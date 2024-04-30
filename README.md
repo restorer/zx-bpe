@@ -1,2 +1,3 @@
-# zx-bpe
+# BPE
+
 Belorussian Pixel Editor — create graphics in SpecSCII style
