@@ -1,8 +1,13 @@
-package com.eightsines.bpe.engine
+package com.eightsines.bpe.engine.data
 
 value class SciiColor(val value: Int) {
+    fun merge(onto: SciiColor) =
+        if (value != VALUE_TRANSPARENT) this else onto
+
     companion object {
-        val Transparent = SciiColor(-1)
+        private const val VALUE_TRANSPARENT = -1
+
+        val Transparent = SciiColor(VALUE_TRANSPARENT)
 
         val Black = SciiColor(0)
         val Navy = SciiColor(1)
