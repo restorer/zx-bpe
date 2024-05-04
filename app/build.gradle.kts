@@ -9,4 +9,12 @@ kotlin {
         browser()
         binaries.executable()
     }
+
+    sourceSets {
+        val jsMain by getting {
+            dependencies {
+                implementation(npm("uuid", libs.versions.npm.uuid.get()))
+            }
+        }
+    }
 }

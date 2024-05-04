@@ -2,6 +2,7 @@
 
 junit = "4.13.2"
 kotlin = "1.9.23"
+npm-uuid = "9.0.1"
 
 [libraries]
 
