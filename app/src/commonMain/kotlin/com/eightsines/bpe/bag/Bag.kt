@@ -11,27 +11,21 @@ interface UnpackableBag {
     fun getBooleanOrNull(): Boolean?
     fun getIntOrNull(): Int?
     fun getStringOrNull(): String?
-    fun <T> getStuffOrNull(unpacker: VersionedUnpackableBag): T?
+    fun <T> getStuffOrNull(unpacker: BagStuff.Unpacker<T>): T?
 
     fun getBoolean(): Boolean
     fun getInt(): Int
     fun getString(): String
-    fun <T> getStuff(unpacker: (bag: VersionedUnpackableBag) -> T): T
-}
-
-interface VersionedPackableBag {
-    fun putVersion(version: Int): PackableBag
-}
-
-interface VersionedUnpackableBag {
-    fun getVersion(): Pair<Int, UnpackableBag>
+    fun <T> getStuff(unpacker: BagStuff.Unpacker<T>): T
 }
 
 interface BagStuff {
-    fun putInTheBag(versionedBag: VersionedPackableBag)
+    val bagStuffVersion: Int
+
+    fun putInTheBag(bag: PackableBag)
 
     interface Unpacker<T> {
-        fun getOutOfTheBag(versionedBag: VersionedUnpackableBag): T
+        fun getOutOfTheBag(version: Int, bag: UnpackableBag): T
     }
 }
 

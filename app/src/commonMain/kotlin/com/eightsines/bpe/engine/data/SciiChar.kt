@@ -19,6 +19,7 @@ value class SciiChar(val value: Int) {
         const val BLOCK_BIT_BL = 0x08
 
         val Transparent = SciiChar(-1)
+        val Space = SciiChar(32)
         val BlockHorizontalTop = SciiChar(BLOCK_VALUE_FIRST + BLOCK_BIT_TR + BLOCK_BIT_TL)
         val BlockVerticalLeft = SciiChar(BLOCK_VALUE_FIRST + BLOCK_BIT_TL + BLOCK_BIT_BL)
     }

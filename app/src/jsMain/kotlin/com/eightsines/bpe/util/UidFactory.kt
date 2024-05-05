@@ -1,4 +1,4 @@
-package com.eightsines.bpe.engine.util
+package com.eightsines.bpe.util
 
 @JsModule("uuid")
 @JsNonModule
