@@ -1,5 +1,8 @@
-package com.eightsines.bpe.engine.data
+package com.eightsines.bpe.model
 
+import kotlin.jvm.JvmInline
+
+@JvmInline
 value class SciiColor(val value: Int) {
     fun merge(onto: SciiColor) =
         if (value != VALUE_TRANSPARENT) this else onto

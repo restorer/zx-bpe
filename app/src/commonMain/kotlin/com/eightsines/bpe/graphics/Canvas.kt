@@ -1,27 +1,25 @@
-package com.eightsines.bpe.engine.canvas
+package com.eightsines.bpe.graphics
 
-import com.eightsines.bpe.bag.BagStuff
-import com.eightsines.bpe.bag.PackableBag
-import com.eightsines.bpe.engine.cell.BlockDrawingCell
-import com.eightsines.bpe.engine.cell.Cell
-import com.eightsines.bpe.engine.cell.CellType
-import com.eightsines.bpe.engine.cell.HBlockMergeCell
-import com.eightsines.bpe.engine.cell.MergeCell
-import com.eightsines.bpe.engine.cell.SciiCell
-import com.eightsines.bpe.engine.cell.SciiMergeCell
-import com.eightsines.bpe.engine.cell.VBlockMergeCell
-import com.eightsines.bpe.engine.data.SciiChar
-import com.eightsines.bpe.engine.data.SciiColor
-import com.eightsines.bpe.engine.data.SciiLight
+import com.eightsines.bpe.model.BlockDrawingCell
+import com.eightsines.bpe.model.Cell
+import com.eightsines.bpe.model.CellType
+import com.eightsines.bpe.model.HBlockMergeCell
+import com.eightsines.bpe.model.SciiCell
+import com.eightsines.bpe.model.SciiChar
+import com.eightsines.bpe.model.SciiColor
+import com.eightsines.bpe.model.SciiLight
+import com.eightsines.bpe.model.VBlockMergeCell
+import com.eightsines.bpe.util.BagStuffPacker
+import com.eightsines.bpe.util.PackableBag
 
-enum class CanvasType(val value: String) {
-    Scii("scii"),
-    HBlock("hblock"),
-    VBlock("vblock"),
-    QBlock("qblock"),
+enum class CanvasType(val value: String, internal val polymorphicPacker: BagStuffPacker<out Canvas<*>>) {
+    Scii("scii", SciiCanvas.Polymorphic),
+    HBlock("hblock", HBlockCanvas.Polymorphic),
+    VBlock("vblock", VBlockCanvas.Polymorphic),
+    QBlock("qblock", QBlockCanvas.Polymorphic),
 }
 
-interface Canvas<T : Cell> : BagStuff {
+interface Canvas<T : Cell> {
     val type: CanvasType
     val cellType: CellType
 
@@ -31,23 +29,26 @@ interface Canvas<T : Cell> : BagStuff {
     val drawingWidth: Int
     val drawingHeight: Int
 
-    override val bagStuffVersion: Int
-        get() = 1
-
     fun copyMutable(): MutableCanvas<T>
     fun toSciiPosition(drawingX: Int, drawingY: Int): Pair<Int, Int>
     fun getDrawingCell(drawingX: Int, drawingY: Int): T
     fun getSciiCell(sciiX: Int, sciiY: Int): SciiCell
-    fun getMergeCell(sciiX: Int, sciiY: Int): MergeCell
+
+    companion object : BagStuffPacker<Canvas<*>> {
+        override val putInTheBagVersion = 1
+
+        override fun putInTheBag(bag: PackableBag, value: Canvas<*>) {
+            bag.put(value.type.value)
+            bag.put(value.sciiWidth)
+            bag.put(value.sciiHeight)
+
+            @Suppress("UNCHECKED_CAST")
+            bag.put(value.type.polymorphicPacker as BagStuffPacker<Canvas<*>>, value)
+        }
+    }
 }
 
 interface BlockCanvas : Canvas<BlockDrawingCell>
-
-private fun <T : Cell> Canvas<T>.putInTheBagBase(bag: PackableBag) {
-    bag.put(type.value)
-    bag.put(sciiWidth)
-    bag.put(sciiHeight)
-}
 
 abstract class SciiCanvas(override val sciiWidth: Int, override val sciiHeight: Int) : Canvas<SciiCell> {
     override val type = CanvasType.Scii
@@ -77,14 +78,14 @@ abstract class SciiCanvas(override val sciiWidth: Int, override val sciiHeight: 
             cells[sciiY][sciiX]
         }
 
-    override fun getMergeCell(sciiX: Int, sciiY: Int) = SciiMergeCell(getSciiCell(sciiX, sciiY))
+    internal object Polymorphic : BagStuffPacker<SciiCanvas> {
+        override val putInTheBagVersion = 1
 
-    override fun putInTheBag(bag: PackableBag) {
-        putInTheBagBase(bag)
-
-        for (line in cells) {
-            for (cell in line) {
-                bag.put(cell)
+        override fun putInTheBag(bag: PackableBag, value: SciiCanvas) {
+            for (line in value.cells) {
+                for (cell in line) {
+                    bag.put(Cell, cell)
+                }
             }
         }
     }
@@ -130,7 +131,7 @@ abstract class HBlockCanvas(
         )
     }
 
-    override fun getMergeCell(sciiX: Int, sciiY: Int): HBlockMergeCell {
+    fun getMergeCell(sciiX: Int, sciiY: Int): HBlockMergeCell {
         if (sciiX < 0 || sciiY < 0 || sciiX >= sciiWidth || sciiY >= sciiHeight) {
             return HBlockMergeCell.Transparent
         }
@@ -146,12 +147,14 @@ abstract class HBlockCanvas(
         )
     }
 
-    override fun putInTheBag(bag: PackableBag) {
-        putInTheBagBase(bag)
+    internal object Polymorphic : BagStuffPacker<HBlockCanvas> {
+        override val putInTheBagVersion = 1
 
-        for (line in cells) {
-            for (cell in line) {
-                bag.put(cell)
+        override fun putInTheBag(bag: PackableBag, value: HBlockCanvas) {
+            for (line in value.cells) {
+                for (cell in line) {
+                    bag.put(Cell, cell)
+                }
             }
         }
     }
@@ -197,7 +200,7 @@ abstract class VBlockCanvas(
         )
     }
 
-    override fun getMergeCell(sciiX: Int, sciiY: Int): VBlockMergeCell {
+    fun getMergeCell(sciiX: Int, sciiY: Int): VBlockMergeCell {
         if (sciiX < 0 || sciiY < 0 || sciiX >= sciiWidth || sciiY >= sciiHeight) {
             return VBlockMergeCell.Transparent
         }
@@ -213,12 +216,14 @@ abstract class VBlockCanvas(
         )
     }
 
-    override fun putInTheBag(bag: PackableBag) {
-        putInTheBagBase(bag)
+    internal object Polymorphic : BagStuffPacker<VBlockCanvas> {
+        override val putInTheBagVersion = 1
 
-        for (line in cells) {
-            for (cell in line) {
-                bag.put(cell)
+        override fun putInTheBag(bag: PackableBag, value: VBlockCanvas) {
+            for (line in value.cells) {
+                for (cell in line) {
+                    bag.put(Cell, cell)
+                }
             }
         }
     }
@@ -283,20 +288,20 @@ abstract class QBlockCanvas(
         }
     }
 
-    override fun getMergeCell(sciiX: Int, sciiY: Int) = SciiMergeCell(getSciiCell(sciiX, sciiY))
+    internal object Polymorphic : BagStuffPacker<QBlockCanvas> {
+        override val putInTheBagVersion = 1
 
-    override fun putInTheBag(bag: PackableBag) {
-        putInTheBagBase(bag)
-
-        for (line in pixels) {
-            for (pixel in line) {
-                bag.put(pixel)
+        override fun putInTheBag(bag: PackableBag, value: QBlockCanvas) {
+            for (line in value.pixels) {
+                for (pixel in line) {
+                    bag.put(pixel)
+                }
             }
-        }
 
-        for (line in attrs) {
-            for (attr in line) {
-                bag.put(attr)
+            for (line in value.attrs) {
+                for (attr in line) {
+                    bag.put(Cell, attr)
+                }
             }
         }
     }

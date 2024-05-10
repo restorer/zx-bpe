@@ -1,6 +1,6 @@
-package com.eightsines.bpe.engine.graphics
+package com.eightsines.bpe.graphics
 
-import com.eightsines.bpe.engine.cell.Cell
+import com.eightsines.bpe.model.Cell
 import kotlin.math.roundToInt
 
 class Painter {

@@ -1,20 +1,7 @@
-package com.eightsines.bpe.engine.cell
-
-import com.eightsines.bpe.engine.data.SciiChar
-import com.eightsines.bpe.engine.data.SciiColor
-import com.eightsines.bpe.engine.data.SciiLight
+package com.eightsines.bpe.model
 
 sealed interface MergeCell {
     fun toSciiCell(): SciiCell
-    fun merge(onto: MergeCell): MergeCell
-}
-
-data class SciiMergeCell(val sciiCell: SciiCell) : MergeCell {
-    override fun toSciiCell() = sciiCell
-
-    override fun merge(onto: MergeCell): MergeCell {
-        TODO("Not yet implemented")
-    }
 }
 
 data class HBlockMergeCell(

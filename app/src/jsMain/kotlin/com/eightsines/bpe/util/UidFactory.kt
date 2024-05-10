@@ -4,8 +4,7 @@ package com.eightsines.bpe.util
 @JsNonModule
 external val uuid: dynamic
 
-@Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-actual class UidFactory {
+class UidFactoryImpl : UidFactory {
     @Suppress("UnsafeCastFromDynamic")
-    actual fun createUid(): String = uuid.v4()
+    override fun createUid(): String = uuid.v4()
 }

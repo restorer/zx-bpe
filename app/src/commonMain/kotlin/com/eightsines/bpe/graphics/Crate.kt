@@ -1,34 +1,21 @@
-package com.eightsines.bpe.engine.graphics
+package com.eightsines.bpe.graphics
 
-import com.eightsines.bpe.bag.BagStuff
-import com.eightsines.bpe.bag.PackableBag
-import com.eightsines.bpe.bag.UnpackableBag
-import com.eightsines.bpe.engine.canvas.Canvas
-import com.eightsines.bpe.engine.cell.Cell
-import com.eightsines.bpe.engine.cell.CellType
-import com.eightsines.bpe.engine.cell.SciiCell
+import com.eightsines.bpe.util.PackableBag
+import com.eightsines.bpe.util.UnpackableBag
+import com.eightsines.bpe.model.Cell
+import com.eightsines.bpe.model.CellType
+import com.eightsines.bpe.model.SciiCell
+import com.eightsines.bpe.util.BagStuffPacker
+import com.eightsines.bpe.util.BagStuffUnpacker
+import com.eightsines.bpe.util.BagUnpackException
 
 data class Crate<T : Cell>(
+    val cellType: CellType,
     val width: Int,
     val height: Int,
-    val cellType: CellType,
     val cells: List<List<T>>,
-) : BagStuff {
-    override val bagStuffVersion = 1
-
-    override fun putInTheBag(bag: PackableBag) {
-        bag.put(width)
-        bag.put(height)
-        bag.put(cellType.value)
-
-        for (line in cells) {
-            for (cell in line) {
-                bag.put(cell)
-            }
-        }
-    }
-
-    companion object : BagStuff.Unpacker<Crate<*>> {
+) {
+    companion object : BagStuffPacker<Crate<*>>, BagStuffUnpacker<Crate<*>> {
         fun makeScii(
             canvas: Canvas<*>,
             sciiX: Int,
@@ -44,7 +31,7 @@ data class Crate<T : Cell>(
                 }
             }
 
-            return Crate(sciiWidth, sciiHeight, CellType.Scii, cells)
+            return Crate(CellType.Scii, sciiWidth, sciiHeight, cells)
         }
 
         fun <T : Cell> makeDrawing(
@@ -64,23 +51,42 @@ data class Crate<T : Cell>(
             }
 
             @Suppress("UNCHECKED_CAST")
-            return Crate(drawingWidth, drawingHeight, canvas.cellType, cells) as Crate<T>
+            return Crate(canvas.cellType, drawingWidth, drawingHeight, cells) as Crate<T>
+        }
+
+        override val putInTheBagVersion = 1
+
+        override fun putInTheBag(bag: PackableBag, value: Crate<*>) {
+            bag.put(value.cellType.value)
+            bag.put(value.width)
+            bag.put(value.height)
+
+            for (line in value.cells) {
+                for (cell in line) {
+                    bag.put(Cell, cell)
+                }
+            }
         }
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Crate<*> {
+            val cellType = try {
+                CellType.of(bag.getString())
+            } catch (e: IllegalArgumentException) {
+                throw BagUnpackException(e.toString())
+            }
+
             val width = bag.getInt()
             val height = bag.getInt()
-            val cellType = CellType.unpack(bag.getString())
             val cells: MutableList<MutableList<Cell?>> = MutableList(width) { MutableList(height) { null } }
 
             for (y in 0..<height) {
                 for (x in 0..<width) {
-                    cells[y][x] = bag.getStuff(Cell.Companion)
+                    cells[y][x] = bag.getStuff(Cell)
                 }
             }
 
             @Suppress("UNCHECKED_CAST")
-            return Crate(width, height, cellType, cells as List<List<Cell>>)
+            return Crate(cellType, width, height, cells as List<List<Cell>>)
         }
     }
 }

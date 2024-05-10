@@ -1,8 +1,11 @@
-package com.eightsines.bpe.engine.data
+package com.eightsines.bpe.model
+
+import kotlin.jvm.JvmInline
 
 // https://en.wikipedia.org/wiki/ZX_Spectrum_character_set
 // https://trilirium.eversong.ru/ZX_vault/ZX_chars.html
 
+@JvmInline
 value class SciiChar(val value: Int) {
     fun merge(onto: SciiChar) =
         if (value != VALUE_TRANSPARENT) this else onto
@@ -20,7 +23,12 @@ value class SciiChar(val value: Int) {
 
         val Transparent = SciiChar(-1)
         val Space = SciiChar(32)
+
+        val BlockSpace = SciiChar(BLOCK_VALUE_FIRST)
         val BlockHorizontalTop = SciiChar(BLOCK_VALUE_FIRST + BLOCK_BIT_TR + BLOCK_BIT_TL)
-        val BlockVerticalLeft = SciiChar(BLOCK_VALUE_FIRST + BLOCK_BIT_TL + BLOCK_BIT_BL)
+        val BlockHorizontalBottom = SciiChar(BLOCK_VALUE_FIRST + BLOCK_BIT_BR + BLOCK_BIT_BL)
+        val BlockVerticalLeft = SciiChar(BLOCK_VALUE_FIRST + BLOCK_BIT_TL + BLOCK_BIT_BL) // 0x80 + 0x02 + 0x08
+        val BlockVerticalRight = SciiChar(BLOCK_VALUE_FIRST + BLOCK_BIT_TR + BLOCK_BIT_BR)
+        val BlockFull = SciiChar(BLOCK_VALUE_LAST)
     }
 }
