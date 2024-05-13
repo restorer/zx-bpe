@@ -1,38 +1,35 @@
 package com.eightsines.bpe.model
 
+import com.eightsines.bpe.test.performTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SciiColorTest {
     @Test
-    fun shouldNotChangeTransparentOnTransparent() {
-        val sut = SciiColor.Transparent
-
-        val actual = sut.merge(SciiColor.Transparent)
-        assertEquals(SciiColor.Transparent, actual)
-    }
-
-    @Test
-    fun shouldNotMergeTransparentOnNonTransparent() {
-        val sut = SciiColor.Transparent
-
-        val actual = sut.merge(SciiColor.White)
-        assertEquals(SciiColor.White, actual)
-    }
+    fun shouldNotChangeTransparentOnTransparent() = performTest(
+        arrange = { SciiColor.Transparent },
+        act = { it.merge(SciiColor.Transparent) },
+        assert = { assertEquals(SciiColor.Transparent, it) },
+    )
 
     @Test
-    fun shouldMergeNonTransparentOnNonTransparent() {
-        val sut = SciiColor.White
-
-        val actual = sut.merge(SciiColor.Black)
-        assertEquals(SciiColor.White, actual)
-    }
+    fun shouldNotMergeTransparentOnNonTransparent() = performTest(
+        arrange = { SciiColor.Transparent },
+        act = { it.merge(SciiColor.White) },
+        assert = { assertEquals(SciiColor.White, it) },
+    )
 
     @Test
-    fun shouldMergeNonTransparentOnTransparent() {
-        val sut = SciiColor.White
+    fun shouldMergeNonTransparentOnNonTransparent() = performTest(
+        arrange = { SciiColor.White },
+        act = { it.merge(SciiColor.Black) },
+        assert = { assertEquals(SciiColor.White, it) },
+    )
 
-        val actual = sut.merge(SciiColor.Transparent)
-        assertEquals(SciiColor.White, actual)
-    }
+    @Test
+    fun shouldMergeNonTransparentOnTransparent() = performTest(
+        arrange = { SciiColor.White },
+        act = { it.merge(SciiColor.Transparent) },
+        assert = { assertEquals(SciiColor.White, it) },
+    )
 }

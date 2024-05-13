@@ -1,41 +1,31 @@
 package com.eightsines.bpe.model
 
+import com.eightsines.bpe.test.SciiCellMother
+import com.eightsines.bpe.test.performTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class HBlockMergeCellTest {
     @Test
-    fun shouldConvertTransparentToScii() {
-        val sut = HBlockMergeCell(SciiColor.Transparent, SciiColor.Transparent, SciiLight.On)
-
-        val actual = sut.toSciiCell()
-        assertEquals(SciiCell.Transparent, actual)
-    }
-
-    @Test
-    fun shouldConvertNonTransparentToScii() {
-        val sut = HBlockMergeCell(SciiColor.White, SciiColor.Black, SciiLight.On)
-
-        val actual = sut.toSciiCell()
-
-        val expected = SciiCell(
-            character = SciiChar.BlockHorizontalTop,
-            ink = SciiColor.White,
-            paper = SciiColor.Black,
-            bright = SciiLight.On,
-            flash = SciiLight.Transparent,
-        )
-
-        assertEquals(expected, actual)
-    }
+    fun shouldConvertTransparentToScii() = performTest(
+        arrange = { HBlockMergeCell(SciiColor.Transparent, SciiColor.Transparent, SciiLight.On) },
+        act = { it.toSciiCell() },
+        assert = { assertEquals(SciiCell.Transparent, it) },
+    )
 
     @Test
-    fun shouldMerge() {
-        val sut = HBlockMergeCell(SciiColor.White, SciiColor.Transparent, SciiLight.On)
+    fun shouldConvertNonTransparentToScii() = performTest(
+        arrange = { HBlockMergeCell(SciiColor.White, SciiColor.Black, SciiLight.On) },
+        act = { it.toSciiCell() },
+        assert = { assertEquals(SciiCellMother.BlockHorizontalTop, it) },
+    )
 
-        val actual = sut.merge(HBlockMergeCell(SciiColor.Black, SciiColor.Red, SciiLight.Off))
-        assertEquals(HBlockMergeCell(SciiColor.White, SciiColor.Red, SciiLight.On), actual)
-    }
+    @Test
+    fun shouldMerge() = performTest(
+        arrange = { HBlockMergeCell(SciiColor.White, SciiColor.Transparent, SciiLight.On) },
+        act = { it.merge(HBlockMergeCell(SciiColor.Black, SciiColor.Red, SciiLight.Off)) },
+        assert = { assertEquals(HBlockMergeCell(SciiColor.White, SciiColor.Red, SciiLight.On), it) },
+    )
 
     @Test
     fun shouldConvertTransparentToSciiStatic() {
@@ -46,15 +36,6 @@ class HBlockMergeCellTest {
     @Test
     fun shouldConvertNonTransparentToSciiStatic() {
         val actual = HBlockMergeCell.makeSciiCell(SciiColor.White, SciiColor.Black, SciiLight.On)
-
-        val expected = SciiCell(
-            character = SciiChar.BlockHorizontalTop,
-            ink = SciiColor.White,
-            paper = SciiColor.Black,
-            bright = SciiLight.On,
-            flash = SciiLight.Transparent,
-        )
-
-        assertEquals(expected, actual)
+        assertEquals(SciiCellMother.BlockHorizontalTop, actual)
     }
 }

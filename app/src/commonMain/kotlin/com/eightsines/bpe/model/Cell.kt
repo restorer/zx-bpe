@@ -8,15 +8,15 @@ import com.eightsines.bpe.util.UnknownPolymorphicTypeBagUnpackException
 import com.eightsines.bpe.util.UnpackableBag
 import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
 
-enum class CellType(val value: String, internal val polymorphicPacker: BagStuffPacker<out Cell>) {
-    Scii("scii", SciiCell.Polymorphic),
-    Block("block", BlockDrawingCell.Polymorphic);
+enum class CellType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Cell>) {
+    Scii(1, SciiCell.Polymorphic),
+    Block(2, BlockDrawingCell.Polymorphic);
 
     companion object {
-        fun of(value: String) = when (value) {
+        fun of(value: Int) = when (value) {
             Scii.value -> Scii
             Block.value -> Block
-            else -> throw IllegalArgumentException("Unknown enum value=\"$value\" for CellType")
+            else -> throw IllegalArgumentException("Unknown enum value=$value for CellType")
         }
     }
 }
@@ -44,7 +44,7 @@ sealed interface Cell {
                 throw UnsupportedVersionBagUnpackException("Cell", version)
             }
 
-            return when (val type = bag.getString()) {
+            return when (val type = bag.getInt()) {
                 CellType.Scii.value -> bag.getStuff(SciiCell.Polymorphic)
                 CellType.Block.value -> bag.getStuff(BlockDrawingCell.Polymorphic)
                 else -> throw UnknownPolymorphicTypeBagUnpackException("Cell", type)

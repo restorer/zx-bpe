@@ -9,12 +9,12 @@ import com.eightsines.bpe.util.UnknownPolymorphicTypeBagUnpackException
 import com.eightsines.bpe.util.UnpackableBag
 import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
 
-enum class ShapeType(val value: String, internal val polymorphicPacker: BagStuffPacker<out Shape<*>>) {
-    Point("point", Shape.Point.Polymorphic),
-    Line("line", Shape.Line.Polymorphic),
-    FillBox("fillBox", Shape.FillBox.Polymorphic),
-    StrokeBox("strokeBox", Shape.StrokeBox.Polymorphic),
-    Cells("cells", Shape.Cells.Polymorphic),
+enum class ShapeType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Shape<*>>) {
+    Point(1, Shape.Point.Polymorphic),
+    Line(2, Shape.Line.Polymorphic),
+    FillBox(3, Shape.FillBox.Polymorphic),
+    StrokeBox(4, Shape.StrokeBox.Polymorphic),
+    Cells(5, Shape.Cells.Polymorphic),
 }
 
 sealed interface Shape<T : Cell> {
@@ -36,7 +36,7 @@ sealed interface Shape<T : Cell> {
                 throw UnsupportedVersionBagUnpackException("Shape", version)
             }
 
-            return when (val type = bag.getString()) {
+            return when (val type = bag.getInt()) {
                 ShapeType.Point.value -> bag.getStuff(Point.Polymorphic)
                 ShapeType.Line.value -> bag.getStuff(Line.Polymorphic)
                 ShapeType.FillBox.value -> bag.getStuff(FillBox.Polymorphic)

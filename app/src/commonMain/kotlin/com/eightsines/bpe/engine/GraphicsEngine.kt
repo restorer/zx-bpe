@@ -243,12 +243,12 @@ class GraphicsEngine(private val uidFactory: UidFactory, private val painter: Pa
             layerUid = layer.uid,
             x = sciiSX,
             y = sciiSY,
-            crate = Crate.makeScii(layer.canvas, sciiSX, sciiSY, sciiEX - sciiSX + 1, sciiEY - sciiSY + 1),
+            crate = Crate.fromCanvasScii(layer.canvas, sciiSX, sciiSY, sciiEX - sciiSX + 1, sciiEY - sciiSY + 1),
         )
 
         canvas.mutate { mutator ->
             painter.paint(action.shape) { x, y, cell ->
-                mutator.putDrawingCell(x, y, cell)
+                mutator.mergeDrawingCell(x, y, cell)
             }
         }
 
@@ -268,7 +268,7 @@ class GraphicsEngine(private val uidFactory: UidFactory, private val painter: Pa
             layerUid = layer.uid,
             x = action.x,
             y = action.y,
-            crate = Crate.makeScii(layer.canvas, action.x, action.y, crate.width, crate.height),
+            crate = Crate.fromCanvasScii(layer.canvas, action.x, action.y, crate.width, crate.height),
         )
 
         layer.canvas.mutate { mutator ->

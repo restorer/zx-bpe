@@ -16,7 +16,7 @@ data class Crate<T : Cell>(
     val cells: List<List<T>>,
 ) {
     companion object : BagStuffPacker<Crate<*>>, BagStuffUnpacker<Crate<*>> {
-        fun makeScii(
+        fun fromCanvasScii(
             canvas: Canvas<*>,
             sciiX: Int,
             sciiY: Int,
@@ -34,7 +34,7 @@ data class Crate<T : Cell>(
             return Crate(CellType.Scii, sciiWidth, sciiHeight, cells)
         }
 
-        fun <T : Cell> makeDrawing(
+        fun <T : Cell> fromCanvasDrawing(
             canvas: Canvas<T>,
             drawingX: Int,
             drawingY: Int,
@@ -70,14 +70,14 @@ data class Crate<T : Cell>(
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Crate<*> {
             val cellType = try {
-                CellType.of(bag.getString())
+                CellType.of(bag.getInt())
             } catch (e: IllegalArgumentException) {
                 throw BagUnpackException(e.toString())
             }
 
             val width = bag.getInt()
             val height = bag.getInt()
-            val cells: MutableList<MutableList<Cell?>> = MutableList(width) { MutableList(height) { null } }
+            val cells: MutableList<MutableList<Cell?>> = MutableList(height) { MutableList(width) { null } }
 
             for (y in 0..<height) {
                 for (x in 0..<width) {

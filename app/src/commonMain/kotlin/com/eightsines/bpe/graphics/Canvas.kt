@@ -12,11 +12,11 @@ import com.eightsines.bpe.model.VBlockMergeCell
 import com.eightsines.bpe.util.BagStuffPacker
 import com.eightsines.bpe.util.PackableBag
 
-enum class CanvasType(val value: String, internal val polymorphicPacker: BagStuffPacker<out Canvas<*>>) {
-    Scii("scii", SciiCanvas.Polymorphic),
-    HBlock("hblock", HBlockCanvas.Polymorphic),
-    VBlock("vblock", VBlockCanvas.Polymorphic),
-    QBlock("qblock", QBlockCanvas.Polymorphic),
+enum class CanvasType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Canvas<*>>) {
+    Scii(1, SciiCanvas.Polymorphic),
+    HBlock(2, HBlockCanvas.Polymorphic),
+    VBlock(3, VBlockCanvas.Polymorphic),
+    QBlock(4, QBlockCanvas.Polymorphic),
 }
 
 interface Canvas<T : Cell> {

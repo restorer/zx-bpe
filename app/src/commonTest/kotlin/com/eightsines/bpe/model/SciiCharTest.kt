@@ -1,38 +1,35 @@
 package com.eightsines.bpe.model
 
+import com.eightsines.bpe.test.performTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SciiCharTest {
     @Test
-    fun shouldNotChangeTransparentOnTransparent() {
-        val sut = SciiChar.Transparent
-
-        val actual = sut.merge(SciiChar.Transparent)
-        assertEquals(SciiChar.Transparent, actual)
-    }
-
-    @Test
-    fun shouldNotMergeTransparentOnNonTransparent() {
-        val sut = SciiChar.Transparent
-
-        val actual = sut.merge(SciiChar.BlockFull)
-        assertEquals(SciiChar.BlockFull, actual)
-    }
+    fun shouldNotChangeTransparentOnTransparent() = performTest(
+        arrange = { SciiChar.Transparent },
+        act = { it.merge(SciiChar.Transparent) },
+        assert = { assertEquals(SciiChar.Transparent, it) },
+    )
 
     @Test
-    fun shouldMergeNonTransparentOnNonTransparent() {
-        val sut = SciiChar.BlockFull
-
-        val actual = sut.merge(SciiChar.Space)
-        assertEquals(SciiChar.BlockFull, actual)
-    }
+    fun shouldNotMergeTransparentOnNonTransparent() = performTest(
+        arrange = { SciiChar.Transparent },
+        act = { it.merge(SciiChar.BlockFull) },
+        assert = { assertEquals(SciiChar.BlockFull, it) },
+    )
 
     @Test
-    fun shouldMergeNonTransparentOnTransparent() {
-        val sut = SciiChar.BlockFull
+    fun shouldMergeNonTransparentOnNonTransparent() = performTest(
+        arrange = { SciiChar.BlockFull },
+        act = { it.merge(SciiChar.Space) },
+        assert = { assertEquals(SciiChar.BlockFull, it) },
+    )
 
-        val actual = sut.merge(SciiChar.Transparent)
-        assertEquals(SciiChar.BlockFull, actual)
-    }
+    @Test
+    fun shouldMergeNonTransparentOnTransparent() = performTest(
+        arrange = { SciiChar.BlockFull },
+        act = { it.merge(SciiChar.Transparent) },
+        assert = { assertEquals(SciiChar.BlockFull, it) },
+    )
 }

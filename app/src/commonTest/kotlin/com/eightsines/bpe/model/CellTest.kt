@@ -1,5 +1,8 @@
 package com.eightsines.bpe.model
 
+import com.eightsines.bpe.test.BlockDrawingCellMother
+import com.eightsines.bpe.test.SciiCellMother
+import com.eightsines.bpe.test.performTest
 import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.PackableStringBag
 import com.eightsines.bpe.util.UnpackableStringBag
@@ -9,62 +12,42 @@ import kotlin.test.assertFailsWith
 
 class CellTest {
     @Test
-    fun shouldPackScii() {
-        val cell = SciiCell(
-            character = SciiChar.BlockVerticalLeft,
-            ink = SciiColor.Black,
-            paper = SciiColor.White,
-            bright = SciiLight.On,
-            flash = SciiLight.Transparent,
-        )
-
-        val bag = PackableStringBag()
-        bag.put(Cell, cell)
-
-        assertEquals("BAG1u1s4sciiu1n008Ai0i7i1iF", bag.toString())
-    }
+    fun shouldPackScii() = performTest(
+        arrange = { SciiCellMother.BlockVerticalLeft to PackableStringBag() },
+        act = { (sut, bag) ->
+            bag.put(Cell, sut)
+            bag.toString()
+        },
+        assert = { assertEquals("BAG1u1i1u1n008Ai0i7i1iF", it) },
+    )
 
     @Test
-    fun shouldPackBlockDrawing() {
-        val cell = BlockDrawingCell(color = SciiColor.White, bright = SciiLight.Off)
-
-        val bag = PackableStringBag()
-        bag.put(Cell, cell)
-
-        assertEquals("BAG1u1s5blocku1i7i0", bag.toString())
-    }
-
-    @Test
-    fun shouldUnpackScii() {
-        val bag = UnpackableStringBag("BAG1u1s4sciiu1n008Ai0i7i1iF")
-
-        val actual = bag.getStuff(Cell)
-
-        val expected = SciiCell(
-            character = SciiChar.BlockVerticalLeft,
-            ink = SciiColor.Black,
-            paper = SciiColor.White,
-            bright = SciiLight.On,
-            flash = SciiLight.Transparent,
-        )
-
-        assertEquals(expected, actual)
-    }
+    fun shouldPackBlockDrawing() = performTest(
+        arrange = { BlockDrawingCellMother.White to PackableStringBag() },
+        act = { (sut, bag) ->
+            bag.put(Cell, sut)
+            bag.toString()
+        },
+        assert = { assertEquals("BAG1u1i2u1i7i1", it) },
+    )
 
     @Test
-    fun shouldUnpackBlockDrawing() {
-        val bag = UnpackableStringBag("BAG1u1s5blocku1i7i0")
+    fun shouldUnpackScii() = performTest(
+        arrange = { UnpackableStringBag("BAG1u1i1u1n008Ai0i7i1iF") },
+        act = { it.getStuff(Cell) },
+        assert = { assertEquals(SciiCellMother.BlockVerticalLeft, it) },
+    )
 
-        val actual = bag.getStuff(Cell)
-        val expected = BlockDrawingCell(color = SciiColor.White, bright = SciiLight.Off)
-
-        assertEquals(expected, actual)
-    }
+    @Test
+    fun shouldUnpackBlockDrawing() = performTest(
+        arrange = { UnpackableStringBag("BAG1u1i2u1i7i1") },
+        act = { it.getStuff(Cell) },
+        assert = { assertEquals(BlockDrawingCellMother.White, it) },
+    )
 
     @Test
     fun shouldNotUnpackUnknown() {
         val bag = UnpackableStringBag("BAG1u1s4test")
-
         assertFailsWith<BagUnpackException> { bag.getStuff(Cell) }
     }
 }

@@ -30,7 +30,7 @@ interface MutableCanvas<T : Cell> : Canvas<T> {
                 throw UnsupportedVersionBagUnpackException("MutableCanvas", version)
             }
 
-            val type = bag.getString()
+            val type = bag.getInt()
             val sciiWidth = bag.getInt()
             val sciiHeight = bag.getInt()
 
@@ -47,7 +47,8 @@ interface MutableCanvas<T : Cell> : Canvas<T> {
 
 interface CanvasMutator<T : Cell> {
     fun clear()
-    fun putDrawingCell(drawingX: Int, drawingY: Int, cell: T)
+    fun mergeDrawingCell(drawingX: Int, drawingY: Int, cell: T)
+    fun replaceDrawingCell(drawingX: Int, drawingY: Int, cell: T)
     fun replaceSciiCell(sciiX: Int, sciiY: Int, cell: SciiCell)
 }
 
@@ -93,20 +94,24 @@ class MutableSciiCanvas(
             }
         }
 
-        override fun putDrawingCell(drawingX: Int, drawingY: Int, cell: SciiCell) {
-            if (drawingX < 0 || drawingY < 0 || drawingX > canvas.drawingWidth || drawingY > canvas.drawingHeight) {
+        override fun mergeDrawingCell(drawingX: Int, drawingY: Int, cell: SciiCell) {
+            if (drawingX < 0 || drawingY < 0 || drawingX >= canvas.drawingWidth || drawingY >= canvas.drawingHeight) {
                 return
             }
 
-            canvas.cells[drawingY][drawingX] = if (cell.character == SciiChar.Transparent) {
-                SciiCell.Transparent
-            } else {
-                cell
+            canvas.cells[drawingY][drawingX] = cell.merge(canvas.cells[drawingY][drawingX])
+        }
+
+        override fun replaceDrawingCell(drawingX: Int, drawingY: Int, cell: SciiCell) {
+            if (drawingX < 0 || drawingY < 0 || drawingX >= canvas.drawingWidth || drawingY >= canvas.drawingHeight) {
+                return
             }
+
+            canvas.cells[drawingY][drawingX] = cell
         }
 
         override fun replaceSciiCell(sciiX: Int, sciiY: Int, cell: SciiCell) {
-            if (sciiX < 0 || sciiY < 0 || sciiX > canvas.sciiWidth || sciiY > canvas.sciiHeight) {
+            if (sciiX < 0 || sciiY < 0 || sciiX >= canvas.sciiWidth || sciiY >= canvas.sciiHeight) {
                 return
             }
 
@@ -126,7 +131,7 @@ class MutableSciiCanvas(
             val canvas = MutableSciiCanvas(sciiWidth, sciiHeight)
 
             for (y in 0..<canvas.drawingHeight) {
-                for (x in 0..<canvas.drawingHeight) {
+                for (x in 0..<canvas.drawingWidth) {
                     canvas.cells[y][x] = bag.getStuff(SciiCell)
                 }
             }
@@ -170,28 +175,37 @@ class MutableHBlockCanvas(
             }
         }
 
-        override fun putDrawingCell(drawingX: Int, drawingY: Int, cell: BlockDrawingCell) {
-            if (drawingX < 0 || drawingY < 0 || drawingX > canvas.drawingWidth || drawingY > canvas.drawingHeight) {
+        override fun mergeDrawingCell(drawingX: Int, drawingY: Int, cell: BlockDrawingCell) {
+            if (drawingX < 0 || drawingY < 0 || drawingX >= canvas.drawingWidth || drawingY >= canvas.drawingHeight) {
                 return
             }
 
             val otherDrawingY = if (drawingY % 2 == 0) drawingY + 1 else drawingY - 1
             val otherCell = canvas.cells[otherDrawingY][drawingX]
 
-            if (cell.color == SciiColor.Transparent && otherCell.color == SciiColor.Transparent) {
-                canvas.cells[drawingY][drawingX] = BlockDrawingCell.Transparent
-                canvas.cells[otherDrawingY][drawingX] = BlockDrawingCell.Transparent
+            canvas.cells[drawingY][drawingX] = cell.merge(canvas.cells[drawingY][drawingX])
+            canvas.cells[otherDrawingY][drawingX] = otherCell.copy(bright = cell.bright.merge(otherCell.bright))
+        }
+
+        override fun replaceDrawingCell(drawingX: Int, drawingY: Int, cell: BlockDrawingCell) {
+            if (drawingX < 0 || drawingY < 0 || drawingX >= canvas.drawingWidth || drawingY >= canvas.drawingHeight) {
+                return
+            }
+
+            val otherDrawingY = if (drawingY % 2 == 0) drawingY + 1 else drawingY - 1
+            val otherCell = canvas.cells[otherDrawingY][drawingX]
+
+            if (cell == BlockDrawingCell.Transparent && otherCell.color == SciiColor.Transparent) {
+                canvas.cells[drawingY][drawingX] = cell
+                canvas.cells[otherDrawingY][drawingX] = cell
             } else {
                 canvas.cells[drawingY][drawingX] = cell
-
-                canvas.cells[otherDrawingY][drawingX] = otherCell.copy(
-                    bright = cell.bright.merge(otherCell.bright),
-                )
+                canvas.cells[otherDrawingY][drawingX] = otherCell.copy(bright = cell.bright.merge(otherCell.bright))
             }
         }
 
         override fun replaceSciiCell(sciiX: Int, sciiY: Int, cell: SciiCell) {
-            if (sciiX < 0 || sciiY < 0 || sciiX > canvas.sciiWidth || sciiY > canvas.sciiHeight) {
+            if (sciiX < 0 || sciiY < 0 || sciiX >= canvas.sciiWidth || sciiY >= canvas.sciiHeight) {
                 return
             }
 
@@ -228,7 +242,7 @@ class MutableHBlockCanvas(
         }
 
         override fun replaceMergeCell(sciiX: Int, sciiY: Int, cell: HBlockMergeCell) {
-            if (sciiX < 0 || sciiY < 0 || sciiX > canvas.sciiWidth || sciiY > canvas.sciiHeight) {
+            if (sciiX < 0 || sciiY < 0 || sciiX >= canvas.sciiWidth || sciiY >= canvas.sciiHeight) {
                 return
             }
 
@@ -258,7 +272,7 @@ class MutableHBlockCanvas(
             val canvas = MutableHBlockCanvas(sciiWidth, sciiHeight)
 
             for (y in 0..<canvas.drawingHeight) {
-                for (x in 0..<canvas.drawingHeight) {
+                for (x in 0..<canvas.drawingWidth) {
                     canvas.cells[y][x] = bag.getStuff(BlockDrawingCell)
                 }
             }
@@ -302,23 +316,37 @@ class MutableVBlockCanvas(
             }
         }
 
-        override fun putDrawingCell(drawingX: Int, drawingY: Int, cell: BlockDrawingCell) {
-            if (drawingX < 0 || drawingY < 0 || drawingX > canvas.drawingWidth || drawingY > canvas.drawingHeight) {
+        override fun mergeDrawingCell(drawingX: Int, drawingY: Int, cell: BlockDrawingCell) {
+            if (drawingX < 0 || drawingY < 0 || drawingX >= canvas.drawingWidth || drawingY >= canvas.drawingHeight) {
                 return
             }
-
-            canvas.cells[drawingY][drawingX] = cell
 
             val otherDrawingX = if (drawingX % 2 == 0) drawingX + 1 else drawingX - 1
             val otherCell = canvas.cells[drawingY][otherDrawingX]
 
-            canvas.cells[drawingY][otherDrawingX] = otherCell.copy(
-                bright = cell.bright.merge(otherCell.bright),
-            )
+            canvas.cells[drawingY][drawingX] = cell.merge(canvas.cells[drawingY][drawingX])
+            canvas.cells[drawingY][otherDrawingX] = otherCell.copy(bright = cell.bright.merge(otherCell.bright))
+        }
+
+        override fun replaceDrawingCell(drawingX: Int, drawingY: Int, cell: BlockDrawingCell) {
+            if (drawingX < 0 || drawingY < 0 || drawingX >= canvas.drawingWidth || drawingY >= canvas.drawingHeight) {
+                return
+            }
+
+            val otherDrawingX = if (drawingX % 2 == 0) drawingX + 1 else drawingX - 1
+            val otherCell = canvas.cells[drawingY][otherDrawingX]
+
+            if (cell == BlockDrawingCell.Transparent && otherCell.color == SciiColor.Transparent) {
+                canvas.cells[drawingY][drawingX] = cell
+                canvas.cells[drawingY][otherDrawingX] = cell
+            } else {
+                canvas.cells[drawingY][drawingX] = cell
+                canvas.cells[drawingY][otherDrawingX] = otherCell.copy(bright = cell.bright.merge(otherCell.bright))
+            }
         }
 
         override fun replaceSciiCell(sciiX: Int, sciiY: Int, cell: SciiCell) {
-            if (sciiX < 0 || sciiY < 0 || sciiX > canvas.sciiWidth || sciiY > canvas.sciiHeight) {
+            if (sciiX < 0 || sciiY < 0 || sciiX >= canvas.sciiWidth || sciiY >= canvas.sciiHeight) {
                 return
             }
 
@@ -355,7 +383,7 @@ class MutableVBlockCanvas(
         }
 
         override fun replaceMergeCell(sciiX: Int, sciiY: Int, cell: VBlockMergeCell) {
-            if (sciiX < 0 || sciiY < 0 || sciiX > canvas.sciiWidth || sciiY > canvas.sciiHeight) {
+            if (sciiX < 0 || sciiY < 0 || sciiX >= canvas.sciiWidth || sciiY >= canvas.sciiHeight) {
                 return
             }
 
@@ -385,7 +413,7 @@ class MutableVBlockCanvas(
             val canvas = MutableVBlockCanvas(sciiWidth, sciiHeight)
 
             for (y in 0..<canvas.drawingHeight) {
-                for (x in 0..<canvas.drawingHeight) {
+                for (x in 0..<canvas.drawingWidth) {
                     canvas.cells[y][x] = bag.getStuff(BlockDrawingCell)
                 }
             }
@@ -437,8 +465,23 @@ class MutableQBlockCanvas(
             }
         }
 
-        override fun putDrawingCell(drawingX: Int, drawingY: Int, cell: BlockDrawingCell) {
-            if (drawingX < 0 || drawingY < 0 || drawingX > canvas.drawingWidth || drawingY > canvas.drawingHeight) {
+        override fun mergeDrawingCell(drawingX: Int, drawingY: Int, cell: BlockDrawingCell) {
+            if (drawingX < 0 || drawingY < 0 || drawingX >= canvas.drawingWidth || drawingY >= canvas.drawingHeight) {
+                return
+            }
+
+            val sciiX = drawingX / 2
+            val sciiY = drawingY / 2
+
+            if (cell.color != SciiColor.Transparent) {
+                canvas.pixels[drawingY][drawingX] = true
+            }
+
+            canvas.attrs[sciiY][sciiX] = cell.merge(canvas.attrs[sciiY][sciiX])
+        }
+
+        override fun replaceDrawingCell(drawingX: Int, drawingY: Int, cell: BlockDrawingCell) {
+            if (drawingX < 0 || drawingY < 0 || drawingX >= canvas.drawingWidth || drawingY >= canvas.drawingHeight) {
                 return
             }
 
@@ -468,8 +511,8 @@ class MutableQBlockCanvas(
         override fun replaceSciiCell(sciiX: Int, sciiY: Int, cell: SciiCell) {
             if (sciiX < 0 ||
                 sciiY < 0 ||
-                sciiX > canvas.sciiWidth ||
-                sciiY > canvas.sciiHeight ||
+                sciiX >= canvas.sciiWidth ||
+                sciiY >= canvas.sciiHeight ||
                 cell.character.value < SciiChar.BLOCK_VALUE_FIRST ||
                 cell.character.value > SciiChar.BLOCK_VALUE_LAST
             ) {
@@ -501,7 +544,7 @@ class MutableQBlockCanvas(
             val canvas = MutableQBlockCanvas(sciiWidth, sciiHeight)
 
             for (y in 0..<canvas.drawingHeight) {
-                for (x in 0..<canvas.drawingHeight) {
+                for (x in 0..<canvas.drawingWidth) {
                     canvas.pixels[y][x] = bag.getBoolean()
                 }
             }

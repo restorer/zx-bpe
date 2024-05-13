@@ -1,5 +1,8 @@
 package com.eightsines.bpe.util
 
+import com.eightsines.bpe.test.TestBagStuff
+import com.eightsines.bpe.test.TestBagStuffMother
+import com.eightsines.bpe.test.performTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -10,355 +13,385 @@ class UnpackableStringBagTest {
 
     @Test
     fun shouldFailInvalidSignature() {
-        assertFailsWith<BagUnpackException> { makeSut("") }
-        assertFailsWith<BagUnpackException> { makeSut("Test") }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("") }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("Test") }
     }
 
     @Test
     fun shouldNotFailValidSignature() {
-        makeSut("BAG1")
+        UnpackableStringBag("BAG1")
     }
 
     // Boolean.Nullable
 
     @Test
-    fun shouldUnpackNullableBooleanNull() {
-        val sut = makeSut("BAG1_")
-
-        val actual = sut.getBooleanOrNull()
-        assertNull(actual)
+    fun shouldNotUnpackNullableNonBoolean() {
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1i1").getBooleanOrNull() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1s1S").getBooleanOrNull() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1u1").getBooleanOrNull() }
     }
 
     @Test
-    fun shouldUnpackNullableBooleanFalse() {
-        val sut = makeSut("BAG1b")
-
-        val actual = sut.getBooleanOrNull()
-        assertEquals(false, actual)
-    }
+    fun shouldUnpackNullableBooleanNull() = performTest(
+        arrange = { UnpackableStringBag("BAG1_") },
+        act = { it.getBooleanOrNull() },
+        assert = { assertNull(it) },
+    )
 
     @Test
-    fun shouldUnpackNullableBooleanTrue() {
-        val sut = makeSut("BAG1B")
+    fun shouldUnpackNullableBooleanFalse() = performTest(
+        arrange = { UnpackableStringBag("BAG1b") },
+        act = { it.getBooleanOrNull() },
+        assert = { assertEquals(false, it) },
+    )
 
-        val actual = sut.getBooleanOrNull()
-        assertEquals(true, actual)
-    }
+    @Test
+    fun shouldUnpackNullableBooleanTrue() = performTest(
+        arrange = { UnpackableStringBag("BAG1B") },
+        act = { it.getBooleanOrNull() },
+        assert = { assertEquals(true, it) },
+    )
 
     // Boolean.NonNull
 
     @Test
-    fun shouldNotUnpackNonNullBooleanNull() {
-        val sut = makeSut("BAG1_")
+    fun shouldNotUnpackNonNullNonBoolean() {
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1i1").getBoolean() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1s1S").getBoolean() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1u1").getBoolean() }
+    }
 
+    @Test
+    fun shouldNotUnpackNonNullBooleanNull() {
+        val sut = UnpackableStringBag("BAG1_")
         assertFailsWith<BagUnpackException> { sut.getBoolean() }
     }
 
     @Test
-    fun shouldUnpackNonNullBooleanFalse() {
-        val sut = makeSut("BAG1b")
-
-        val actual = sut.getBoolean()
-        assertEquals(false, actual)
-    }
+    fun shouldUnpackNonNullBooleanFalse() = performTest(
+        arrange = { UnpackableStringBag("BAG1b") },
+        act = { it.getBoolean() },
+        assert = { assertEquals(false, it) },
+    )
 
     @Test
-    fun shouldUnpackNonNullBooleanTrue() {
-        val sut = makeSut("BAG1B")
-
-        val actual = sut.getBoolean()
-        assertEquals(true, actual)
-    }
+    fun shouldUnpackNonNullBooleanTrue() = performTest(
+        arrange = { UnpackableStringBag("BAG1B") },
+        act = { it.getBoolean() },
+        assert = { assertEquals(true, it) },
+    )
 
     // Int.Nullable
 
     @Test
-    fun shouldUnpackNullableIntNull() {
-        val sut = makeSut("BAG1_")
-
-        val actual = sut.getIntOrNull()
-        assertNull(actual)
+    fun shouldNotUnpackNullableNonInt() {
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1b").getIntOrNull() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1B").getIntOrNull() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1s1S").getIntOrNull() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1u1").getIntOrNull() }
     }
 
     @Test
-    fun shouldUnpackNullableIntDigit() {
-        val sut = makeSut("BAG1i0iFi8i1i7")
-
-        val actual = listOf(
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-        )
-
-        assertEquals(listOf(0, -1, -8, 1, 7), actual)
-    }
+    fun shouldUnpackNullableIntNull() = performTest(
+        arrange = { UnpackableStringBag("BAG1_") },
+        act = { it.getIntOrNull() },
+        assert = { assertNull(it) },
+    )
 
     @Test
-    fun shouldUnpackNullableIntByte() {
-        val sut = makeSut("BAG1I80IC0I40I7F")
-
-        val actual = listOf(
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-        )
-
-        assertEquals(listOf(-128, -64, 64, 127), actual)
-    }
-
-    @Test
-    fun shouldUnpackNullableIntShort() {
-        val sut = makeSut("BAG1n8000nC000n4000n7FFF")
-
-        val actual = listOf(
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-        )
-
-        assertEquals(listOf(-32768, -16384, 16384, 32767), actual)
-    }
+    fun shouldUnpackNullableIntDigit() = performTest(
+        arrange = { UnpackableStringBag("BAG1i0iFi8i1i7") },
+        act = {
+            listOf(
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+            )
+        },
+        assert = { assertEquals(listOf(0, -1, -8, 1, 7), it) },
+    )
 
     @Test
-    fun shouldUnpackNullableIntInt() {
-        val sut = makeSut("BAG1N80000000NC0000000N40000000N7FFFFFFF")
+    fun shouldUnpackNullableIntByte() = performTest(
+        arrange = { UnpackableStringBag("BAG1I80IC0I40I7F") },
+        act = {
+            listOf(
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+            )
+        },
+        assert = { assertEquals(listOf(-128, -64, 64, 127), it) },
+    )
 
-        val actual = listOf(
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-        )
+    @Test
+    fun shouldUnpackNullableIntShort() = performTest(
+        arrange = { UnpackableStringBag("BAG1n8000nC000n4000n7FFF") },
+        act = {
+            listOf(
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+            )
+        },
+        assert = { assertEquals(listOf(-32768, -16384, 16384, 32767), it) },
+    )
 
-        assertEquals(listOf(-2147483648, -1073741824, 1073741824, 2147483647), actual)
-    }
+    @Test
+    fun shouldUnpackNullableIntInt() = performTest(
+        arrange = { UnpackableStringBag("BAG1N80000000NC0000000N40000000N7FFFFFFF") },
+        act = {
+            listOf(
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+            )
+        },
+        assert = { assertEquals(listOf(-2147483648, -1073741824, 1073741824, 2147483647), it) },
+    )
 
     // Int.NonNull
 
     @Test
-    fun shouldNotUnpackNonNullIntNull() {
-        val sut = makeSut("BAG1_")
+    fun shouldNotUnpackNonNullNonInt() {
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1b").getInt() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1B").getInt() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1s1S").getInt() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1u1").getInt() }
+    }
 
+    @Test
+    fun shouldNotUnpackNonNullIntNull() {
+        val sut = UnpackableStringBag("BAG1_")
         assertFailsWith<BagUnpackException> { sut.getInt() }
     }
 
     @Test
-    fun shouldUnpackNonNullIntDigit() {
-        val sut = makeSut("BAG1i0iFi8i1i7")
-
-        val actual = listOf(
-            sut.getInt(),
-            sut.getInt(),
-            sut.getInt(),
-            sut.getInt(),
-            sut.getInt(),
-        )
-
-        assertEquals(listOf(0, -1, -8, 1, 7), actual)
-    }
-
-    @Test
-    fun shouldUnpackNonNullIntByte() {
-        val sut = makeSut("BAG1I80IC0I40I7F")
-
-        val actual = listOf(
-            sut.getInt(),
-            sut.getInt(),
-            sut.getInt(),
-            sut.getInt(),
-        )
-
-        assertEquals(listOf(-128, -64, 64, 127), actual)
-    }
+    fun shouldUnpackNonNullIntDigit() = performTest(
+        arrange = { UnpackableStringBag("BAG1i0iFi8i1i7") },
+        act = {
+            listOf(
+                it.getInt(),
+                it.getInt(),
+                it.getInt(),
+                it.getInt(),
+                it.getInt(),
+            )
+        },
+        assert = { assertEquals(listOf(0, -1, -8, 1, 7), it) },
+    )
 
     @Test
-    fun shouldUnpackNonNullIntShort() {
-        val sut = makeSut("BAG1n8000nC000n4000n7FFF")
-
-        val actual = listOf(
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-            sut.getIntOrNull(),
-        )
-
-        assertEquals(listOf(-32768, -16384, 16384, 32767), actual)
-    }
+    fun shouldUnpackNonNullIntByte() = performTest(
+        arrange = { UnpackableStringBag("BAG1I80IC0I40I7F") },
+        act = {
+            listOf(
+                it.getInt(),
+                it.getInt(),
+                it.getInt(),
+                it.getInt(),
+            )
+        },
+        assert = { assertEquals(listOf(-128, -64, 64, 127), it) },
+    )
 
     @Test
-    fun shouldUnpackNotNullIntInt() {
-        val sut = makeSut("BAG1N80000000NC0000000N40000000N7FFFFFFF")
+    fun shouldUnpackNonNullIntShort() = performTest(
+        arrange = { UnpackableStringBag("BAG1n8000nC000n4000n7FFF") },
+        act = {
+            listOf(
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+                it.getIntOrNull(),
+            )
+        },
+        assert = { assertEquals(listOf(-32768, -16384, 16384, 32767), it) },
+    )
 
-        val actual = listOf(
-            sut.getInt(),
-            sut.getInt(),
-            sut.getInt(),
-            sut.getInt(),
-        )
-
-        assertEquals(listOf(-2147483648, -1073741824, 1073741824, 2147483647), actual)
-    }
+    @Test
+    fun shouldUnpackNotNullIntInt() = performTest(
+        arrange = { UnpackableStringBag("BAG1N80000000NC0000000N40000000N7FFFFFFF") },
+        act = {
+            listOf(
+                it.getInt(),
+                it.getInt(),
+                it.getInt(),
+                it.getInt(),
+            )
+        },
+        assert = { assertEquals(listOf(-2147483648, -1073741824, 1073741824, 2147483647), it) },
+    )
 
     // String.Nullable
 
     @Test
-    fun shouldUnpackNullableStringNull() {
-        val sut = makeSut("BAG1_")
-
-        val actual = sut.getStringOrNull()
-        assertNull(actual)
+    fun shouldNotUnpackNullableNonString() {
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1b").getStringOrNull() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1B").getStringOrNull() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1i1").getStringOrNull() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1u1").getStringOrNull() }
     }
 
     @Test
-    fun shouldUnpackNullableStringEmpty() {
-        val sut = makeSut("BAG1s0")
-
-        val actual = sut.getStringOrNull()
-        assertEquals("", actual)
-    }
-
-    @Test
-    fun shouldUnpackNullableStringDigitLength() {
-        val sut = makeSut("BAG1s4Test")
-
-        val actual = sut.getStringOrNull()
-        assertEquals("Test", actual)
-    }
+    fun shouldUnpackNullableStringNull() = performTest(
+        arrange = { UnpackableStringBag("BAG1_") },
+        act = { it.getStringOrNull() },
+        assert = { assertNull(it) },
+    )
 
     @Test
-    fun shouldUnpackNullableStringByteLength() {
-        val sut = makeSut("BAG1S10TestTestTestTest")
-
-        val actual = sut.getStringOrNull()
-        assertEquals("TestTestTestTest", actual)
-    }
+    fun shouldUnpackNullableStringEmpty() = performTest(
+        arrange = { UnpackableStringBag("BAG1s0") },
+        act = { it.getStringOrNull() },
+        assert = { assertEquals("", it) },
+    )
 
     @Test
-    fun shouldUnpackNullableStringSequence() {
-        val sut = makeSut("BAG1s4TestS10TestTestTestTest")
+    fun shouldUnpackNullableStringDigitLength() = performTest(
+        arrange = { UnpackableStringBag("BAG1s4Test") },
+        act = { it.getStringOrNull() },
+        assert = { assertEquals("Test", it) },
+    )
 
-        val actual = listOf(sut.getStringOrNull(), sut.getStringOrNull())
-        assertEquals(listOf("Test", "TestTestTestTest"), actual)
-    }
+    @Test
+    fun shouldUnpackNullableStringByteLength() = performTest(
+        arrange = { UnpackableStringBag("BAG1S10TestTestTestTest") },
+        act = { it.getStringOrNull() },
+        assert = { assertEquals("TestTestTestTest", it) },
+    )
+
+    @Test
+    fun shouldUnpackNullableStringSequence() = performTest(
+        arrange = { UnpackableStringBag("BAG1s4TestS10TestTestTestTest") },
+        act = { listOf(it.getStringOrNull(), it.getStringOrNull()) },
+        assert = { assertEquals(listOf("Test", "TestTestTestTest"), it) },
+    )
 
     // String.NotNull
 
     @Test
-    fun shouldNotUnpackNonNullStringNull() {
-        val sut = makeSut("BAG1_")
+    fun shouldNotUnpackNonNullNonString() {
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1b").getString() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1B").getString() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1i1").getString() }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1u1").getString() }
+    }
 
+    @Test
+    fun shouldNotUnpackNonNullStringNull() {
+        val sut = UnpackableStringBag("BAG1_")
         assertFailsWith<BagUnpackException> { sut.getString() }
     }
 
     @Test
-    fun shouldUnpackNotNullStringEmpty() {
-        val sut = makeSut("BAG1s0")
-
-        val actual = sut.getString()
-        assertEquals("", actual)
-    }
-
-    @Test
-    fun shouldUnpackNotNullStringDigitLength() {
-        val sut = makeSut("BAG1s4Test")
-
-        val actual = sut.getString()
-        assertEquals("Test", actual)
-    }
+    fun shouldUnpackNotNullStringEmpty() = performTest(
+        arrange = { UnpackableStringBag("BAG1s0") },
+        act = { it.getString() },
+        assert = { assertEquals("", it) },
+    )
 
     @Test
-    fun shouldUnpackNotNullStringByteLength() {
-        val sut = makeSut("BAG1S10TestTestTestTest")
-
-        val actual = sut.getString()
-        assertEquals("TestTestTestTest", actual)
-    }
+    fun shouldUnpackNotNullStringDigitLength() = performTest(
+        arrange = { UnpackableStringBag("BAG1s4Test") },
+        act = { it.getString() },
+        assert = { assertEquals("Test", it) },
+    )
 
     @Test
-    fun shouldUnpackNotNullStringSequence() {
-        val sut = makeSut("BAG1s4TestS10TestTestTestTest")
+    fun shouldUnpackNotNullStringByteLength() = performTest(
+        arrange = { UnpackableStringBag("BAG1S10TestTestTestTest") },
+        act = { it.getString() },
+        assert = { assertEquals("TestTestTestTest", it) },
+    )
 
-        val actual = listOf(sut.getString(), sut.getString())
-        assertEquals(listOf("Test", "TestTestTestTest"), actual)
-    }
+    @Test
+    fun shouldUnpackNotNullStringSequence() = performTest(
+        arrange = { UnpackableStringBag("BAG1s4TestS10TestTestTestTest") },
+        act = { listOf(it.getString(), it.getString()) },
+        assert = { assertEquals(listOf("Test", "TestTestTestTest"), it) },
+    )
 
     // Stuff.Nullable
 
     @Test
-    fun shouldUnpackNullableStuffNull() {
-        val sut = makeSut("BAG1_")
-
-        val actual = sut.getStuffOrNull(BagStuffStub)
-        assertNull(actual)
+    fun shouldNotUnpackNullableNonStuff() {
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1b").getStuffOrNull(TestBagStuff) }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1B").getStuffOrNull(TestBagStuff) }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1i1").getStuffOrNull(TestBagStuff) }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1s1S").getStuffOrNull(TestBagStuff) }
     }
 
     @Test
-    fun shouldUnpackNullableStuff() {
-        val sut = makeSut("BAG1u1bI2As5Stuff")
+    fun shouldUnpackNullableStuffNull() = performTest(
+        arrange = { UnpackableStringBag("BAG1_") },
+        act = { it.getStuffOrNull(TestBagStuff) },
+        assert = { assertNull(it) },
+    )
 
-        val actual = sut.getStuffOrNull(BagStuffStub)
-        assertEquals(makeStuff(), actual)
-    }
+    @Test
+    fun shouldUnpackNullableStuff() = performTest(
+        arrange = { UnpackableStringBag("BAG1u1bI2As5Stuff") },
+        act = { it.getStuffOrNull(TestBagStuff) },
+        assert = { assertEquals(TestBagStuffMother.TestStuff, it) },
+    )
 
     // Stuff.NonNull
 
     @Test
-    fun shouldUnpackNonNullStuffNull() {
-        val sut = makeSut("BAG1_")
-
-        assertFailsWith<BagUnpackException> { sut.getStuff(BagStuffStub) }
+    fun shouldNotUnpackNonNullNonStuff() {
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1b").getStuff(TestBagStuff) }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1B").getStuff(TestBagStuff) }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1i1").getStuff(TestBagStuff) }
+        assertFailsWith<BagUnpackException> { UnpackableStringBag("BAG1s1S").getStuff(TestBagStuff) }
     }
 
     @Test
-    fun shouldUnpackNonNullStuff() {
-        val sut = makeSut("BAG1u1bI2As5Stuff")
-
-        val actual = sut.getStuff(BagStuffStub)
-        assertEquals(makeStuff(), actual)
+    fun shouldUnpackNonNullStuffNull() {
+        val sut = UnpackableStringBag("BAG1_")
+        assertFailsWith<BagUnpackException> { sut.getStuff(TestBagStuff) }
     }
+
+    @Test
+    fun shouldUnpackNonNullStuff() = performTest(
+        arrange = { UnpackableStringBag("BAG1u1bI2As5Stuff") },
+        act = { it.getStuff(TestBagStuff) },
+        assert = { assertEquals(TestBagStuffMother.TestStuff, it) },
+    )
 
     // Multi
 
     @Test
-    fun shouldUnpackNullableMulti() {
-        val sut = makeSut("BAG1s4TestB_u1bI2As5StuffI2A")
-
-        val actual = listOf(
-            sut.getStringOrNull(),
-            sut.getBooleanOrNull(),
-            sut.getIntOrNull(),
-            sut.getStuffOrNull(BagStuffStub),
-            sut.getIntOrNull(),
-        )
-
-        assertEquals(listOf("Test", true, null, makeStuff(), 42), actual)
-    }
+    fun shouldUnpackNullableMulti() = performTest(
+        arrange = { UnpackableStringBag("BAG1s4TestB_u1bI2As5StuffI2A") },
+        act = {
+            listOf(
+                it.getStringOrNull(),
+                it.getBooleanOrNull(),
+                it.getIntOrNull(),
+                it.getStuffOrNull(TestBagStuff),
+                it.getIntOrNull(),
+            )
+        },
+        assert = { assertEquals(listOf("Test", true, null, TestBagStuffMother.TestStuff, 42), it) }
+    )
 
     @Test
-    fun shouldUnpackNonNullMulti() {
-        val sut = makeSut("BAG1s4TestBu1bI2As5StuffI2A")
-
-        val actual = listOf(
-            sut.getString(),
-            sut.getBoolean(),
-            sut.getStuff(BagStuffStub),
-            sut.getInt(),
-        )
-
-        assertEquals(listOf("Test", true, makeStuff(), 42), actual)
-    }
-
-    // Utils
-
-    private fun makeSut(input: String) = UnpackableStringBag(input)
-
-    private fun makeStuff() = BagStuffStub(
-        booleanValue = false,
-        intValue = 42,
-        stringValue = "Stuff",
+    fun shouldUnpackNonNullMulti() = performTest(
+        arrange = { UnpackableStringBag("BAG1s4TestBu1bI2As5StuffI2A") },
+        act = {
+            listOf(
+                it.getString(),
+                it.getBoolean(),
+                it.getStuff(TestBagStuff),
+                it.getInt(),
+            )
+        },
+        assert = { assertEquals(listOf("Test", true, TestBagStuffMother.TestStuff, 42), it) },
     )
 }

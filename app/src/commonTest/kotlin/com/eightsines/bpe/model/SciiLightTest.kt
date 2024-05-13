@@ -1,78 +1,70 @@
 package com.eightsines.bpe.model
 
+import com.eightsines.bpe.test.performTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SciiLightTest {
     @Test
-    fun shouldNotChangeTransparentOnTransparent() {
-        val sut = SciiLight.Transparent
-
-        val actual = sut.merge(SciiLight.Transparent)
-        assertEquals(SciiLight.Transparent, actual)
-    }
-
-    @Test
-    fun shouldNotMergeTransparentOnOff() {
-        val sut = SciiLight.Transparent
-
-        val actual = sut.merge(SciiLight.Off)
-        assertEquals(SciiLight.Off, actual)
-    }
+    fun shouldNotChangeTransparentOnTransparent() = performTest(
+        arrange = { SciiLight.Transparent },
+        act = { it.merge(SciiLight.Transparent) },
+        assert = { assertEquals(SciiLight.Transparent, it) },
+    )
 
     @Test
-    fun shouldNotMergeTransparentOnOn() {
-        val sut = SciiLight.Transparent
-
-        val actual = sut.merge(SciiLight.On)
-        assertEquals(SciiLight.On, actual)
-    }
-
-    @Test
-    fun shouldNotChangeOffOnOff() {
-        val sut = SciiLight.Off
-
-        val actual = sut.merge(SciiLight.Off)
-        assertEquals(SciiLight.Off, actual)
-    }
+    fun shouldNotMergeTransparentOnOff() = performTest(
+        arrange = { SciiLight.Transparent },
+        act = { it.merge(SciiLight.Off) },
+        assert = { assertEquals(SciiLight.Off, it) },
+    )
 
     @Test
-    fun shouldMergeOffOnOn() {
-        val sut = SciiLight.Off
-
-        val actual = sut.merge(SciiLight.On)
-        assertEquals(SciiLight.Off, actual)
-    }
-
-    @Test
-    fun shouldMergeOffOnTransparent() {
-        val sut = SciiLight.Off
-
-        val actual = sut.merge(SciiLight.Transparent)
-        assertEquals(SciiLight.Off, actual)
-    }
+    fun shouldNotMergeTransparentOnOn() = performTest(
+        arrange = { SciiLight.Transparent },
+        act = { it.merge(SciiLight.On) },
+        assert = { assertEquals(SciiLight.On, it) },
+    )
 
     @Test
-    fun shouldNotChangeOnOnOn() {
-        val sut = SciiLight.On
-
-        val actual = sut.merge(SciiLight.On)
-        assertEquals(SciiLight.On, actual)
-    }
-
-    @Test
-    fun shouldMergeOnOnOff() {
-        val sut = SciiLight.On
-
-        val actual = sut.merge(SciiLight.Off)
-        assertEquals(SciiLight.On, actual)
-    }
+    fun shouldNotChangeOffOnOff() = performTest(
+        arrange = { SciiLight.Off },
+        act = { it.merge(SciiLight.Off) },
+        assert = { assertEquals(SciiLight.Off, it) },
+    )
 
     @Test
-    fun shouldMergeOnOnTransparent() {
-        val sut = SciiLight.On
+    fun shouldMergeOffOnOn() = performTest(
+        arrange = { SciiLight.Off },
+        act = { it.merge(SciiLight.On) },
+        assert = { assertEquals(SciiLight.Off, it) },
+    )
 
-        val actual = sut.merge(SciiLight.Transparent)
-        assertEquals(SciiLight.On, actual)
-    }
+    @Test
+    fun shouldMergeOffOnTransparent() = performTest(
+        arrange = { SciiLight.Off },
+        act = { it.merge(SciiLight.Transparent) },
+        assert = { assertEquals(SciiLight.Off, it) },
+    )
+
+    @Test
+    fun shouldNotChangeOnOnOn() = performTest(
+        arrange = { SciiLight.On },
+        act = { it.merge(SciiLight.On) },
+        assert = { assertEquals(SciiLight.On, it) },
+    )
+
+    @Test
+    fun shouldNotChangeOnOnOff() = performTest(
+        arrange = { SciiLight.On },
+        act = { it.merge(SciiLight.Off) },
+        assert = { assertEquals(SciiLight.On, it) },
+    )
+
+    @Test
+    fun shouldMergeOnOnTransparent() = performTest(
+        arrange = { SciiLight.On },
+        act = { it.merge(SciiLight.Transparent) },
+        assert = { assertEquals(SciiLight.On, it) },
+    )
 }

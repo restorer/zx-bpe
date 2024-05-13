@@ -1,5 +1,8 @@
 package com.eightsines.bpe.util
 
+import com.eightsines.bpe.test.TestBagStuff
+import com.eightsines.bpe.test.TestBagStuffMother
+import com.eightsines.bpe.test.performTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -7,197 +10,191 @@ class PackableStringBagTest {
     // Empty
 
     @Test
-    fun shouldPackEmpty() {
-        val sut = makeSut()
-
-        val actual = sut.toString()
-        assertEquals("BAG1", actual)
-    }
+    fun shouldPackEmpty() = performTest(
+        arrange = { PackableStringBag() },
+        act = { it.toString() },
+        assert = { assertEquals("BAG1", it) },
+    )
 
     // Boolean
 
     @Test
-    fun shouldPackBooleanNull() {
-        val sut = makeSut()
-
-        sut.put(null as Boolean?)
-
-        val actual = sut.toString()
-        assertEquals("BAG1_", actual)
-    }
-
-    @Test
-    fun shouldPackBooleanFalse() {
-        val sut = makeSut()
-
-        sut.put(false)
-
-        val actual = sut.toString()
-        assertEquals("BAG1b", actual)
-    }
+    fun shouldPackBooleanNull() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put(null as Boolean?)
+            it.toString()
+        },
+        assert = { assertEquals("BAG1_", it) },
+    )
 
     @Test
-    fun shouldPackBooleanTrue() {
-        val sut = makeSut()
+    fun shouldPackBooleanFalse() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put(false)
+            it.toString()
+        },
+        assert = { assertEquals("BAG1b", it) },
+    )
 
-        sut.put(true)
-
-        val actual = sut.toString()
-        assertEquals("BAG1B", actual)
-    }
+    @Test
+    fun shouldPackBooleanTrue() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put(true)
+            it.toString()
+        },
+        assert = { assertEquals("BAG1B", it) },
+    )
 
     // Int
 
     @Test
-    fun shouldPackIntNull() {
-        val sut = makeSut()
-
-        sut.put(null as Int?)
-
-        val actual = sut.toString()
-        assertEquals("BAG1_", actual)
-    }
-
-    @Test
-    fun shouldPackIntDigit() {
-        val sut = makeSut()
-
-        sut.put(0)
-        sut.put(-1)
-        sut.put(-8)
-        sut.put(1)
-        sut.put(7)
-
-        val actual = sut.toString()
-        assertEquals("BAG1i0iFi8i1i7", actual)
-    }
+    fun shouldPackIntNull() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put(null as Int?)
+            it.toString()
+        },
+        assert = { assertEquals("BAG1_", it) },
+    )
 
     @Test
-    fun shouldPackIntByte() {
-        val sut = makeSut()
+    fun shouldPackIntDigit() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put(0)
+            it.put(-1)
+            it.put(-8)
+            it.put(1)
+            it.put(7)
 
-        sut.put(-128)
-        sut.put(-64)
-        sut.put(64)
-        sut.put(127)
-
-        val actual = sut.toString()
-        assertEquals("BAG1I80IC0I40I7F", actual)
-    }
-
-    @Test
-    fun shouldPackIntShort() {
-        val sut = makeSut()
-
-        sut.put(-32768)
-        sut.put(-16384)
-        sut.put(16384)
-        sut.put(32767)
-
-        val actual = sut.toString()
-        assertEquals("BAG1n8000nC000n4000n7FFF", actual)
-    }
+            it.toString()
+        },
+        assert = { assertEquals("BAG1i0iFi8i1i7", it) },
+    )
 
     @Test
-    fun shouldPackIntInt() {
-        val sut = makeSut()
+    fun shouldPackIntByte() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put(-128)
+            it.put(-64)
+            it.put(64)
+            it.put(127)
 
-        sut.put(-2147483648)
-        sut.put(-1073741824)
-        sut.put(1073741824)
-        sut.put(2147483647)
+            it.toString()
+        },
+        assert = { assertEquals("BAG1I80IC0I40I7F", it) },
+    )
 
-        val actual = sut.toString()
-        assertEquals("BAG1N80000000NC0000000N40000000N7FFFFFFF", actual)
-    }
+    @Test
+    fun shouldPackIntShort() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put(-32768)
+            it.put(-16384)
+            it.put(16384)
+            it.put(32767)
+
+            it.toString()
+        },
+        assert = { assertEquals("BAG1n8000nC000n4000n7FFF", it) },
+    )
+
+    @Test
+    fun shouldPackIntInt() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put(-2147483648)
+            it.put(-1073741824)
+            it.put(1073741824)
+            it.put(2147483647)
+
+            it.toString()
+        },
+        assert = { assertEquals("BAG1N80000000NC0000000N40000000N7FFFFFFF", it) },
+    )
 
     // String
 
     @Test
-    fun shouldPackStringNull() {
-        val sut = makeSut()
-
-        sut.put(null as String?)
-
-        val actual = sut.toString()
-        assertEquals("BAG1_", actual)
-    }
-
-    @Test
-    fun shouldPackStringEmpty() {
-        val sut = makeSut()
-
-        sut.put("")
-
-        val actual = sut.toString()
-        assertEquals("BAG1s0", actual)
-    }
+    fun shouldPackStringNull() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put(null as String?)
+            it.toString()
+        },
+        assert = { assertEquals("BAG1_", it) },
+    )
 
     @Test
-    fun shouldPackStringDigitLength() {
-        val sut = makeSut()
-
-        sut.put("Test")
-
-        val actual = sut.toString()
-        assertEquals("BAG1s4Test", actual)
-    }
+    fun shouldPackStringEmpty() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put("")
+            it.toString()
+        },
+        assert = { assertEquals("BAG1s0", it) },
+    )
 
     @Test
-    fun shouldPackStringByteLength() {
-        val sut = makeSut()
+    fun shouldPackStringDigitLength() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put("Test")
+            it.toString()
+        },
+        assert = { assertEquals("BAG1s4Test", it) },
+    )
 
-        sut.put("TestTestTestTest")
-
-        val actual = sut.toString()
-        assertEquals("BAG1S10TestTestTestTest", actual)
-    }
+    @Test
+    fun shouldPackStringByteLength() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put("TestTestTestTest")
+            it.toString()
+        },
+        assert = { assertEquals("BAG1S10TestTestTestTest", it) },
+    )
 
     // Stuff
 
     @Test
-    fun shouldPackStuffNull() {
-        val sut = makeSut()
-
-        sut.put(BagStuffStub, null)
-
-        val actual = sut.toString()
-        assertEquals("BAG1_", actual)
-    }
+    fun shouldPackStuffNull() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put(TestBagStuff, null)
+            it.toString()
+        },
+        assert = { assertEquals("BAG1_", it) },
+    )
 
     @Test
-    fun shouldPackStuff() {
-        val sut = makeSut()
-
-        sut.put(BagStuffStub, makeStuff())
-
-        val actual = sut.toString()
-        assertEquals("BAG1u1bI2As5Stuff", actual)
-    }
+    fun shouldPackStuff() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put(TestBagStuff, TestBagStuffMother.TestStuff)
+            it.toString()
+        },
+        assert = { assertEquals("BAG1u1bI2As5Stuff", it) },
+    )
 
     // Multi
 
     @Test
-    fun shouldPackMulti() {
-        val sut = makeSut()
+    fun shouldPackMulti() = performTest(
+        arrange = { PackableStringBag() },
+        act = {
+            it.put("Test")
+            it.put(true)
+            it.put(null as Int?)
+            it.put(TestBagStuff, TestBagStuffMother.TestStuff)
+            it.put(42)
 
-        sut.put("Test")
-        sut.put(true)
-        sut.put(null as Int?)
-        sut.put(BagStuffStub, makeStuff())
-        sut.put(42)
-
-        val actual = sut.toString()
-        assertEquals("BAG1s4TestB_u1bI2As5StuffI2A", actual)
-    }
-
-    // Utils
-
-    private fun makeSut() = PackableStringBag()
-
-    private fun makeStuff() = BagStuffStub(
-        booleanValue = false,
-        intValue = 42,
-        stringValue = "Stuff",
+            it.toString()
+        },
+        assert = { assertEquals("BAG1s4TestB_u1bI2As5StuffI2A", it) }
     )
 }

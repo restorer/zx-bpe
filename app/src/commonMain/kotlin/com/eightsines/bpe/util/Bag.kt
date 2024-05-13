@@ -33,5 +33,7 @@ open class BagUnpackException(message: String) : RuntimeException(message)
 class UnsupportedVersionBagUnpackException(kind: String, version: Int) :
     BagUnpackException("Unsupported version=$version for $kind")
 
-class UnknownPolymorphicTypeBagUnpackException(kind: String, type: String) :
-    BagUnpackException("Unknown polymorphic type=\"$type\" for $kind")
+class UnknownPolymorphicTypeBagUnpackException : BagUnpackException {
+    constructor(kind: String, type: Int) : super("Unknown polymorphic type=$type for $kind")
+    constructor(kind: String, type: String) : super("Unknown polymorphic type=\"$type\" for $kind")
+}
