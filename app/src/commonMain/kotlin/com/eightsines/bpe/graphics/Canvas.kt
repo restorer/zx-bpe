@@ -29,6 +29,8 @@ interface Canvas<T : Cell> {
     val drawingWidth: Int
     val drawingHeight: Int
 
+    val mutations: Int
+
     fun copyMutable(): MutableCanvas<T>
     fun toSciiPosition(drawingX: Int, drawingY: Int): Pair<Int, Int>
     fun getDrawingCell(drawingX: Int, drawingY: Int): T

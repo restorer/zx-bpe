@@ -13,8 +13,6 @@ import com.eightsines.bpe.util.UnpackableBag
 import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
 
 interface MutableCanvas<T : Cell> : Canvas<T> {
-    val mutations: Int
-
     fun mutate(block: (mutator: CanvasMutator<T>) -> Unit)
 
     companion object : BagStuffUnpacker<MutableCanvas<*>> {

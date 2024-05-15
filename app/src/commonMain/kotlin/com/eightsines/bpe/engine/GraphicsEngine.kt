@@ -8,6 +8,7 @@ import com.eightsines.bpe.graphics.MutableHBlockCanvas
 import com.eightsines.bpe.graphics.MutableSciiCanvas
 import com.eightsines.bpe.graphics.MutableVBlockCanvas
 import com.eightsines.bpe.graphics.Painter
+import com.eightsines.bpe.graphics.SciiCanvas
 import com.eightsines.bpe.graphics.VBlockCanvas
 import com.eightsines.bpe.layer.BackgroundLayer
 import com.eightsines.bpe.layer.CanvasLayer
@@ -41,6 +42,20 @@ class GraphicsEngine(
     private var canvasLayers = mutableListOf<MutableCanvasLayer<*>>()
     private val canvasLayersMap = mutableMapOf<String, MutableCanvasLayer<*>>()
     private val preview = MutableSciiCanvas(SCREEN_SCII_WIDTH, SCREEN_SCII_HEIGHT)
+
+    val state = object : GraphicsState {
+        override val borderColor: SciiColor
+            get() = this@GraphicsEngine.borderColor
+
+        override val backgroundLayer: BackgroundLayer
+            get() = this@GraphicsEngine.backgroundLayer
+
+        override val canvasLayers: List<CanvasLayer<*>>
+            get() = this@GraphicsEngine.canvasLayers
+
+        override val preview: SciiCanvas
+            get() = this@GraphicsEngine.preview
+    }
 
     fun execute(action: GraphicsAction): GraphicsAction? = when (action) {
         is GraphicsAction.SetBorderColor -> executeSetBorderColor(action)
