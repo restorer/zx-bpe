@@ -25,10 +25,10 @@ interface BackgroundLayer : Layer {
     val sciiCell: SciiCell
         get() = SciiCell(
             character = if (color == SciiColor.Transparent) SciiChar.Transparent else SciiChar.Space,
-            ink = SciiColor.Transparent,
+            ink = color,
             paper = color,
             bright = bright,
-            flash = SciiLight.Transparent,
+            flash = SciiLight.Off,
         )
 
     companion object : BagStuffPacker<BackgroundLayer> {

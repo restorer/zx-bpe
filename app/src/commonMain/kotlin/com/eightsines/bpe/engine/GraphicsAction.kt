@@ -23,7 +23,8 @@ sealed interface GraphicsAction {
     data class SetLayerVisible(val layerUid: LayerUid, val isVisible: Boolean) : GraphicsAction
     data class SetLayerLocked(val layerUid: LayerUid, val isLocked: Boolean) : GraphicsAction
     data class MoveLayer(val layerUid: LayerUid, val onTopOfLayerUid: LayerUid) : GraphicsAction
-    data class DrawShape(val layerUid: LayerUid, val shape: Shape<Cell>) : GraphicsAction
+    data class MergeShape(val layerUid: LayerUid, val shape: Shape<Cell>) : GraphicsAction
+    data class ReplaceShape(val layerUid: LayerUid, val shape: Shape<Cell>) : GraphicsAction
 
     data class ReplaceCells(
         val layerUid: LayerUid,

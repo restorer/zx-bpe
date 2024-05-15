@@ -24,7 +24,11 @@ import com.eightsines.bpe.util.UidFactory
 import com.eightsines.bpe.util.UnpackableBag
 import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
 
-class GraphicsEngine(private val uidFactory: UidFactory, private val painter: Painter) {
+class GraphicsEngine(
+    private val uidFactory: UidFactory,
+    private val painter: Painter,
+    private val renderer: Renderer,
+) {
     private var borderColor: SciiColor = SciiColor.Transparent
 
     private var backgroundLayer = MutableBackgroundLayer(
@@ -51,7 +55,8 @@ class GraphicsEngine(private val uidFactory: UidFactory, private val painter: Pa
         is GraphicsAction.SetLayerVisible -> executeSetLayerVisible(action)
         is GraphicsAction.SetLayerLocked -> executeSetLayerLocked(action)
         is GraphicsAction.MoveLayer -> executeMoveLayer(action)
-        is GraphicsAction.DrawShape -> executeDrawShape(action)
+        is GraphicsAction.MergeShape -> executeMergeShape(action)
+        is GraphicsAction.ReplaceShape -> executeReplaceShape(action)
         is GraphicsAction.ReplaceCells -> executeReplaceCells(action)
         is GraphicsAction.MergeLayers -> executeMergeLayers(action)
         is GraphicsAction.UndoMergeLayers -> executeUndoMergeLayers(action)
@@ -224,7 +229,7 @@ class GraphicsEngine(private val uidFactory: UidFactory, private val painter: Pa
         return undoAction
     }
 
-    private fun executeDrawShape(action: GraphicsAction.DrawShape): GraphicsAction? {
+    private fun executeMergeShape(action: GraphicsAction.MergeShape): GraphicsAction? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
 
         if (layer.isLocked || layer.canvas.cellType != action.shape.cellType) {
@@ -249,6 +254,37 @@ class GraphicsEngine(private val uidFactory: UidFactory, private val painter: Pa
         canvas.mutate { mutator ->
             painter.paint(action.shape) { x, y, cell ->
                 mutator.mergeDrawingCell(x, y, cell)
+            }
+        }
+
+        return undoAction
+    }
+
+    private fun executeReplaceShape(action: GraphicsAction.ReplaceShape): GraphicsAction? {
+        val layer = canvasLayersMap[action.layerUid.value] ?: return null
+
+        if (layer.isLocked || layer.canvas.cellType != action.shape.cellType) {
+            return null
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        val canvas: MutableCanvas<Cell> = layer.canvas as MutableCanvas<Cell>
+
+        val drawingBBox = painter.getBBox(action.shape)
+
+        val (sciiSX, sciiSY) = canvas.toSciiPosition(drawingBBox.x, drawingBBox.y)
+        val (sciiEX, sciiEY) = canvas.toSciiPosition(drawingBBox.ex, drawingBBox.ey)
+
+        val undoAction = GraphicsAction.ReplaceCells(
+            layerUid = layer.uid,
+            x = sciiSX,
+            y = sciiSY,
+            crate = Crate.fromCanvasScii(layer.canvas, sciiSX, sciiSY, sciiEX - sciiSX + 1, sciiEY - sciiSY + 1),
+        )
+
+        canvas.mutate { mutator ->
+            painter.paint(action.shape) { x, y, cell ->
+                mutator.replaceDrawingCell(x, y, cell)
             }
         }
 
@@ -386,19 +422,8 @@ class GraphicsEngine(private val uidFactory: UidFactory, private val painter: Pa
         return undoAction
     }
 
-    private fun updatePreview(box: Box) {
-        preview.mutate { mutator ->
-            walkInBox(box) { x, y ->
-                var cell = backgroundLayer.sciiCell
-
-                for (layer in canvasLayers) {
-                    cell = layer.canvas.getSciiCell(x, y).merge(cell)
-                }
-
-                mutator.replaceSciiCell(x, y, cell)
-            }
-        }
-    }
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun updatePreview(box: Box) = renderer.render(preview, backgroundLayer, canvasLayers, box)
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun getLayerIndex(uid: LayerUid) = canvasLayers.indexOfFirst { it.uid.value == uid.value }
@@ -415,17 +440,9 @@ class GraphicsEngine(private val uidFactory: UidFactory, private val painter: Pa
     private inline fun getLayerUidBelow(index: Int) =
         if (index > 0) canvasLayers[index - 1].uid else LayerUid.Background
 
-    private inline fun walkInBox(box: Box, block: (x: Int, y: Int) -> Unit) {
-        walkInBox(box.x, box.y, box.ex, box.ey, block)
-    }
-
     private inline fun walkInBox(width: Int, height: Int, block: (x: Int, y: Int) -> Unit) {
-        walkInBox(0, 0, width - 1, height - 1, block)
-    }
-
-    private inline fun walkInBox(sx: Int, sy: Int, ex: Int, ey: Int, block: (x: Int, y: Int) -> Unit) {
-        for (y in sy..ey) {
-            for (x in sx..ex) {
+        for (y in 0..<height) {
+            for (x in 0..<width) {
                 block(x, y)
             }
         }
