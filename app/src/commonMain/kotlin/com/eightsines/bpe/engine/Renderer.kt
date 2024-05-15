@@ -25,13 +25,13 @@ class Renderer {
         destination.mutate {
             for (sciiY in box.y..box.ey) {
                 for (sciiX in box.x..box.ex) {
-                    it.replaceSciiCell(sciiX, sciiY, merge(backgroundCell, groups, sciiX, sciiY))
+                    it.replaceSciiCell(sciiX, sciiY, mergeCell(backgroundCell, groups, sciiX, sciiY))
                 }
             }
         }
     }
 
-    internal fun merge(
+    internal fun mergeCell(
         backgroundCell: SciiCell,
         groups: List<Pair<MergeType, List<Canvas<*>>>>,
         sciiX: Int,
@@ -39,27 +39,27 @@ class Renderer {
     ): SciiCell {
         var result = backgroundCell
 
-        for ((mergeType, group) in groups) {
+        for ((mergeType, canvases) in groups) {
             when (mergeType) {
-                MergeType.Scii -> for (canvas in group) {
+                MergeType.Scii -> for (canvas in canvases) {
                     result = canvas.getSciiCell(sciiX, sciiY).merge(result)
                 }
 
                 MergeType.HBlock -> {
-                    val subResult = HBlockMergeCell.Transparent
+                    var subResult = HBlockMergeCell.Transparent
 
-                    for (canvas in group) {
-                        (canvas as HBlockCanvas).getMergeCell(sciiX, sciiY).merge(subResult)
+                    for (canvas in canvases) {
+                        subResult = (canvas as HBlockCanvas).getMergeCell(sciiX, sciiY).merge(subResult)
                     }
 
                     result = subResult.toSciiCell().merge(result)
                 }
 
                 MergeType.VBlock -> {
-                    val subResult = VBlockMergeCell.Transparent
+                    var subResult = VBlockMergeCell.Transparent
 
-                    for (canvas in groups) {
-                        (canvas as VBlockCanvas).getMergeCell(sciiX, sciiY).merge(subResult)
+                    for (canvas in canvases) {
+                        subResult = (canvas as VBlockCanvas).getMergeCell(sciiX, sciiY).merge(subResult)
                     }
 
                     result = subResult.toSciiCell().merge(result)
@@ -74,7 +74,7 @@ class Renderer {
         val groups = mutableListOf<Pair<MergeType, List<Canvas<*>>>>()
 
         var currentType: MergeType? = null
-        val currentGroup = mutableListOf<Canvas<*>>()
+        var currentGroup = mutableListOf<Canvas<*>>()
 
         for (layer in layers) {
             if (!layer.isVisible) {
@@ -90,10 +90,12 @@ class Renderer {
             if (currentType != mergeType) {
                 if (currentType != null) {
                     groups.add(currentType to currentGroup)
-                    currentGroup.clear()
+                    currentGroup = mutableListOf()
                 }
 
                 currentType = mergeType
+                currentGroup.add(layer.canvas)
+            } else {
                 currentGroup.add(layer.canvas)
             }
         }

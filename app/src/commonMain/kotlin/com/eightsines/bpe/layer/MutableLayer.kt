@@ -16,6 +16,13 @@ data class MutableBackgroundLayer(
     override var color: SciiColor,
     override var bright: SciiLight,
 ) : BackgroundLayer, MutableLayer {
+    override fun copyMutable() = MutableBackgroundLayer(
+        isVisible = isVisible,
+        isLocked = isLocked,
+        color = color,
+        bright = bright,
+    )
+
     companion object : BagStuffUnpacker<MutableBackgroundLayer> {
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): MutableBackgroundLayer {
             if (version != 1) {

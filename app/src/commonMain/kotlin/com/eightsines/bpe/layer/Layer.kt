@@ -13,6 +13,8 @@ interface Layer {
     val uid: LayerUid
     val isVisible: Boolean
     val isLocked: Boolean
+
+    fun copyMutable(): Layer
 }
 
 interface BackgroundLayer : Layer {
@@ -31,6 +33,8 @@ interface BackgroundLayer : Layer {
             flash = SciiLight.Off,
         )
 
+    override fun copyMutable(): MutableBackgroundLayer
+
     companion object : BagStuffPacker<BackgroundLayer> {
         override val putInTheBagVersion = 1
 
@@ -46,7 +50,7 @@ interface BackgroundLayer : Layer {
 interface CanvasLayer<T : Cell> : Layer {
     val canvas: Canvas<T>
 
-    fun copyMutable(): MutableCanvasLayer<T>
+    override fun copyMutable(): MutableCanvasLayer<T>
 
     companion object : BagStuffPacker<CanvasLayer<*>> {
         override val putInTheBagVersion = 1

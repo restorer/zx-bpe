@@ -29,4 +29,12 @@ object SciiCellMother {
         bright = SciiLight.Transparent,
         flash = SciiLight.Transparent,
     )
+
+    val BlueSpace = SciiCell(
+        character = SciiChar.Space,
+        ink = SciiColor.Blue,
+        paper = SciiColor.Blue,
+        bright = SciiLight.Off,
+        flash = SciiLight.Off,
+    )
 }
