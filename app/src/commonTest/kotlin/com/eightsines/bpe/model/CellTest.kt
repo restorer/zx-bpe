@@ -1,6 +1,6 @@
 package com.eightsines.bpe.model
 
-import com.eightsines.bpe.test.BlockDrawingCellMother
+import com.eightsines.bpe.test.BlockCellMother
 import com.eightsines.bpe.test.SciiCellMother
 import com.eightsines.bpe.test.performTest
 import com.eightsines.bpe.util.BagUnpackException
@@ -23,7 +23,7 @@ class CellTest {
 
     @Test
     fun shouldPackBlockDrawing() = performTest(
-        arrange = { BlockDrawingCellMother.White to PackableStringBag() },
+        arrange = { BlockCellMother.White to PackableStringBag() },
         act = { (sut, bag) ->
             bag.put(Cell, sut)
             bag.toString()
@@ -42,7 +42,7 @@ class CellTest {
     fun shouldUnpackBlockDrawing() = performTest(
         arrange = { UnpackableStringBag("BAG1u1i2u1i7i1") },
         act = { it.getStuff(Cell) },
-        assert = { assertEquals(BlockDrawingCellMother.White, it) },
+        assert = { assertEquals(BlockCellMother.White, it) },
     )
 
     @Test

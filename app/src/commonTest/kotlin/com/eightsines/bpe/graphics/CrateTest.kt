@@ -1,9 +1,9 @@
 package com.eightsines.bpe.graphics
 
-import com.eightsines.bpe.model.BlockDrawingCell
+import com.eightsines.bpe.model.BlockCell
 import com.eightsines.bpe.model.CellType
 import com.eightsines.bpe.model.SciiCell
-import com.eightsines.bpe.test.BlockDrawingCellMother
+import com.eightsines.bpe.test.BlockCellMother
 import com.eightsines.bpe.test.SciiCellMother
 import com.eightsines.bpe.test.performTest
 import com.eightsines.bpe.util.PackableStringBag
@@ -55,7 +55,7 @@ class CrateTest {
                 cellType = CellType.Scii,
                 width = 2,
                 height = 1,
-                cells = listOf(listOf(BlockDrawingCellMother.White, BlockDrawingCell.Transparent)),
+                cells = listOf(listOf(BlockCellMother.White, BlockCell.Transparent)),
             )
 
             sut to PackableStringBag()
@@ -77,7 +77,7 @@ class CrateTest {
                     cellType = CellType.Scii,
                     width = 2,
                     height = 1,
-                    cells = listOf(listOf(BlockDrawingCellMother.White, BlockDrawingCell.Transparent)),
+                    cells = listOf(listOf(BlockCellMother.White, BlockCell.Transparent)),
                 ),
                 it,
             )

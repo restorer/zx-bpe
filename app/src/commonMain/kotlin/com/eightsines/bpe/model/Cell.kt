@@ -10,7 +10,7 @@ import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
 
 enum class CellType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Cell>) {
     Scii(1, SciiCell.Polymorphic),
-    Block(2, BlockDrawingCell.Polymorphic);
+    Block(2, BlockCell.Polymorphic);
 
     companion object {
         fun of(value: Int) = when (value) {
@@ -27,7 +27,7 @@ sealed interface Cell {
     companion object : BagStuffPacker<Cell>, BagStuffUnpacker<Cell> {
         fun makeTransparent(type: CellType) = when (type) {
             CellType.Scii -> SciiCell.Transparent
-            CellType.Block -> BlockDrawingCell.Transparent
+            CellType.Block -> BlockCell.Transparent
         }
 
         override val putInTheBagVersion = 1
@@ -46,7 +46,7 @@ sealed interface Cell {
 
             return when (val type = bag.getInt()) {
                 CellType.Scii.value -> bag.getStuff(SciiCell.Polymorphic)
-                CellType.Block.value -> bag.getStuff(BlockDrawingCell.Polymorphic)
+                CellType.Block.value -> bag.getStuff(BlockCell.Polymorphic)
                 else -> throw UnknownPolymorphicTypeBagUnpackException("Cell", type)
             }
         }
@@ -117,42 +117,42 @@ data class SciiCell(
     }
 }
 
-data class BlockDrawingCell(val color: SciiColor, val bright: SciiLight) : Cell {
+data class BlockCell(val color: SciiColor, val bright: SciiLight) : Cell {
     override val type = CellType.Block
 
-    fun merge(onto: BlockDrawingCell) = BlockDrawingCell(
+    fun merge(onto: BlockCell) = BlockCell(
         color = color.merge(onto.color),
         bright = bright.merge(onto.bright),
     )
 
-    companion object : BagStuffUnpacker<BlockDrawingCell> {
-        val Transparent = BlockDrawingCell(color = SciiColor.Transparent, bright = SciiLight.Transparent)
+    companion object : BagStuffUnpacker<BlockCell> {
+        val Transparent = BlockCell(color = SciiColor.Transparent, bright = SciiLight.Transparent)
 
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): BlockDrawingCell {
+        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): BlockCell {
             val cell = Cell.getOutOfTheBag(version, bag)
 
-            if (cell !is BlockDrawingCell) {
-                throw BagUnpackException("Mismatched type=\"${cell.type}\" for BlockDrawingCell")
+            if (cell !is BlockCell) {
+                throw BagUnpackException("Mismatched type=\"${cell.type}\" for BlockCell")
             }
 
             return cell
         }
     }
 
-    internal object Polymorphic : BagStuffPacker<BlockDrawingCell>, BagStuffUnpacker<BlockDrawingCell> {
+    internal object Polymorphic : BagStuffPacker<BlockCell>, BagStuffUnpacker<BlockCell> {
         override val putInTheBagVersion = 1
 
-        override fun putInTheBag(bag: PackableBag, value: BlockDrawingCell) {
+        override fun putInTheBag(bag: PackableBag, value: BlockCell) {
             bag.put(value.color.value)
             bag.put(value.bright.value)
         }
 
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): BlockDrawingCell {
+        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): BlockCell {
             if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("BlockDrawingCell", version)
+                throw UnsupportedVersionBagUnpackException("BlockCell", version)
             }
 
-            return BlockDrawingCell(
+            return BlockCell(
                 color = SciiColor(bag.getInt()),
                 bright = SciiLight(bag.getInt()),
             )

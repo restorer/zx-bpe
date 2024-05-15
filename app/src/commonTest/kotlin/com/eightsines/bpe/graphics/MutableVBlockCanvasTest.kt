@@ -1,10 +1,10 @@
 package com.eightsines.bpe.graphics
 
 import com.eightsines.bpe.model.BlockCell
-import com.eightsines.bpe.model.HBlockMergeCell
 import com.eightsines.bpe.model.SciiCell
 import com.eightsines.bpe.model.SciiColor
 import com.eightsines.bpe.model.SciiLight
+import com.eightsines.bpe.model.VBlockMergeCell
 import com.eightsines.bpe.test.BlockCellMother
 import com.eightsines.bpe.test.SciiCellMother
 import com.eightsines.bpe.test.performTest
@@ -15,19 +15,19 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotSame
 
-class MutableHBlockCanvasTest {
+class MutableVBlockCanvasTest {
     // Non-mutable
 
     @Test
     fun shouldHaveProperDrawingSize() = performTest(
-        arrange = { MutableHBlockCanvas(4, 3) },
+        arrange = { MutableVBlockCanvas(4, 3) },
         act = { it.drawingWidth to it.drawingHeight },
-        assert = { assertEquals(4 to 6, it) },
+        assert = { assertEquals(8 to 3, it) },
     )
 
     @Test
     fun shouldMapPosition() = performTest(
-        arrange = { MutableHBlockCanvas(4, 4) },
+        arrange = { MutableVBlockCanvas(4, 4) },
         act = {
             listOf(
                 it.toSciiPosition(0, 0),
@@ -36,16 +36,16 @@ class MutableHBlockCanvasTest {
                 it.toSciiPosition(3, 3),
             )
         },
-        assert = { assertEquals(listOf(0 to 0, 0 to 0, 3 to 1, 3 to 1), it) },
+        assert = { assertEquals(listOf(0 to 0, 0 to 1, 1 to 2, 1 to 3), it) },
     )
 
     @Test
     fun shouldGetInitialDrawingCell() = performTest(
-        arrange = { MutableHBlockCanvas(1, 1) },
+        arrange = { MutableVBlockCanvas(1, 1) },
         act = {
             listOf(
                 it.getDrawingCell(0, 0),
-                it.getDrawingCell(0, 1),
+                it.getDrawingCell(1, 0),
             )
         },
         assert = { assertEquals(listOf(BlockCell.Transparent, BlockCell.Transparent), it) },
@@ -53,7 +53,7 @@ class MutableHBlockCanvasTest {
 
     @Test
     fun shouldGetInitialSciiCell() = performTest(
-        arrange = { MutableHBlockCanvas(1, 1) },
+        arrange = { MutableVBlockCanvas(1, 1) },
         act = { it.getSciiCell(0, 0) },
         assert = { assertEquals(SciiCell.Transparent, it) },
     )
@@ -61,16 +61,16 @@ class MutableHBlockCanvasTest {
     @Test
     fun shouldGetTransparentDrawingOutside() = performTest(
         arrange = {
-            MutableHBlockCanvas(1, 1).also { sut ->
+            MutableVBlockCanvas(1, 1).also { sut ->
                 sut.mutate {
-                    it.replaceSciiCell(0, 0, SciiCellMother.BlockHorizontalTop)
+                    it.replaceSciiCell(0, 0, SciiCellMother.BlockVerticalLeft)
                 }
             }
         },
         act = {
             listOf(
                 it.getDrawingCell(-1, -1),
-                it.getDrawingCell(1, 2),
+                it.getDrawingCell(2, 1),
             )
         },
         assert = {
@@ -84,10 +84,10 @@ class MutableHBlockCanvasTest {
     @Test
     fun shouldGetTransparentSciiOutside() = performTest(
         arrange = {
-            MutableHBlockCanvas(2, 1).also { sut ->
+            MutableVBlockCanvas(2, 1).also { sut ->
                 sut.mutate {
-                    it.replaceSciiCell(0, 0, SciiCellMother.BlockHorizontalTop)
-                    it.replaceSciiCell(1, 0, SciiCellMother.BlockHorizontalTop)
+                    it.replaceSciiCell(0, 0, SciiCellMother.BlockVerticalLeft)
+                    it.replaceSciiCell(1, 0, SciiCellMother.BlockVerticalLeft)
                 }
             }
         },
@@ -108,31 +108,31 @@ class MutableHBlockCanvasTest {
     @Test
     fun shouldGetNonInitialSciiCell() = performTest(
         arrange = {
-            MutableHBlockCanvas(1, 1).also { sut ->
+            MutableVBlockCanvas(1, 1).also { sut ->
                 sut.mutate {
-                    it.mergeDrawingCell(0, 0, BlockCellMother.White)
-                    it.mergeDrawingCell(0, 1, BlockCellMother.Black)
+                    it.mergeDrawingCell(0, 0, BlockCellMother.Black)
+                    it.mergeDrawingCell(1, 0, BlockCellMother.White)
                 }
             }
         },
         act = { it.getSciiCell(0, 0) },
-        assert = { assertEquals(SciiCellMother.BlockHorizontalTop, it) },
+        assert = { assertEquals(SciiCellMother.BlockVerticalLeft, it) },
     )
 
     @Test
     fun shouldGetNonInitialMergeCell() = performTest(
         arrange = {
-            MutableHBlockCanvas(1, 1).also { sut ->
+            MutableVBlockCanvas(1, 1).also { sut ->
                 sut.mutate {
-                    it.mergeDrawingCell(0, 0, BlockCellMother.White)
-                    it.mergeDrawingCell(0, 1, BlockCellMother.Black)
+                    it.mergeDrawingCell(0, 0, BlockCellMother.Black)
+                    it.mergeDrawingCell(1, 0, BlockCellMother.White)
                 }
             }
         },
         act = { it.getMergeCell(0, 0) },
         assert = {
             assertEquals(
-                HBlockMergeCell(topColor = SciiColor.White, bottomColor = SciiColor.Black, bright = SciiLight.On),
+                VBlockMergeCell(leftColor = SciiColor.Black, rightColor = SciiColor.White, bright = SciiLight.On),
                 it,
             )
         },
@@ -141,10 +141,10 @@ class MutableHBlockCanvasTest {
     @Test
     fun shouldNotGetMergeCellOutsize() = performTest(
         arrange = {
-            MutableHBlockCanvas(1, 1).also { sut ->
+            MutableVBlockCanvas(1, 1).also { sut ->
                 sut.mutate {
                     it.mergeDrawingCell(0, 0, BlockCellMother.White)
-                    it.mergeDrawingCell(0, 1, BlockCellMother.Black)
+                    it.mergeDrawingCell(1, 0, BlockCellMother.Black)
                 }
             }
         },
@@ -156,7 +156,7 @@ class MutableHBlockCanvasTest {
         },
         assert = {
             assertEquals(
-                listOf(HBlockMergeCell.Transparent, HBlockMergeCell.Transparent),
+                listOf(VBlockMergeCell.Transparent, VBlockMergeCell.Transparent),
                 it,
             )
         },
@@ -167,12 +167,12 @@ class MutableHBlockCanvasTest {
     @Test
     fun shouldChangeMutations() = performTest(
         arrange = {
-            val sut = MutableHBlockCanvas(1, 1)
-            sut.mutate { it.replaceSciiCell(0, 0, SciiCellMother.BlockHorizontalTop) }
+            val sut = MutableVBlockCanvas(1, 1)
+            sut.mutate { it.replaceSciiCell(0, 0, SciiCellMother.BlockVerticalLeft) }
             sut to sut.mutations
         },
         act = { (sut, initialMutations) ->
-            sut.mutate { it.replaceSciiCell(0, 0, SciiCellMother.BlockHorizontalTop) }
+            sut.mutate { it.replaceSciiCell(0, 0, SciiCellMother.BlockVerticalLeft) }
             initialMutations to sut.mutations
         },
         assert = { (initialMutations, actualMutations) ->
@@ -183,10 +183,10 @@ class MutableHBlockCanvasTest {
     @Test
     fun shouldClear() = performTest(
         arrange = {
-            MutableHBlockCanvas(2, 1).also { sut ->
+            MutableVBlockCanvas(2, 1).also { sut ->
                 sut.mutate {
-                    it.replaceSciiCell(0, 0, SciiCellMother.BlockHorizontalTop)
-                    it.replaceSciiCell(1, 0, SciiCellMother.BlockHorizontalTop)
+                    it.replaceSciiCell(0, 0, SciiCellMother.BlockVerticalLeft)
+                    it.replaceSciiCell(1, 0, SciiCellMother.BlockVerticalLeft)
                 }
             }
         },
@@ -204,10 +204,10 @@ class MutableHBlockCanvasTest {
     @Test
     fun shouldMergeDrawingCell() = performTest(
         arrange = {
-            MutableHBlockCanvas(2, 1).also { sut ->
+            MutableVBlockCanvas(1, 2).also { sut ->
                 sut.mutate {
                     it.replaceDrawingCell(0, 0, BlockCellMother.White)
-                    it.replaceDrawingCell(1, 0, BlockCellMother.Black)
+                    it.replaceDrawingCell(0, 1, BlockCellMother.Black)
                 }
             }
         },
@@ -224,7 +224,7 @@ class MutableHBlockCanvasTest {
 
             listOf(
                 sut.getDrawingCell(0, 0),
-                sut.getDrawingCell(1, 0),
+                sut.getDrawingCell(0, 1),
             )
         },
         assert = {
@@ -241,7 +241,7 @@ class MutableHBlockCanvasTest {
     @Test
     fun shouldReplaceDrawingCell() = performTest(
         arrange = {
-            MutableHBlockCanvas(1, 1).also { sut ->
+            MutableVBlockCanvas(1, 1).also { sut ->
                 sut.mutate {
                     it.replaceDrawingCell(0, 0, BlockCellMother.White)
                 }
@@ -265,25 +265,25 @@ class MutableHBlockCanvasTest {
 
     @Test
     fun shouldReplaceSciiCell() = performTest(
-        arrange = { MutableHBlockCanvas(2, 1) },
+        arrange = { MutableVBlockCanvas(1, 2) },
         act = { sut ->
             sut.mutate {
-                it.replaceSciiCell(0, 0, SciiCellMother.BlockHorizontalTop)
-                it.replaceSciiCell(1, 0, SciiCellMother.RedSpace)
+                it.replaceSciiCell(0, 0, SciiCellMother.BlockVerticalLeft)
+                it.replaceSciiCell(0, 1, SciiCellMother.RedSpace)
             }
 
             listOf(
                 sut.getDrawingCell(0, 0),
-                sut.getDrawingCell(0, 1),
                 sut.getDrawingCell(1, 0),
+                sut.getDrawingCell(0, 1),
                 sut.getDrawingCell(1, 1),
             )
         },
         assert = {
             assertEquals(
                 listOf(
-                    BlockCellMother.White,
                     BlockCell(color = SciiColor.Black, bright = SciiLight.On),
+                    BlockCellMother.White,
                     BlockCell(color = SciiColor.Red, bright = SciiLight.Transparent),
                     BlockCell(color = SciiColor.Red, bright = SciiLight.Transparent),
                 ),
@@ -294,7 +294,7 @@ class MutableHBlockCanvasTest {
 
     @Test
     fun shouldNotMergeDrawingOutside() = performTest(
-        arrange = { MutableHBlockCanvas(1, 1) },
+        arrange = { MutableVBlockCanvas(1, 1) },
         act = { sut ->
             sut.mutate {
                 it.mergeDrawingCell(-1, -1, BlockCellMother.White)
@@ -308,7 +308,7 @@ class MutableHBlockCanvasTest {
 
     @Test
     fun shouldNotReplaceDrawingOutside() = performTest(
-        arrange = { MutableHBlockCanvas(1, 1) },
+        arrange = { MutableVBlockCanvas(1, 1) },
         act = { sut ->
             sut.mutate {
                 it.replaceDrawingCell(-1, -1, BlockCellMother.White)
@@ -322,11 +322,11 @@ class MutableHBlockCanvasTest {
 
     @Test
     fun shouldNotReplaceSciiOutside() = performTest(
-        arrange = { MutableHBlockCanvas(2, 1) },
+        arrange = { MutableVBlockCanvas(2, 1) },
         act = { sut ->
             sut.mutate {
-                it.replaceSciiCell(-1, -1, SciiCellMother.BlockHorizontalTop)
-                it.replaceSciiCell(2, 1, SciiCellMother.BlockHorizontalTop)
+                it.replaceSciiCell(-1, -1, SciiCellMother.BlockVerticalLeft)
+                it.replaceSciiCell(2, 1, SciiCellMother.BlockVerticalLeft)
             }
 
             listOf(
@@ -347,7 +347,7 @@ class MutableHBlockCanvasTest {
     @Test
     fun shouldPack() = performTest(
         arrange = {
-            val sut = MutableHBlockCanvas(2, 1)
+            val sut = MutableVBlockCanvas(1, 2)
 
             sut.mutate {
                 it.replaceDrawingCell(0, 0, BlockCellMother.Black)
@@ -360,12 +360,12 @@ class MutableHBlockCanvasTest {
             bag.put(Canvas, sut)
             bag.toString()
         },
-        assert = { assertEquals("BAG1u1i2i2i1u1u1i2u1i0iFu1i2u1iFi1u1i2u1iFiFu1i2u1i7i1", it) },
+        assert = { assertEquals("BAG1u1i3i1i2u1u1i2u1i0iFu1i2u1iFiFu1i2u1iFi1u1i2u1i7i1", it) },
     )
 
     @Test
     fun shouldUnpack() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1i2i2i1u1u1i2u1i0iFu1i2u1iFi1u1i2u1iFiFu1i2u1i7i1") },
+        arrange = { UnpackableStringBag("BAG1u1i3i1i2u1u1i2u1i0iFu1i2u1iFiFu1i2u1iFi1u1i2u1i7i1") },
         act = {
             val sut = it.getStuff(MutableCanvas)
 
@@ -378,14 +378,14 @@ class MutableHBlockCanvasTest {
             )
         },
         assert = { (sut, props) ->
-            assertIs<MutableHBlockCanvas>(sut)
+            assertIs<MutableVBlockCanvas>(sut)
 
             assertEquals(
                 listOf(
-                    2 to 1,
+                    1 to 2,
                     BlockCellMother.Black,
-                    BlockCell(color = SciiColor.Transparent, bright = SciiLight.On),
                     BlockCell.Transparent,
+                    BlockCell(color = SciiColor.Transparent, bright = SciiLight.On),
                     BlockCellMother.White,
                 ),
                 props,

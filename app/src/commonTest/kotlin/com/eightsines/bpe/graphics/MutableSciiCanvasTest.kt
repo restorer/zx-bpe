@@ -10,6 +10,7 @@ import com.eightsines.bpe.util.PackableStringBag
 import com.eightsines.bpe.util.UnpackableStringBag
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNotSame
 
 class MutableSciiCanvasTest {
@@ -315,20 +316,22 @@ class MutableSciiCanvasTest {
         act = {
             val sut = it.getStuff(MutableCanvas)
 
-            listOf(
+            sut to listOf(
                 sut.sciiWidth to sut.sciiHeight,
                 sut.getSciiCell(0, 0),
                 sut.getSciiCell(1, 0),
             )
         },
-        assert = {
+        assert = { (sut, props) ->
+            assertIs<MutableSciiCanvas>(sut)
+
             assertEquals(
                 listOf(
                     2 to 1,
                     SciiCellMother.BlockHorizontalTop,
                     SciiCellMother.RedSpace,
                 ),
-                it
+                props,
             )
         },
     )

@@ -1,6 +1,6 @@
 package com.eightsines.bpe.graphics
 
-import com.eightsines.bpe.model.BlockDrawingCell
+import com.eightsines.bpe.model.BlockCell
 import com.eightsines.bpe.model.Cell
 import com.eightsines.bpe.model.CellType
 import com.eightsines.bpe.model.HBlockMergeCell
@@ -48,7 +48,7 @@ interface Canvas<T : Cell> {
     }
 }
 
-interface BlockCanvas : Canvas<BlockDrawingCell>
+interface BlockCanvas : Canvas<BlockCell>
 
 abstract class SciiCanvas(override val sciiWidth: Int, override val sciiHeight: Int) : Canvas<SciiCell> {
     override val type = CanvasType.Scii
@@ -94,7 +94,7 @@ abstract class SciiCanvas(override val sciiWidth: Int, override val sciiHeight: 
 abstract class HBlockCanvas(
     override val sciiWidth: Int,
     override val sciiHeight: Int,
-) : Canvas<BlockDrawingCell>, BlockCanvas {
+) : Canvas<BlockCell>, BlockCanvas {
     override val type = CanvasType.HBlock
     override val cellType = CellType.Block
 
@@ -104,13 +104,13 @@ abstract class HBlockCanvas(
     @Suppress("LeakingThis")
     override val drawingHeight = sciiHeight * 2
 
-    protected abstract val cells: List<List<BlockDrawingCell>>
+    protected abstract val cells: List<List<BlockCell>>
 
     override fun toSciiPosition(drawingX: Int, drawingY: Int) = drawingX to (drawingY / 2)
 
     override fun getDrawingCell(drawingX: Int, drawingY: Int) =
         if (drawingX < 0 || drawingY < 0 || drawingX >= drawingWidth || drawingY >= drawingHeight) {
-            BlockDrawingCell.Transparent
+            BlockCell.Transparent
         } else {
             cells[drawingY][drawingX]
         }
@@ -163,7 +163,7 @@ abstract class HBlockCanvas(
 abstract class VBlockCanvas(
     override val sciiWidth: Int,
     override val sciiHeight: Int,
-) : Canvas<BlockDrawingCell>, BlockCanvas {
+) : Canvas<BlockCell>, BlockCanvas {
     override val type = CanvasType.VBlock
     override val cellType = CellType.Block
 
@@ -173,13 +173,13 @@ abstract class VBlockCanvas(
     @Suppress("LeakingThis")
     override val drawingHeight = sciiHeight
 
-    protected abstract val cells: List<List<BlockDrawingCell>>
+    protected abstract val cells: List<List<BlockCell>>
 
     override fun toSciiPosition(drawingX: Int, drawingY: Int) = (drawingX / 2) to drawingY
 
     override fun getDrawingCell(drawingX: Int, drawingY: Int) =
         if (drawingX < 0 || drawingY < 0 || drawingX >= drawingWidth || drawingY >= drawingHeight) {
-            BlockDrawingCell.Transparent
+            BlockCell.Transparent
         } else {
             cells[drawingY][drawingX]
         }
@@ -232,7 +232,7 @@ abstract class VBlockCanvas(
 abstract class QBlockCanvas(
     override val sciiWidth: Int,
     override val sciiHeight: Int,
-) : Canvas<BlockDrawingCell>, BlockCanvas {
+) : Canvas<BlockCell>, BlockCanvas {
     override val type = CanvasType.QBlock
     override val cellType = CellType.Block
 
@@ -243,7 +243,7 @@ abstract class QBlockCanvas(
     override val drawingHeight = sciiHeight * 2
 
     protected abstract val pixels: List<List<Boolean>>
-    protected abstract val attrs: List<List<BlockDrawingCell>>
+    protected abstract val attrs: List<List<BlockCell>>
 
     override fun toSciiPosition(drawingX: Int, drawingY: Int) = (drawingX / 2) to (drawingY / 2)
 
@@ -254,7 +254,7 @@ abstract class QBlockCanvas(
             drawingY >= drawingHeight ||
             !pixels[drawingY][drawingX]
         ) {
-            BlockDrawingCell.Transparent
+            BlockCell.Transparent
         } else {
             attrs[drawingY / 2][drawingX / 2]
         }

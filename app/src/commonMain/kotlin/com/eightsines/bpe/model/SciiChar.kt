@@ -20,6 +20,7 @@ value class SciiChar(val value: Int) {
         const val BLOCK_BIT_TL = 0x02
         const val BLOCK_BIT_BR = 0x04
         const val BLOCK_BIT_BL = 0x08
+        const val BLOCK_MASK = BLOCK_BIT_TR + BLOCK_BIT_TL + BLOCK_BIT_BR + BLOCK_BIT_BL
 
         val Transparent = SciiChar(-1)
         val Space = SciiChar(32)
