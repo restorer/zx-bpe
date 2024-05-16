@@ -24,6 +24,7 @@ value class SciiChar(val value: Int) {
 
         val Transparent = SciiChar(-1)
         val Space = SciiChar(32)
+        val Copyright = SciiChar(127)
 
         val BlockSpace = SciiChar(BLOCK_VALUE_FIRST)
         val BlockHorizontalTop = SciiChar(BLOCK_VALUE_FIRST + BLOCK_BIT_TR + BLOCK_BIT_TL)

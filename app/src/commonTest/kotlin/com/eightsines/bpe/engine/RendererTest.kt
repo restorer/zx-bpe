@@ -318,6 +318,7 @@ class RendererTest {
                 backgroundLayer = MutableBackgroundLayer(
                     isVisible = true,
                     isLocked = false,
+                    border = SciiColor.Black,
                     color = SciiColor.Blue,
                     bright = SciiLight.On,
                 ),

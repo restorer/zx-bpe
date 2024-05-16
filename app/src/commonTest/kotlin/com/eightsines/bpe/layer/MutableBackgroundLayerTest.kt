@@ -16,6 +16,7 @@ class MutableBackgroundLayerTest {
             MutableBackgroundLayer(
                 isVisible = true,
                 isLocked = false,
+                border = SciiColor.Black,
                 color = SciiColor.Red,
                 bright = SciiLight.Off,
             ) to PackableStringBag()
@@ -24,25 +25,26 @@ class MutableBackgroundLayerTest {
             bag.put(BackgroundLayer, sut)
             bag.toString()
         },
-        assert = { assertEquals("BAG1u1Bbi2i0", it) },
+        assert = { assertEquals("BAG1u1Bbi0i2i0", it) },
     )
 
     @Test
     fun shouldUnpack() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1Bbi2i0") },
+        arrange = { UnpackableStringBag("BAG1u1Bbi0i2i0") },
         act = {
             val sut = it.getStuff(MutableBackgroundLayer)
 
             sut to listOf(
                 sut.isVisible,
                 sut.isLocked,
+                sut.border,
                 sut.color,
                 sut.bright,
             )
         },
         assert = { (sut, props) ->
             assertIs<MutableBackgroundLayer>(sut)
-            assertEquals(listOf(true, false, SciiColor.Red, SciiLight.Off), props)
+            assertEquals(listOf(true, false, SciiColor.Black, SciiColor.Red, SciiLight.Off), props)
         },
     )
 }

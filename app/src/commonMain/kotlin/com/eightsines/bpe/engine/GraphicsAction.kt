@@ -11,7 +11,7 @@ import com.eightsines.bpe.layer.CanvasLayer
 import com.eightsines.bpe.layer.LayerUid
 
 sealed interface GraphicsAction {
-    data class SetBorderColor(val color: SciiColor) : GraphicsAction
+    data class SetBackgroundBorder(val color: SciiColor) : GraphicsAction
     data class SetBackgroundColor(val color: SciiColor) : GraphicsAction
     data class SetBackgroundBright(val light: SciiLight) : GraphicsAction
     data class SetBackgroundVisible(val isVisible: Boolean) : GraphicsAction

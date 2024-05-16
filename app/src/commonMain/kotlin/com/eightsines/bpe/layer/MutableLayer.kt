@@ -13,12 +13,14 @@ interface MutableLayer : Layer
 data class MutableBackgroundLayer(
     override var isVisible: Boolean = true,
     override var isLocked: Boolean = false,
+    override var border: SciiColor,
     override var color: SciiColor,
     override var bright: SciiLight,
 ) : BackgroundLayer, MutableLayer {
     override fun copyMutable() = MutableBackgroundLayer(
         isVisible = isVisible,
         isLocked = isLocked,
+        border = border,
         color = color,
         bright = bright,
     )
@@ -32,6 +34,7 @@ data class MutableBackgroundLayer(
             return MutableBackgroundLayer(
                 isVisible = bag.getBoolean(),
                 isLocked = bag.getBoolean(),
+                border = SciiColor(bag.getInt()),
                 color = SciiColor(bag.getInt()),
                 bright = SciiLight(bag.getInt()),
             )

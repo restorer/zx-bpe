@@ -21,6 +21,7 @@ interface BackgroundLayer : Layer {
     override val uid: LayerUid
         get() = LayerUid.Background
 
+    val border: SciiColor
     val color: SciiColor
     val bright: SciiLight
 
@@ -41,6 +42,7 @@ interface BackgroundLayer : Layer {
         override fun putInTheBag(bag: PackableBag, value: BackgroundLayer) {
             bag.put(value.isVisible)
             bag.put(value.isLocked)
+            bag.put(value.border.value)
             bag.put(value.color.value)
             bag.put(value.bright.value)
         }

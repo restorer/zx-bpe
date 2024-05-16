@@ -1,32 +1,55 @@
 package com.eightsines.bpe.engine
 
+import com.eightsines.bpe.graphics.Crate
 import com.eightsines.bpe.graphics.SciiCanvas
-import com.eightsines.bpe.graphics.ShapeType
-import com.eightsines.bpe.layer.Layer
+import com.eightsines.bpe.graphics.Selection
 import com.eightsines.bpe.layer.LayerUid
 import com.eightsines.bpe.model.SciiChar
 import com.eightsines.bpe.model.SciiColor
 import com.eightsines.bpe.model.SciiLight
+import com.eightsines.bpe.state.CanvasView
+import com.eightsines.bpe.state.LayerView
 
-interface BpeState {
-    val borderColor: SciiColor
-    val layers: List<Layer>
-    val preview: SciiCanvas
+data class BpeState(
+    val layers: List<LayerView<*>>,
+    val preview: CanvasView<SciiCanvas>,
+    val borderColor: SciiColor,
 
-    val paletteChar: SciiChar
-    val paletteInk: SciiColor
-    val palettePaper: SciiColor
-    val paletteBright: SciiLight
-    val paletteFlash: SciiLight
+    val paletteInk: SciiColor = SciiColor.White,
+    val palettePaper: SciiColor = SciiColor.Transparent,
+    val paletteBright: SciiLight = SciiLight.Transparent,
+    val paletteFlash: SciiLight = SciiLight.Transparent,
+    val paletteChar: SciiChar = SciiChar.Copyright,
 
-    val currentTool: BpeTool
-    val currentLayerUid: LayerUid
+    val paintShape: BpeShape = BpeShape.Point,
+    val eraseShape: BpeShape = BpeShape.Point,
+
+    val currentTool: BpeTool = BpeTool.Paint,
+    val currentLayerUid: LayerUid = LayerUid.Background,
+
+    val selection: Selection? = null,
+    val clipboard: Crate<*>? = null,
+    val isInFloatingMode: Boolean = false,
+
+    val canUndo: Boolean = false,
+    val canRedo: Boolean = false,
+
+    // val history: List<BpeStep> = emptyList(),
+    // val revertFloatingAction: GraphicsAction? = null,
+)
+
+enum class BpeShape {
+    Point,
+    Line,
+    FillBox,
+    StrokeBox,
 }
 
-sealed interface BpeTool {
-    data object Select : BpeTool
-    data object Move : BpeTool
-    data object ColorPicker : BpeTool
-    data class Eraser(val shapeType: ShapeType) : BpeTool
-    data class Brush(val shapeType: ShapeType) : BpeTool
+enum class BpeTool {
+    Paint,
+    Erase,
+    Select,
+    PickColor,
 }
+
+data class BpeStep(val action: GraphicsAction, val undoAction: GraphicsAction)

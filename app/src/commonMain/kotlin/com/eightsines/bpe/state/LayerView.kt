@@ -12,12 +12,14 @@ sealed interface LayerView<T : Layer> {
 class BackgroundLayerView(override val layer: BackgroundLayer) : LayerView<BackgroundLayer> {
     private val isLocked = layer.isLocked
     private val isVisible = layer.isVisible
+    private val border = layer.border
     private val color = layer.color
     private val bright = layer.bright
 
     override val isDirty: Boolean
         get() = isLocked != layer.isLocked ||
                 isVisible != layer.isVisible ||
+                border != layer.border ||
                 color != layer.color ||
                 bright != layer.bright
 
@@ -34,6 +36,7 @@ class BackgroundLayerView(override val layer: BackgroundLayer) : LayerView<Backg
 
         return isLocked == other.isLocked ||
                 isVisible == other.isVisible ||
+                border == other.border ||
                 color == other.color ||
                 bright == other.bright
     }
@@ -41,6 +44,7 @@ class BackgroundLayerView(override val layer: BackgroundLayer) : LayerView<Backg
     override fun hashCode(): Int {
         var result = isLocked.hashCode()
         result = 31 * result + isVisible.hashCode()
+        result = 31 * result + border.hashCode()
         result = 31 * result + color.hashCode()
         result = 31 * result + bright.hashCode()
         return result

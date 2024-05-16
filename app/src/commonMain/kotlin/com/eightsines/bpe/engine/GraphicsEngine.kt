@@ -30,11 +30,10 @@ class GraphicsEngine(
     private val painter: Painter,
     private val renderer: Renderer,
 ) {
-    private var borderColor: SciiColor = SciiColor.Transparent
-
     private var backgroundLayer = MutableBackgroundLayer(
         isVisible = true,
         isLocked = false,
+        border = SciiColor.Transparent,
         color = SciiColor.Transparent,
         bright = SciiLight.Transparent,
     )
@@ -44,9 +43,6 @@ class GraphicsEngine(
     private val preview = MutableSciiCanvas(SCREEN_SCII_WIDTH, SCREEN_SCII_HEIGHT)
 
     val state = object : GraphicsState {
-        override val borderColor: SciiColor
-            get() = this@GraphicsEngine.borderColor
-
         override val backgroundLayer: BackgroundLayer
             get() = this@GraphicsEngine.backgroundLayer
 
@@ -57,8 +53,29 @@ class GraphicsEngine(
             get() = this@GraphicsEngine.preview
     }
 
+    fun canExecute(action: GraphicsAction): Boolean = when (action) {
+        is GraphicsAction.SetBackgroundBorder -> canSetBackgroundBorder(action)
+        is GraphicsAction.SetBackgroundColor -> canSetBackgroundColor(action)
+        is GraphicsAction.SetBackgroundBright -> canSetBackgroundBright(action)
+        is GraphicsAction.SetBackgroundVisible -> canSetBackgroundVisible(action)
+        is GraphicsAction.SetBackgroundLocked -> canSetBackgroundLocked(action)
+        is GraphicsAction.CreateLayer -> canCreateLayer()
+        is GraphicsAction.ReplaceLayer -> canReplaceLayer(action) != null
+        is GraphicsAction.InsertLayer -> canInsertLayer()
+        is GraphicsAction.DeleteLayer -> canDeleteLayer(action) != null
+        is GraphicsAction.SetLayerVisible -> canSetLayerVisible(action) != null
+        is GraphicsAction.SetLayerLocked -> canSetLayerLocked(action) != null
+        is GraphicsAction.MoveLayer -> canMoveLayer(action) != null
+        is GraphicsAction.MergeShape -> canMergeShape(action) != null
+        is GraphicsAction.ReplaceShape -> canReplaceShape(action) != null
+        is GraphicsAction.ReplaceCells -> canReplaceCells(action) != null
+        is GraphicsAction.MergeLayers -> canMergeLayers(action) != null
+        is GraphicsAction.UndoMergeLayers -> canUndoMergeLayers(action)
+        is GraphicsAction.ConvertLayer -> canConvertLayer(action) != null
+    }
+
     fun execute(action: GraphicsAction): GraphicsAction? = when (action) {
-        is GraphicsAction.SetBorderColor -> executeSetBorderColor(action)
+        is GraphicsAction.SetBackgroundBorder -> executeSetBackgroundBorder(action)
         is GraphicsAction.SetBackgroundColor -> executeSetBackgroundColor(action)
         is GraphicsAction.SetBackgroundBright -> executeSetBackgroundBright(action)
         is GraphicsAction.SetBackgroundVisible -> executeSetBackgroundVisible(action)
@@ -81,18 +98,13 @@ class GraphicsEngine(
     fun putInTheBag(bag: PackableBag) {
         bag.put(
             StateStuff,
-            StateStuff(
-                borderColor = borderColor,
-                backgroundLayer = backgroundLayer,
-                canvasLayers = canvasLayers,
-            )
+            StateStuff(backgroundLayer = backgroundLayer, canvasLayers = canvasLayers),
         )
     }
 
     fun getOutOfTheBag(bag: UnpackableBag) {
         val stateStuff = bag.getStuff(StateStuff)
 
-        borderColor = stateStuff.borderColor
         backgroundLayer = stateStuff.backgroundLayer
         canvasLayers = stateStuff.canvasLayers
 
@@ -105,17 +117,23 @@ class GraphicsEngine(
         updatePreview(ScreenBox)
     }
 
-    private fun executeSetBorderColor(action: GraphicsAction.SetBorderColor): GraphicsAction? =
-        if (borderColor != action.color) {
-            val undoAction = GraphicsAction.SetBorderColor(borderColor)
-            borderColor = action.color
+    private fun canSetBackgroundBorder(action: GraphicsAction.SetBackgroundBorder) =
+        !backgroundLayer.isLocked && backgroundLayer.border != action.color
+
+    private fun executeSetBackgroundBorder(action: GraphicsAction.SetBackgroundBorder): GraphicsAction? =
+        if (canSetBackgroundBorder(action)) {
+            val undoAction = GraphicsAction.SetBackgroundBorder(backgroundLayer.border)
+            backgroundLayer.border = action.color
             undoAction
         } else {
             null
         }
 
+    private fun canSetBackgroundColor(action: GraphicsAction.SetBackgroundColor) =
+        !backgroundLayer.isLocked && backgroundLayer.color != action.color
+
     private fun executeSetBackgroundColor(action: GraphicsAction.SetBackgroundColor): GraphicsAction? =
-        if (!backgroundLayer.isLocked && backgroundLayer.color != action.color) {
+        if (canSetBackgroundColor(action)) {
             val undoAction = GraphicsAction.SetBackgroundColor(backgroundLayer.color)
             backgroundLayer.color = action.color
             updatePreview(ScreenBox)
@@ -124,8 +142,11 @@ class GraphicsEngine(
             null
         }
 
+    private fun canSetBackgroundBright(action: GraphicsAction.SetBackgroundBright) =
+        !backgroundLayer.isLocked && backgroundLayer.bright != action.light
+
     private fun executeSetBackgroundBright(action: GraphicsAction.SetBackgroundBright): GraphicsAction? =
-        if (!backgroundLayer.isLocked && backgroundLayer.bright != action.light) {
+        if (canSetBackgroundBright(action)) {
             val undoAction = GraphicsAction.SetBackgroundBright(backgroundLayer.bright)
             backgroundLayer.bright = action.light
             updatePreview(ScreenBox)
@@ -134,8 +155,11 @@ class GraphicsEngine(
             null
         }
 
+    private fun canSetBackgroundVisible(action: GraphicsAction.SetBackgroundVisible) =
+        backgroundLayer.isVisible != action.isVisible
+
     private fun executeSetBackgroundVisible(action: GraphicsAction.SetBackgroundVisible): GraphicsAction? =
-        if (backgroundLayer.isVisible != action.isVisible) {
+        if (canSetBackgroundVisible(action)) {
             val undoAction = GraphicsAction.SetBackgroundVisible(backgroundLayer.isVisible)
             backgroundLayer.isVisible = action.isVisible
             updatePreview(ScreenBox)
@@ -144,14 +168,20 @@ class GraphicsEngine(
             null
         }
 
+    private fun canSetBackgroundLocked(action: GraphicsAction.SetBackgroundLocked) =
+        backgroundLayer.isLocked != action.isLocked
+
     private fun executeSetBackgroundLocked(action: GraphicsAction.SetBackgroundLocked): GraphicsAction? =
-        if (backgroundLayer.isLocked != action.isLocked) {
+        if (canSetBackgroundLocked(action)) {
             val undoAction = GraphicsAction.SetBackgroundLocked(backgroundLayer.isLocked)
             backgroundLayer.isLocked = action.isLocked
             undoAction
         } else {
             null
         }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun canCreateLayer() = true
 
     private fun executeCreateLayer(action: GraphicsAction.CreateLayer): GraphicsAction {
         val layer = MutableCanvasLayer(
@@ -166,8 +196,11 @@ class GraphicsEngine(
         return undoAction
     }
 
+    private fun canReplaceLayer(action: GraphicsAction.ReplaceLayer) =
+        canvasLayersMap[action.layer.uid.value]
+
     private fun executeReplaceLayer(action: GraphicsAction.ReplaceLayer): GraphicsAction? {
-        val existingLayer = canvasLayersMap[action.layer.uid.value] ?: return null
+        val existingLayer = canReplaceLayer(action) ?: return null
         val undoAction = GraphicsAction.ReplaceLayer(existingLayer)
 
         val layer = action.layer.copyMutable()
@@ -177,6 +210,9 @@ class GraphicsEngine(
         updatePreview(ScreenBox)
         return undoAction
     }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun canInsertLayer() = true
 
     private fun executeInsertLayer(action: GraphicsAction.InsertLayer): GraphicsAction {
         val layer = action.layer.copyMutable()
@@ -189,12 +225,13 @@ class GraphicsEngine(
         return undoAction
     }
 
-    private fun executeDeleteLayer(action: GraphicsAction.DeleteLayer): GraphicsAction? {
+    private fun canDeleteLayer(action: GraphicsAction.DeleteLayer): MutableCanvasLayer<*>? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
+        return if (layer.isLocked) null else layer
+    }
 
-        if (layer.isLocked) {
-            return null
-        }
+    private fun executeDeleteLayer(action: GraphicsAction.DeleteLayer): GraphicsAction? {
+        val layer = canDeleteLayer(action) ?: return null
 
         val layerIndex = getLayerInsertIndex(layer.uid)
         val undoAction = GraphicsAction.InsertLayer(layer = layer, onTopOfLayerUid = getLayerUidBelow(layerIndex))
@@ -206,23 +243,33 @@ class GraphicsEngine(
         return undoAction
     }
 
-    private fun executeSetLayerVisible(action: GraphicsAction.SetLayerVisible): GraphicsAction? {
+    private fun canSetLayerVisible(action: GraphicsAction.SetLayerVisible): MutableCanvasLayer<*>? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
+        return if (layer.isVisible == action.isVisible) null else layer
+    }
+
+    private fun executeSetLayerVisible(action: GraphicsAction.SetLayerVisible): GraphicsAction? {
+        val layer = canSetLayerVisible(action) ?: return null
 
         val undoAction = GraphicsAction.SetLayerVisible(layer.uid, layer.isVisible)
         layer.isVisible = action.isVisible
         return undoAction
     }
 
-    private fun executeSetLayerLocked(action: GraphicsAction.SetLayerLocked): GraphicsAction? {
+    private fun canSetLayerLocked(action: GraphicsAction.SetLayerLocked): MutableCanvasLayer<*>? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
+        return if (layer.isLocked == action.isLocked) null else layer
+    }
+
+    private fun executeSetLayerLocked(action: GraphicsAction.SetLayerLocked): GraphicsAction? {
+        val layer = canSetLayerLocked(action) ?: return null
 
         val undoAction = GraphicsAction.SetLayerLocked(layer.uid, layer.isLocked)
         layer.isLocked = action.isLocked
         return undoAction
     }
 
-    private fun executeMoveLayer(action: GraphicsAction.MoveLayer): GraphicsAction? {
+    private fun canMoveLayer(action: GraphicsAction.MoveLayer): MoveLayerData? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
 
         if (layer.uid == action.onTopOfLayerUid) {
@@ -236,20 +283,27 @@ class GraphicsEngine(
             return null
         }
 
-        val undoAction = GraphicsAction.MoveLayer(layer.uid, undoOnTopOfLayerUid)
-        canvasLayers.removeAt(layerIndex)
-        canvasLayers.add(getLayerInsertIndex(action.onTopOfLayerUid), layer)
+        return MoveLayerData(layer, layerIndex, undoOnTopOfLayerUid)
+    }
+
+    private fun executeMoveLayer(action: GraphicsAction.MoveLayer): GraphicsAction? {
+        val data = canMoveLayer(action) ?: return null
+
+        val undoAction = GraphicsAction.MoveLayer(data.layer.uid, data.undoOnTopOfLayerUid)
+        canvasLayers.removeAt(data.layerIndex)
+        canvasLayers.add(getLayerInsertIndex(action.onTopOfLayerUid), data.layer)
 
         updatePreview(ScreenBox)
         return undoAction
     }
 
-    private fun executeMergeShape(action: GraphicsAction.MergeShape): GraphicsAction? {
+    private fun canMergeShape(action: GraphicsAction.MergeShape): MutableCanvasLayer<*>? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
+        return if (layer.isLocked || layer.canvas.cellType != action.shape.cellType) null else layer
+    }
 
-        if (layer.isLocked || layer.canvas.cellType != action.shape.cellType) {
-            return null
-        }
+    private fun executeMergeShape(action: GraphicsAction.MergeShape): GraphicsAction? {
+        val layer = canMergeShape(action) ?: return null
 
         @Suppress("UNCHECKED_CAST")
         val canvas: MutableCanvas<Cell> = layer.canvas as MutableCanvas<Cell>
@@ -275,12 +329,13 @@ class GraphicsEngine(
         return undoAction
     }
 
-    private fun executeReplaceShape(action: GraphicsAction.ReplaceShape): GraphicsAction? {
+    private fun canReplaceShape(action: GraphicsAction.ReplaceShape): MutableCanvasLayer<*>? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
+        return if (layer.isLocked || layer.canvas.cellType != action.shape.cellType) null else layer
+    }
 
-        if (layer.isLocked || layer.canvas.cellType != action.shape.cellType) {
-            return null
-        }
+    private fun executeReplaceShape(action: GraphicsAction.ReplaceShape): GraphicsAction? {
+        val layer = canReplaceShape(action) ?: return null
 
         @Suppress("UNCHECKED_CAST")
         val canvas: MutableCanvas<Cell> = layer.canvas as MutableCanvas<Cell>
@@ -306,13 +361,13 @@ class GraphicsEngine(
         return undoAction
     }
 
-    private fun executeReplaceCells(action: GraphicsAction.ReplaceCells): GraphicsAction? {
+    private fun canReplaceCells(action: GraphicsAction.ReplaceCells): MutableCanvasLayer<*>? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
+        return if (layer.isLocked) null else layer
+    }
 
-        if (layer.isLocked) {
-            return null
-        }
-
+    private fun executeReplaceCells(action: GraphicsAction.ReplaceCells): GraphicsAction? {
+        val layer = canReplaceCells(action) ?: return null
         val crate = action.crate
 
         val undoAction = GraphicsAction.ReplaceCells(
@@ -334,7 +389,7 @@ class GraphicsEngine(
         return undoAction
     }
 
-    private fun executeMergeLayers(action: GraphicsAction.MergeLayers): GraphicsAction? {
+    private fun canMergeLayers(action: GraphicsAction.MergeLayers): MergeLayersData? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
         val ontoLayer = canvasLayersMap[action.ontoLayerUid.value] ?: return null
 
@@ -342,18 +397,24 @@ class GraphicsEngine(
             return null
         }
 
-        val layerIndex = getLayerIndex(layer.uid)
-        val ontoLayerIndex = getLayerIndex(ontoLayer.uid)
+        return MergeLayersData(layer, ontoLayer)
+    }
+
+    private fun executeMergeLayers(action: GraphicsAction.MergeLayers): GraphicsAction? {
+        val data = canMergeLayers(action) ?: return null
+
+        val layerIndex = getLayerIndex(data.layer.uid)
+        val ontoLayerIndex = getLayerIndex(data.ontoLayer.uid)
 
         val undoAction = GraphicsAction.UndoMergeLayers(
-            insertLayer = layer,
+            insertLayer = data.layer,
             insertOnTopOfLayerUid = getLayerUidBelow(layerIndex),
-            replaceLayer = ontoLayer,
+            replaceLayer = data.ontoLayer,
         )
 
-        val mergeLayer = ontoLayer.copyMutable()
+        val mergeLayer = data.ontoLayer.copyMutable()
 
-        val canvas = layer.canvas
+        val canvas = data.layer.canvas
         val mergeCanvas = mergeLayer.canvas
 
         val mergeWidth = minOf(canvas.sciiWidth, mergeCanvas.sciiWidth)
@@ -380,17 +441,20 @@ class GraphicsEngine(
         }
 
         canvasLayers[ontoLayerIndex] = mergeLayer
-        canvasLayersMap[ontoLayer.uid.value] = mergeLayer
+        canvasLayersMap[data.ontoLayer.uid.value] = mergeLayer
 
         canvasLayers.removeAt(layerIndex)
-        canvasLayersMap.remove(layer.uid.value)
+        canvasLayersMap.remove(data.layer.uid.value)
 
         updatePreview(ScreenBox)
         return undoAction
     }
 
+    private fun canUndoMergeLayers(action: GraphicsAction.UndoMergeLayers) =
+        canvasLayersMap.containsKey(action.replaceLayer.uid.value)
+
     private fun executeUndoMergeLayers(action: GraphicsAction.UndoMergeLayers): GraphicsAction? {
-        if (!canvasLayersMap.containsKey(action.replaceLayer.uid.value)) {
+        if (!canUndoMergeLayers(action)) {
             return null
         }
 
@@ -411,7 +475,7 @@ class GraphicsEngine(
         return undoAction
     }
 
-    private fun executeConvertLayer(action: GraphicsAction.ConvertLayer): GraphicsAction? {
+    private fun canConvertLayer(action: GraphicsAction.ConvertLayer): ConvertLayerData? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
         val canvas = layer.canvas
 
@@ -419,20 +483,26 @@ class GraphicsEngine(
             return null
         }
 
+        return ConvertLayerData(layer, canvas)
+    }
+
+    private fun executeConvertLayer(action: GraphicsAction.ConvertLayer): GraphicsAction? {
+        val data = canConvertLayer(action) ?: return null
+
         val convertedLayer = MutableCanvasLayer(
-            uid = layer.uid,
+            uid = data.layer.uid,
             canvas = MutableCanvas.create(action.canvasType, SCREEN_SCII_WIDTH, SCREEN_SCII_HEIGHT),
         )
 
         convertedLayer.canvas.mutate { mutator ->
-            walkInBox(canvas.sciiWidth, canvas.sciiHeight) { x, y ->
-                mutator.replaceSciiCell(x, y, canvas.getSciiCell(x, y))
+            walkInBox(data.canvas.sciiWidth, data.canvas.sciiHeight) { x, y ->
+                mutator.replaceSciiCell(x, y, data.canvas.getSciiCell(x, y))
             }
         }
 
-        val undoAction = GraphicsAction.ReplaceLayer(layer)
-        canvasLayers[getLayerIndex(layer.uid)] = convertedLayer
-        canvasLayersMap[layer.uid.value] = convertedLayer
+        val undoAction = GraphicsAction.ReplaceLayer(data.layer)
+        canvasLayers[getLayerIndex(data.layer.uid)] = convertedLayer
+        canvasLayersMap[data.layer.uid.value] = convertedLayer
 
         return undoAction
     }
@@ -463,6 +533,15 @@ class GraphicsEngine(
         }
     }
 
+    private data class MoveLayerData(
+        val layer: MutableCanvasLayer<*>,
+        val layerIndex: Int,
+        val undoOnTopOfLayerUid: LayerUid,
+    )
+
+    private data class MergeLayersData(val layer: MutableCanvasLayer<*>, val ontoLayer: MutableCanvasLayer<*>)
+    private data class ConvertLayerData(val layer: MutableCanvasLayer<*>, val canvas: MutableCanvas<*>)
+
     companion object {
         const val SCREEN_SCII_WIDTH = 32
         const val SCREEN_SCII_HEIGHT = 24
@@ -471,7 +550,6 @@ class GraphicsEngine(
     }
 
     private class StateStuff(
-        val borderColor: SciiColor,
         val backgroundLayer: MutableBackgroundLayer,
         val canvasLayers: MutableList<MutableCanvasLayer<*>>,
     ) {
@@ -479,7 +557,6 @@ class GraphicsEngine(
             override val putInTheBagVersion = 1
 
             override fun putInTheBag(bag: PackableBag, value: StateStuff) {
-                bag.put(value.borderColor.value)
                 bag.put(BackgroundLayer, value.backgroundLayer)
                 bag.put(value.canvasLayers.size)
 
@@ -493,7 +570,6 @@ class GraphicsEngine(
                     throw UnsupportedVersionBagUnpackException("GraphicsEngine", version)
                 }
 
-                val borderColor = SciiColor(bag.getInt())
                 val backgroundLayer = bag.getStuff(MutableBackgroundLayer)
                 val canvasLayersSize = bag.getInt()
 
@@ -501,7 +577,6 @@ class GraphicsEngine(
                     (0..<canvasLayersSize).mapTo(mutableListOf()) { bag.getStuff(MutableCanvasLayer) }
 
                 return StateStuff(
-                    borderColor = borderColor,
                     backgroundLayer = backgroundLayer,
                     canvasLayers = canvasLayers,
                 )
