@@ -6,7 +6,6 @@ import com.eightsines.bpe.layer.Layer
 
 sealed interface LayerView<T : Layer> {
     val layer: T
-    val isDirty: Boolean
 }
 
 class BackgroundLayerView(override val layer: BackgroundLayer) : LayerView<BackgroundLayer> {
@@ -15,13 +14,6 @@ class BackgroundLayerView(override val layer: BackgroundLayer) : LayerView<Backg
     private val border = layer.border
     private val color = layer.color
     private val bright = layer.bright
-
-    override val isDirty: Boolean
-        get() = isLocked != layer.isLocked ||
-                isVisible != layer.isVisible ||
-                border != layer.border ||
-                color != layer.color ||
-                bright != layer.bright
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {
@@ -55,11 +47,6 @@ class CanvasLayerView(override val layer: CanvasLayer<*>) : LayerView<CanvasLaye
     private val isLocked = layer.isLocked
     private val isVisible = layer.isVisible
     private val canvasMutations = layer.canvas.mutations
-
-    override val isDirty: Boolean
-        get() = isLocked != layer.isLocked ||
-                isVisible != layer.isVisible ||
-                canvasMutations != layer.canvas.mutations
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {

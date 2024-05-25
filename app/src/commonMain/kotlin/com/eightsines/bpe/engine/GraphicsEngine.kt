@@ -49,6 +49,9 @@ class GraphicsEngine(
         override val canvasLayers: List<CanvasLayer<*>>
             get() = this@GraphicsEngine.canvasLayers
 
+        override val canvasLayersMap: Map<String, CanvasLayer<*>>
+            get() = this@GraphicsEngine.canvasLayersMap
+
         override val preview: SciiCanvas
             get() = this@GraphicsEngine.preview
     }
