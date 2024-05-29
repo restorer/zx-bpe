@@ -24,16 +24,14 @@ sealed interface BpeAction {
     data class LayersConvert(val canvasType: CanvasType) : BpeAction
 
     data class ToolboxSetTool(val tool: BpeTool) : BpeAction
-    data class ToolboxSetPaintShape(val shape: BpeShape) : BpeAction
-    data class ToolboxSetEraseShape(val shape: BpeShape) : BpeAction
+    data class ToolboxSetShape(val shape: BpeShape) : BpeAction
     data object ToolboxPaste : BpeAction
     data object ToolboxUndo : BpeAction
     data object ToolboxRedo : BpeAction
 
+    data object SelectionDeselect : BpeAction
     data object SelectionCut : BpeAction
     data object SelectionCopy : BpeAction
-    data object SelectionFloat : BpeAction
-    data object SelectionAnchor : BpeAction
 
     data class CanvasDown(val drawingX: Int, val drawingY: Int) : BpeAction
     data class CanvasUp(val drawingX: Int, val drawingY: Int) : BpeAction

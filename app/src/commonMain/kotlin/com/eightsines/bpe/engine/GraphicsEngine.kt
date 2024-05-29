@@ -302,7 +302,7 @@ class GraphicsEngine(
 
     private fun canMergeShape(action: GraphicsAction.MergeShape): MutableCanvasLayer<*>? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
-        return if (layer.isLocked || layer.canvas.cellType != action.shape.cellType) null else layer
+        return if (layer.isLocked || layer.canvas.type.cellType != action.shape.cellType) null else layer
     }
 
     private fun executeMergeShape(action: GraphicsAction.MergeShape): GraphicsAction? {
@@ -313,8 +313,8 @@ class GraphicsEngine(
 
         val drawingBBox = painter.getBBox(action.shape)
 
-        val (sciiSX, sciiSY) = canvas.toSciiPosition(drawingBBox.x, drawingBBox.y)
-        val (sciiEX, sciiEY) = canvas.toSciiPosition(drawingBBox.ex, drawingBBox.ey)
+        val (sciiSX, sciiSY) = canvas.type.toSciiPosition(drawingBBox.x, drawingBBox.y)
+        val (sciiEX, sciiEY) = canvas.type.toSciiPosition(drawingBBox.ex, drawingBBox.ey)
 
         val undoAction = GraphicsAction.ReplaceCells(
             layerUid = layer.uid,
@@ -334,7 +334,7 @@ class GraphicsEngine(
 
     private fun canReplaceShape(action: GraphicsAction.ReplaceShape): MutableCanvasLayer<*>? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
-        return if (layer.isLocked || layer.canvas.cellType != action.shape.cellType) null else layer
+        return if (layer.isLocked || layer.canvas.type.cellType != action.shape.cellType) null else layer
     }
 
     private fun executeReplaceShape(action: GraphicsAction.ReplaceShape): GraphicsAction? {
@@ -345,8 +345,8 @@ class GraphicsEngine(
 
         val drawingBBox = painter.getBBox(action.shape)
 
-        val (sciiSX, sciiSY) = canvas.toSciiPosition(drawingBBox.x, drawingBBox.y)
-        val (sciiEX, sciiEY) = canvas.toSciiPosition(drawingBBox.ex, drawingBBox.ey)
+        val (sciiSX, sciiSY) = canvas.type.toSciiPosition(drawingBBox.x, drawingBBox.y)
+        val (sciiEX, sciiEY) = canvas.type.toSciiPosition(drawingBBox.ex, drawingBBox.ey)
 
         val undoAction = GraphicsAction.ReplaceCells(
             layerUid = layer.uid,

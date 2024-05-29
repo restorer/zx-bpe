@@ -1,6 +1,7 @@
 package com.eightsines.bpe.layer
 
 import com.eightsines.bpe.graphics.Canvas
+import com.eightsines.bpe.graphics.CanvasType
 import com.eightsines.bpe.model.Cell
 import com.eightsines.bpe.model.SciiCell
 import com.eightsines.bpe.model.SciiChar
@@ -51,6 +52,7 @@ interface BackgroundLayer : Layer {
 
 interface CanvasLayer<T : Cell> : Layer {
     val canvas: Canvas<T>
+    val canvasType: CanvasType
 
     override fun copyMutable(): MutableCanvasLayer<T>
 

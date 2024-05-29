@@ -169,7 +169,7 @@ sealed interface Shape<T : Cell> {
 
     data class Cells<T : Cell>(val x: Int, val y: Int, val crate: Crate<T>) : Shape<T> {
         override val type = ShapeType.Cells
-        override val cellType = crate.cellType
+        override val cellType = crate.canvasType.cellType
 
         internal object Polymorphic : BagStuffPacker<Cells<*>>, BagStuffUnpacker<Cells<*>> {
             override val putInTheBagVersion = 1

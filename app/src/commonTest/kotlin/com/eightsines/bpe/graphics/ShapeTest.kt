@@ -155,7 +155,7 @@ class ShapeTest {
                 1,
                 2,
                 Crate(
-                    CellType.Block,
+                    CanvasType.HBlock,
                     2,
                     1,
                     listOf(listOf(BlockCellMother.Black, BlockCellMother.White)),
@@ -194,7 +194,7 @@ class ShapeTest {
                     CellType.Block,
                     1,
                     2, Crate(
-                        CellType.Block,
+                        CanvasType.HBlock,
                         2,
                         1,
                         listOf(listOf(BlockCellMother.Black, BlockCellMother.White)),

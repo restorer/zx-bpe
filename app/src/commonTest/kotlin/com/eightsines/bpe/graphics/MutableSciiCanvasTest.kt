@@ -28,10 +28,10 @@ class MutableSciiCanvasTest {
         arrange = { MutableSciiCanvas(4, 2) },
         act = {
             listOf(
-                it.toSciiPosition(0, 0),
-                it.toSciiPosition(0, 1),
-                it.toSciiPosition(3, 0),
-                it.toSciiPosition(3, 1),
+                it.type.toSciiPosition(0, 0),
+                it.type.toSciiPosition(0, 1),
+                it.type.toSciiPosition(3, 0),
+                it.type.toSciiPosition(3, 1),
             )
         },
         assert = { assertEquals(listOf(0 to 0, 0 to 1, 3 to 0, 3 to 1), it) },

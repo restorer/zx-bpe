@@ -46,7 +46,7 @@ class PainterTest {
                 5,
                 2,
                 Crate(
-                    CellType.Block,
+                    CanvasType.HBlock,
                     2,
                     1,
                     listOf(listOf(BlockCellMother.Black, BlockCellMother.White)),
@@ -326,7 +326,7 @@ class PainterTest {
                 5,
                 2,
                 Crate(
-                    CellType.Block,
+                    CanvasType.HBlock,
                     3,
                     2,
                     listOf(

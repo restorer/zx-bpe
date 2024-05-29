@@ -10,7 +10,7 @@ import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.BagUnpackException
 
 data class Crate<T : Cell>(
-    val cellType: CellType,
+    val canvasType: CanvasType,
     val width: Int,
     val height: Int,
     val cells: List<List<T>>,
@@ -31,7 +31,7 @@ data class Crate<T : Cell>(
                 }
             }
 
-            return Crate(CellType.Scii, sciiWidth, sciiHeight, cells)
+            return Crate(CanvasType.Scii, sciiWidth, sciiHeight, cells)
         }
 
         fun <T : Cell> fromCanvasDrawing(
@@ -41,7 +41,7 @@ data class Crate<T : Cell>(
             drawingWidth: Int,
             drawingHeight: Int,
         ): Crate<T> {
-            val transparentCell = Cell.makeTransparent(canvas.cellType)
+            val transparentCell = Cell.makeTransparent(canvas.type.cellType)
             val cells = MutableList(drawingHeight) { MutableList(drawingWidth) { transparentCell } }
 
             for (y in 0..<drawingHeight) {
@@ -51,13 +51,22 @@ data class Crate<T : Cell>(
             }
 
             @Suppress("UNCHECKED_CAST")
-            return Crate(canvas.cellType, drawingWidth, drawingHeight, cells) as Crate<T>
+            return Crate(canvas.type, drawingWidth, drawingHeight, cells) as Crate<T>
         }
+
+        @Suppress("NOTHING_TO_INLINE")
+        inline fun <T : Cell> fromCanvasDrawing(canvas: Canvas<T>, box: Box): Crate<T> = fromCanvasDrawing(
+            canvas = canvas,
+            drawingX = box.x,
+            drawingY = box.y,
+            drawingWidth = box.width,
+            drawingHeight = box.height,
+        )
 
         override val putInTheBagVersion = 1
 
         override fun putInTheBag(bag: PackableBag, value: Crate<*>) {
-            bag.put(value.cellType.value)
+            bag.put(value.canvasType.value)
             bag.put(value.width)
             bag.put(value.height)
 
@@ -70,7 +79,7 @@ data class Crate<T : Cell>(
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Crate<*> {
             val cellType = try {
-                CellType.of(bag.getInt())
+                CanvasType.of(bag.getInt())
             } catch (e: IllegalArgumentException) {
                 throw BagUnpackException(e.toString())
             }

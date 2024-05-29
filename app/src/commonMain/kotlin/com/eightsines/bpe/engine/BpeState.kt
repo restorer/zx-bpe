@@ -1,6 +1,7 @@
 package com.eightsines.bpe.engine
 
 import com.eightsines.bpe.graphics.CanvasType
+import com.eightsines.bpe.graphics.Crate
 import com.eightsines.bpe.graphics.SciiCanvas
 import com.eightsines.bpe.graphics.Selection
 import com.eightsines.bpe.layer.BackgroundLayer
@@ -24,9 +25,15 @@ data class BpeState(
 
     val layers: List<LayerView<*>>,
     val layersCurrentUid: LayerUid,
+    val layersCanMoveUp: Boolean,
+    val layersCanMoveDown: Boolean,
+    val layersCanDelete: Boolean,
+    val layersCanMerge: Boolean,
+    val layersCanConvert: Boolean,
 
-    val toolboxTool: BpeTool?,
+    val toolboxTool: BpeTool,
     val toolboxShape: BpeShape?,
+    val toolboxAvailTools: Set<BpeTool>,
     val toolboxCanSelect: Boolean,
     val toolboxCanPaste: Boolean,
     val toolboxCanUndo: Boolean,
@@ -35,8 +42,6 @@ data class BpeState(
     val selection: Selection?,
     val selectionCanCut: Boolean,
     val selectionCanCopy: Boolean,
-    val selectionCanFloat: Boolean,
-    val selectionCanAnchor: Boolean,
     val selectionIsFloating: Boolean,
 )
 
@@ -48,8 +53,27 @@ enum class BpeShape {
 }
 
 enum class BpeTool {
+    None,
     Paint,
     Erase,
     Select,
     PickColor,
 }
+
+sealed interface BpeSelectionState {
+    data object None : BpeSelectionState
+    data class Selected(val selection: Selection) : BpeSelectionState
+
+    data class Floating(
+        val selection: Selection,
+        val offset: Pair<Int, Int>,
+        val layerUid: LayerUid,
+        val crate: Crate<*>,
+        val cutAction: GraphicsAction?,
+        val undoCutAction: GraphicsAction?,
+        val overlayAction: GraphicsAction,
+        val undoOverlayAction: GraphicsAction,
+    ) : BpeSelectionState
+}
+
+data class BpeClipboard(val drawingX: Int, val drawingY: Int, val crate: Crate<*>)

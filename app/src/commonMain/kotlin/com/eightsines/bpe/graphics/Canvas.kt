@@ -12,16 +12,80 @@ import com.eightsines.bpe.model.VBlockMergeCell
 import com.eightsines.bpe.util.BagStuffPacker
 import com.eightsines.bpe.util.PackableBag
 
-enum class CanvasType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Canvas<*>>) {
-    Scii(1, SciiCanvas.Polymorphic),
-    HBlock(2, HBlockCanvas.Polymorphic),
-    VBlock(3, VBlockCanvas.Polymorphic),
-    QBlock(4, QBlockCanvas.Polymorphic),
+sealed class CanvasType {
+    abstract val value: Int
+    abstract val cellType: CellType
+    abstract val transparentCell: Cell
+    internal abstract val polymorphicPacker: BagStuffPacker<out Canvas<*>>
+
+    abstract fun toSciiPosition(drawingX: Int, drawingY: Int): Pair<Int, Int>
+
+    object Scii : CanvasType() {
+        override val value = 1
+        override val cellType = CellType.Scii
+        override val transparentCell = SciiCell.Transparent
+        override val polymorphicPacker = SciiCanvas.Polymorphic
+
+        override fun toSciiPosition(drawingX: Int, drawingY: Int) = drawingX to drawingY
+    }
+
+    object HBlock : CanvasType() {
+        override val value = 2
+        override val cellType = CellType.Block
+        override val transparentCell = BlockCell.Transparent
+        override val polymorphicPacker = HBlockCanvas.Polymorphic
+
+        override fun toSciiPosition(drawingX: Int, drawingY: Int) = drawingX to (drawingY / 2)
+    }
+
+    object VBlock : CanvasType() {
+        override val value = 3
+        override val cellType = CellType.Block
+        override val transparentCell = BlockCell.Transparent
+        override val polymorphicPacker = VBlockCanvas.Polymorphic
+
+        override fun toSciiPosition(drawingX: Int, drawingY: Int) = (drawingX / 2) to drawingY
+    }
+
+    object QBlock : CanvasType() {
+        override val value = 4
+        override val cellType = CellType.Block
+        override val transparentCell = BlockCell.Transparent
+        override val polymorphicPacker = QBlockCanvas.Polymorphic
+
+        override fun toSciiPosition(drawingX: Int, drawingY: Int) = (drawingX / 2) to (drawingY / 2)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) {
+            return true
+        }
+
+        if (other == null || this::class != other::class) {
+            return false
+        }
+
+        other as CanvasType
+        return value == other.value
+    }
+
+    override fun hashCode(): Int {
+        return value
+    }
+
+    companion object {
+        fun of(value: Int) = when (value) {
+            Scii.value -> Scii
+            HBlock.value -> HBlock
+            VBlock.value -> VBlock
+            QBlock.value -> QBlock
+            else -> throw IllegalArgumentException("Unknown enum value=$value for CanvasType")
+        }
+    }
 }
 
 interface Canvas<T : Cell> {
     val type: CanvasType
-    val cellType: CellType
 
     val sciiWidth: Int
     val sciiHeight: Int
@@ -32,7 +96,6 @@ interface Canvas<T : Cell> {
     val mutations: Int
 
     fun copyMutable(): MutableCanvas<T>
-    fun toSciiPosition(drawingX: Int, drawingY: Int): Pair<Int, Int>
     fun getDrawingCell(drawingX: Int, drawingY: Int): T
     fun getSciiCell(sciiX: Int, sciiY: Int): SciiCell
 
@@ -54,7 +117,6 @@ interface BlockCanvas : Canvas<BlockCell>
 
 abstract class SciiCanvas(override val sciiWidth: Int, override val sciiHeight: Int) : Canvas<SciiCell> {
     override val type = CanvasType.Scii
-    override val cellType = CellType.Scii
 
     @Suppress("LeakingThis")
     override val drawingWidth = sciiWidth
@@ -63,8 +125,6 @@ abstract class SciiCanvas(override val sciiWidth: Int, override val sciiHeight: 
     override val drawingHeight = sciiHeight
 
     protected abstract val cells: List<List<SciiCell>>
-
-    override fun toSciiPosition(drawingX: Int, drawingY: Int) = drawingX to drawingY
 
     override fun getDrawingCell(drawingX: Int, drawingY: Int) =
         if (drawingX < 0 || drawingY < 0 || drawingX >= drawingWidth || drawingY >= drawingHeight) {
@@ -98,7 +158,6 @@ abstract class HBlockCanvas(
     override val sciiHeight: Int,
 ) : Canvas<BlockCell>, BlockCanvas {
     override val type = CanvasType.HBlock
-    override val cellType = CellType.Block
 
     @Suppress("LeakingThis")
     override val drawingWidth = sciiWidth
@@ -107,8 +166,6 @@ abstract class HBlockCanvas(
     override val drawingHeight = sciiHeight * 2
 
     protected abstract val cells: List<List<BlockCell>>
-
-    override fun toSciiPosition(drawingX: Int, drawingY: Int) = drawingX to (drawingY / 2)
 
     override fun getDrawingCell(drawingX: Int, drawingY: Int) =
         if (drawingX < 0 || drawingY < 0 || drawingX >= drawingWidth || drawingY >= drawingHeight) {
@@ -167,7 +224,6 @@ abstract class VBlockCanvas(
     override val sciiHeight: Int,
 ) : Canvas<BlockCell>, BlockCanvas {
     override val type = CanvasType.VBlock
-    override val cellType = CellType.Block
 
     @Suppress("LeakingThis")
     override val drawingWidth = sciiWidth * 2
@@ -176,8 +232,6 @@ abstract class VBlockCanvas(
     override val drawingHeight = sciiHeight
 
     protected abstract val cells: List<List<BlockCell>>
-
-    override fun toSciiPosition(drawingX: Int, drawingY: Int) = (drawingX / 2) to drawingY
 
     override fun getDrawingCell(drawingX: Int, drawingY: Int) =
         if (drawingX < 0 || drawingY < 0 || drawingX >= drawingWidth || drawingY >= drawingHeight) {
@@ -236,7 +290,6 @@ abstract class QBlockCanvas(
     override val sciiHeight: Int,
 ) : Canvas<BlockCell>, BlockCanvas {
     override val type = CanvasType.QBlock
-    override val cellType = CellType.Block
 
     @Suppress("LeakingThis")
     override val drawingWidth = sciiWidth * 2
@@ -246,8 +299,6 @@ abstract class QBlockCanvas(
 
     protected abstract val pixels: List<List<Boolean>>
     protected abstract val attrs: List<List<BlockCell>>
-
-    override fun toSciiPosition(drawingX: Int, drawingY: Int) = (drawingX / 2) to (drawingY / 2)
 
     override fun getDrawingCell(drawingX: Int, drawingY: Int) =
         if (drawingX < 0 ||

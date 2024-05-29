@@ -1,5 +1,6 @@
 package com.eightsines.bpe.layer
 
+import com.eightsines.bpe.graphics.CanvasType
 import com.eightsines.bpe.graphics.MutableCanvas
 import com.eightsines.bpe.model.Cell
 import com.eightsines.bpe.model.SciiColor
@@ -48,6 +49,8 @@ data class MutableCanvasLayer<T : Cell>(
     override var isLocked: Boolean = false,
     override val canvas: MutableCanvas<T>,
 ) : CanvasLayer<T>, MutableLayer {
+    override val canvasType: CanvasType = canvas.type
+
     override fun copyMutable() = MutableCanvasLayer(
         uid = uid,
         isVisible = isVisible,

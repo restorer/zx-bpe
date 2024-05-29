@@ -16,7 +16,7 @@ class CrateTest {
     fun shouldPackScii() = performTest(
         arrange = {
             val sut = Crate(
-                cellType = CellType.Scii,
+                canvasType = CanvasType.Scii,
                 width = 2,
                 height = 1,
                 cells = listOf(listOf(SciiCellMother.BlockVerticalLeft, SciiCell.Transparent)),
@@ -38,7 +38,7 @@ class CrateTest {
         assert = {
             assertEquals(
                 Crate(
-                    cellType = CellType.Scii,
+                    canvasType = CanvasType.Scii,
                     width = 2,
                     height = 1,
                     cells = listOf(listOf(SciiCellMother.BlockVerticalLeft, SciiCell.Transparent)),
@@ -52,7 +52,7 @@ class CrateTest {
     fun shouldPackBlock() = performTest(
         arrange = {
             val sut = Crate(
-                cellType = CellType.Scii,
+                canvasType = CanvasType.Scii,
                 width = 2,
                 height = 1,
                 cells = listOf(listOf(BlockCellMother.White, BlockCell.Transparent)),
@@ -74,7 +74,7 @@ class CrateTest {
         assert = {
             assertEquals(
                 Crate(
-                    cellType = CellType.Scii,
+                    canvasType = CanvasType.Scii,
                     width = 2,
                     height = 1,
                     cells = listOf(listOf(BlockCellMother.White, BlockCell.Transparent)),

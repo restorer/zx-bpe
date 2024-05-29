@@ -30,10 +30,10 @@ class MutableQBlockCanvasTest {
         arrange = { MutableQBlockCanvas(4, 4) },
         act = {
             listOf(
-                it.toSciiPosition(0, 0),
-                it.toSciiPosition(0, 1),
-                it.toSciiPosition(3, 2),
-                it.toSciiPosition(3, 3),
+                it.type.toSciiPosition(0, 0),
+                it.type.toSciiPosition(0, 1),
+                it.type.toSciiPosition(3, 2),
+                it.type.toSciiPosition(3, 3),
             )
         },
         assert = { assertEquals(listOf(0 to 0, 0 to 0, 1 to 1, 1 to 1), it) },
