@@ -9,7 +9,9 @@ import com.eightsines.bpe.layer.BackgroundLayer
 import com.eightsines.bpe.layer.CanvasLayer
 import com.eightsines.bpe.layer.Layer
 import com.eightsines.bpe.layer.LayerUid
+import com.eightsines.bpe.model.BlockCell
 import com.eightsines.bpe.model.Cell
+import com.eightsines.bpe.model.SciiCell
 import com.eightsines.bpe.model.SciiChar
 import com.eightsines.bpe.model.SciiColor
 import com.eightsines.bpe.model.SciiLight
@@ -40,6 +42,7 @@ class BpeEngine(
     private var currentLayer: Layer = graphicsEngine.state.backgroundLayer
     private var canvasLayerAbove: CanvasLayer<*>? = null
     private var canvasLayerBelow: CanvasLayer<*>? = null
+    private var startPoint: Pair<Int, Int>? = null
     private var shouldRefresh: Boolean = false
 
     var state: BpeState = refresh()
@@ -354,13 +357,60 @@ class BpeEngine(
     //
 
     private fun executeCanvasDown(action: BpeAction.CanvasDown) {
+        val currentLayer = this.currentLayer
+
+        when (toolboxTool) {
+            BpeTool.None -> Unit
+
+            BpeTool.Paint -> if (currentLayer is CanvasLayer<*>) {
+                startPoint = action.drawingX to action.drawingY
+                // TODO
+            }
+
+            BpeTool.Erase -> if (currentLayer is CanvasLayer<*>) {
+                startPoint = action.drawingX to action.drawingY
+                // TODO
+            }
+
+            BpeTool.Select -> {
+                startPoint = action.drawingX to action.drawingY
+                // TODO
+            }
+
+            BpeTool.PickColor -> {
+                when (currentLayer) {
+                    is BackgroundLayer -> paletteInk = currentLayer.color
+
+                    is CanvasLayer<*> -> {
+                        val cell = currentLayer.canvas.getDrawingCell(action.drawingX, action.drawingY)
+
+                        when (cell) {
+                            is SciiCell -> {
+                                paletteInk = cell.ink
+                                palettePaper = cell.paper
+                                paletteBright = cell.bright
+                                paletteFlash = cell.flash
+                                paletteChar = cell.character
+                            }
+
+                            is BlockCell -> {
+                                paletteInk = cell.color
+                                paletteBright = cell.bright
+                            }
+                        }
+                    }
+                }
+
+                shouldRefresh = true
+            }
+        }
     }
 
     private fun executeCanvasUp(action: BpeAction.CanvasUp) {
     }
 
-    private fun executeCanvasCancel() {
-    }
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun executeCanvasCancel() = cancelCanvasAction()
 
     //
     // Utils
@@ -374,6 +424,13 @@ class BpeEngine(
 
         is HistoryAction.Graphics -> shouldRefresh = graphicsEngine.execute(action.graphicsAction) != null || shouldRefresh
         is HistoryAction.Composite -> action.actions.forEach(::executeHistoryAction)
+    }
+
+    private fun cancelCanvasAction() {
+        if (startPoint != null) {
+            // TODO
+            startPoint = null
+        }
     }
 
     private fun anchorSelection() {
