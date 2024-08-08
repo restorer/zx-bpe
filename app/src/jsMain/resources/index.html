@@ -1,12 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>BPE</title>
-    <script type="application/javascript" src="app.js"></script>
+    <link rel="stylesheet" type="text/css" href="bpe.css" />
+    <!-- <script type="application/javascript" src="app.js"></script> -->
 </head>
 <body>
-    <div id="bpe"></div>
+    <div class="container">
+        <div class="panel panel--palette">
+            <div class="panel__pane">
+                <div class="tool tool--md">
+                    <div class="tool__ink" style="background-color: #ff0000;"></div>
+                    <img src="drawable/palette__ink.svg" alt="Select ink" class="tool__icon tool__icon--md" />
+                </div>
+                <div class="tool tool--md">
+                    <div class="tool__paper" style="border-color: #ff0000;"></div>
+                    <img src="drawable/palette__paper.svg" alt="Select paper" class="tool__icon tool__icon--md" />
+                </div>
+                <div class="tool tool--md" style="display: none;">
+                    <div class="tool__color" style="background-color: #ff0000;"></div>
+                    <img src="drawable/palette__color.svg" alt="Select color" class="tool__icon tool__icon--md" />
+                </div>
+                <img src="drawable/palette__bright.svg" alt="Select bright" class="tool tool--md tool--selected" />
+                <img src="drawable/palette__flash.svg" alt="Select flash" class="tool tool--md" />
+                <img src="drawable/palette__character.svg" alt="Select character" class="tool tool--md" />
+            </div>
+            <div class="panel__pane">
+                <img src="drawable/layers.svg" alt="Layers" class="tool tool--md" />
+            </div>
+        </div>
+        <div class="panel panel--toolbox">
+            <div class="panel__pane">
+                <img src="drawable/tool__paint.svg" alt="Paint" class="tool tool--md tool--selected" />
+                <img src="drawable/tool__erase.svg" alt="Erase" class="tool tool--md" />
+                <img src="drawable/tool__select.svg" alt="Select" class="tool tool--md" />
+                <img src="drawable/tool__pick_color.svg" alt="Pick color" class="tool tool--md" />
+            </div>
+            <div class="panel__pane">
+                <img src="drawable/toolbox__undo.svg" alt="Undo" class="tool tool--md tool--active" />
+                <img src="drawable/toolbox__redo.svg" alt="Redo" class="tool tool--md" />
+                <img src="drawable/menu.svg" alt="Menu" class="tool tool--md" />
+            </div>
+        </div>
+    </div>
 </body>
 </html>

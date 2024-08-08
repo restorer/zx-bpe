@@ -1,0 +1,129 @@
+/* https://www.materialpalette.com/colors */
+
+body {
+    margin: 0;
+    padding: 0;
+    background: #000000;
+}
+
+.container {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.panel {
+    display: flex;
+    justify-content: space-between;
+    min-height: 48px;
+}
+
+.panel--palette {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    border-bottom: 2px solid #607d8b;
+}
+
+.panel--toolbox {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-top: 2px solid #607d8b;
+}
+
+.panel__pane {
+    display: flex;
+    justify-content: start;
+}
+
+.tool {
+    display: block;
+    position: relative;
+}
+
+.tool--active {
+    background: #37474f;
+}
+
+.tool--selected {
+    background: #607d8b;
+}
+
+.tool--md {
+    width: 48px;
+    height: 48px;
+}
+
+.tool__icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.tool__icon--md {
+    width: 48px;
+    height: 48px;
+}
+
+.tool__ink {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 16px;
+    left: 16px;
+}
+
+.tool__paper {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 4px;
+    left: 4px;
+    border-top: 10px solid;
+    border-right: 10px solid;
+    border-bottom: 10px solid;
+    border-left: 10px solid;
+}
+
+.tool__color {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    top: 4px;
+    left: 4px;
+}
+
+@media screen and (orientation: landscape) {
+    .panel {
+        flex-direction: column;
+        min-height: auto;
+        min-width: 48px;
+    }
+
+    .panel__pane {
+        flex-direction: column;
+    }
+
+    .panel--palette {
+        top: 0;
+        right: auto;
+        bottom: 0;
+        left: 0;
+        border-right: 2px solid #607d8b;
+        border-bottom: 0 none;
+    }
+
+    .panel--toolbox {
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: auto;
+        border-top: 0 none;
+        border-left: 2px solid #607d8b;
+    }
+}
