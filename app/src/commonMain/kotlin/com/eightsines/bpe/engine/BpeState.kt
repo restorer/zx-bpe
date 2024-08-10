@@ -38,7 +38,7 @@ data class BpeState(
     val toolboxCanPaste: Boolean,
     val toolboxCanUndo: Boolean,
     val toolboxCanRedo: Boolean,
-f
+
     val selection: Selection?,
     val selectionCanCut: Boolean,
     val selectionCanCopy: Boolean,
