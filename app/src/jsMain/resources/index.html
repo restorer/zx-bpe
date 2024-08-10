@@ -4,14 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>BPE</title>
-    <link rel="stylesheet" type="text/css" href="bpe.css" />
+    <link rel="stylesheet" type="text/css" href="style/bpe.css" />
+    <link rel="stylesheet" type="text/css" href="style/specscii.css" />
     <!-- <script type="application/javascript" src="app.js"></script> -->
 </head>
 <body>
     <div class="container">
         <div class="panel panel--palette">
             <div class="panel__pane">
-                <div class="tool" xstyle="display: none;">
+                <div class="tool tool--hidden">
                     <div class="tool__color tool__color--transparent"></div>
                     <img src="drawable/palette__color.svg" alt="Select color" class="tool__icon" />
                 </div>
@@ -32,10 +33,17 @@
                     <img src="drawable/palette__flash.svg" alt="Select flash" class="tool__icon" />
                 </div>
                 <div class="tool">
+                    <div class="tool__character tool__character--127"></div>
                     <img src="drawable/palette__character.svg" alt="Select character" class="tool" />
                 </div>
             </div>
             <div class="panel__pane">
+                <div class="tool">
+                    <img src="drawable/selection__cut.svg" alt="Cut" class="tool__icon" />
+                </div>
+                <div class="tool">
+                    <img src="drawable/selection__copy.svg" alt="Copy" class="tool__icon" />
+                </div>
                 <div class="tool">
                     <img src="drawable/layers.svg" alt="Layers" class="tool__icon" />
                 </div>
@@ -43,7 +51,13 @@
         </div>
         <div class="panel panel--toolbox">
             <div class="panel__pane">
-                <div class="tool tool--active">
+                <div class="tool tool--active tool__shape tool__shape--point">
+                    <img src="drawable/shape__point.svg" alt="Point" class="tool__icon tool__icon--shape__point" />
+                    <img src="drawable/shape__line.svg" alt="Line" class="tool__icon tool__icon--shape__line" />
+                    <img src="drawable/shape__stroke_box.svg" alt="Stroke box" class="tool__icon tool__icon--shape__stroke_box" />
+                    <img src="drawable/shape__fill_box.svg" alt="Fill box" class="tool__icon tool__icon--shape__fill_box" />
+                </div>
+                <div class="tool tool--hidden">
                     <img src="drawable/tool__paint.svg" alt="Paint" class="tool__icon" />
                 </div>
                 <div class="tool">
@@ -57,6 +71,9 @@
                 </div>
             </div>
             <div class="panel__pane">
+                <div class="tool">
+                    <img src="drawable/toolbox__paste.svg" alt="Paste" class="tool__icon" />
+                </div>
                 <div class="tool">
                     <img src="drawable/toolbox__undo.svg" alt="Undo" class="tool__icon" />
                 </div>

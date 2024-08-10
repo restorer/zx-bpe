@@ -311,6 +311,7 @@
     --tool-size: 48px;
     --tool-offset: calc(var(--tool-size) / 12);
     --tool-inner-size: calc((var(--tool-size) - var(--tool-offset) * 2) / 2);
+    --tool-character-size: 24px;
 
     --panel-background: var(--material-brown--900);
     --panel-divider: var(--material-brown--600);
@@ -388,6 +389,10 @@ body {
     opacity: var(--panel-focus-opacity);
 }
 
+.tool--hidden {
+    display: none;
+}
+
 .tool--active {
     background: var(--panel-active);
 }
@@ -459,6 +464,37 @@ body {
     background: var(--panel-background);
 }
 
+.tool__character {
+    --offset: calc((var(--tool-size) - var(--tool-character-size)) / 2);
+
+    position: absolute;
+    top: var(--offset);
+    left: var(--offset);
+    width: var(--tool-character-size);
+    height: var(--tool-character-size);
+    background-image: url(../drawable/specscii__24x24.png);
+}
+
+.tool__shape > .tool__icon {
+    display: none;
+}
+
+.tool__shape--point > .tool__icon--shape__point {
+    display: block;
+}
+
+.tool__shape--line > .tool__icon--shape__line {
+    display: block;
+}
+
+.tool__shape--stroke_box > .tool__icon--shape__stroke_box {
+    display: block;
+}
+
+.tool__shape--fill_box > .tool__icon--shape__fill_box {
+    display: block;
+}
+
 .tool__color_ink--transparent {
     --half-size: calc(var(--tool-inner-size) / 2);
 
@@ -471,9 +507,19 @@ body {
     background-position: 0 var(--half-size), 0 0, var(--half-size) 0, calc(var(--half-size) * -1) var(--half-size);
 }
 
+.tool__character--transparent {
+    top: var(--tool-offset);
+    right: var(--tool-offset);
+    bottom: var(--tool-offset);
+    left: var(--tool-offset);
+    width: auto;
+    height: auto;
+}
+
 .tool__color--transparent,
 .tool__color_paper--transparent,
-.tool__light--transparent {
+.tool__light--transparent,
+.tool__character--transparent {
     --size: calc(var(--tool-size) / 2 - var(--tool-offset));
     --half-size: calc(var(--size) / 2);
 
@@ -532,6 +578,16 @@ body {
 .tool__color_ink--7,
 .tool__color_paper--7 {
     background: var(--spec--7);
+}
+
+@media screen and (((orientation: portrait) and (max-width: 399px))
+    or ((orientation: landscape) and (max-height: 399px))) {
+
+    :root {
+        --tool-size: 40px;
+        --tool-offset: calc(var(--tool-size) / 12);
+        --tool-inner-size: calc((var(--tool-size) - var(--tool-offset) * 2) / 2);
+    }
 }
 
 @media screen and (orientation: landscape) {
