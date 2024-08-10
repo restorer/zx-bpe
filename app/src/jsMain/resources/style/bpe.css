@@ -9,6 +9,7 @@
     --spec--7: #c0c0c0;
 
     --tool-size: 48px;
+    --tool-sm-size: 32px;
     --tool-character-size: 24px;
     --panel-divider-size: 4px;
 
@@ -23,6 +24,7 @@
 
     --subpanel-background: var(--material-brown--600);
     --subpanel-divider: var(--material-brown--800);
+    --subpanel-separator: var(--material-brown--900);
 }
 
 body {
@@ -37,8 +39,8 @@ body {
     right: 0;
     bottom: 0;
     left: 0;
-    min-width: 320px;
-    min-height: 320px;
+    min-width: 344px;
+    min-height: 344px;
 }
 
 .panel {
@@ -82,12 +84,6 @@ body {
     background: var(--subpanel-background);
 }
 
-.subpanel--characters {
-    flex-direction: column;
-    justify-content: center;
-    padding: var(--panel-divider-size) 0;
-}
-
 .subpanel--palette {
     position: absolute;
     top: var(--tool-size);
@@ -96,7 +92,35 @@ body {
     border-bottom: var(--panel-divider-size) solid var(--subpanel-divider);
 }
 
-.subpanel--tool {
+.subpanel--palette_characters {
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--panel-divider-size) 0;
+}
+
+.subpanel--palette_characters .tool {
+    border: 1px solid var(--subpanel-separator);
+}
+
+.subpanel--palette_characters .tool + .tool {
+    border-left: 0 none;
+}
+
+.subpanel--palette_characters .panel__pane + .panel__pane .tool {
+    border-top: 0 none;
+}
+
+.subpanel--layers {
+    position: absolute;
+    top: var(--tool-size);
+    right: 0;
+    left: 50vw;
+    border-left: var(--panel-divider-size) solid var(--subpanel-divider);
+    border-bottom: var(--panel-divider-size) solid var(--subpanel-divider);
+    justify-content: space-between;
+}
+
+.subpanel--tools {
     position: absolute;
     right: 0;
     bottom: var(--tool-size);
@@ -118,8 +142,12 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
-.tool--sm {
+.tool--md {
     --tool-size: 40px;
+}
+
+.tool-sm {
+    --tool-size: var(--tool-sm-size);
 }
 
 .tool--xs {
@@ -346,9 +374,10 @@ body {
 
     :root {
         --tool-size: 40px;
+        --tool-sm-size: 26px;
     }
 
-    .tool--sm {
+    .tool--md {
         --tool-size: 32px;
     }
 
@@ -372,11 +401,11 @@ body {
         flex-direction: column;
     }
 
-    .subpanel--characters {
+    .subpanel--palette_characters {
         padding: 0 var(--panel-divider-size);
     }
 
-    .subpanel--characters > .panel__pane {
+    .subpanel--palette_characters > .panel__pane {
         flex-direction: row;
     }
 
@@ -411,7 +440,7 @@ body {
         border-bottom: 0 none;
     }
 
-    .subpanel--tool {
+    .subpanel--tools {
         top: 0;
         right: auto;
         bottom: 0;
