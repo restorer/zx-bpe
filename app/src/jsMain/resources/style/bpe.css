@@ -32,7 +32,10 @@
     --layers-scrollbar-track: var(--subpanel-divider);
     --layers-active: var(--material-red--500);
 
-    --canvas-offset: var(--tool-xs-size);
+    --menu-font-size: 20px;
+    --menu-offset: 24px;
+
+    --canvas-offset: 16px;
 }
 
 body {
@@ -85,14 +88,14 @@ body {
 
 .subpanel {
     display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
-    align-items: center;
     min-height: var(--tool-size);
     background: var(--subpanel-background);
 }
 
 .subpanel--palette {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
     position: absolute;
     top: var(--tool-size);
     right: 0;
@@ -118,12 +121,40 @@ body {
     border-top: 0 none;
 }
 
-.subpanel--tools {
+.subpanel--tools,
+.subpanel--menu {
     position: absolute;
     right: 0;
     bottom: var(--tool-size);
     left: 0;
     border-top: var(--panel-divider-size) solid var(--subpanel-divider);
+}
+
+.subpanel--tools {
+    flex-direction: row;
+    align-items: center;
+    justify-content: start;
+}
+
+.subpanel--menu {
+    flex-direction: column;
+    align-items: end;
+    justify-content: end;
+}
+
+.menu__item {
+    color: #ffffff;
+    font-family: sans-serif;
+    font-size: var(--menu-font-size);
+    line-height: var(--tool-sm-size);
+    padding: 0 var(--panel-divider-size);
+    margin: calc((var(--tool-size) - var(--tool-sm-size)) / 2) var(--menu-offset);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.menu__item:active {
+    text-decoration: none;
 }
 
 .layers {
@@ -135,13 +166,14 @@ body {
     top: var(--tool-size);
     right: 0;
     width: 272px;
+    box-sizing: border-box;
     background: var(--subpanel-background);
+    border-top: var(--panel-divider-size) solid var(--subpanel-background);
     border-bottom: var(--panel-divider-size) solid var(--subpanel-divider);
     max-height: calc(100vh - var(--tool-size) * 3);
 }
 
 .layers__list {
-    margin: var(--panel-divider-size) var(--panel-divider-size) 0 var(--panel-divider-size);
     min-height: var(--tool-sm-size);
     background: var(--panel-background);
     overflow-y: scroll;
@@ -181,7 +213,7 @@ body {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: var(--panel-divider-size);
+    padding: var(--panel-divider-size) calc(var(--panel-divider-size) * 2);
     min-height: var(--tool-md-size);
     cursor: pointer;
 
@@ -204,6 +236,10 @@ body {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+}
+
+.layers__toolbar--extra {
+    background: var(--panel-divider);
 }
 
 .tool {
@@ -488,6 +524,7 @@ body {
         --tool-md-size: 32px;
         --tool-sm-size: 26px;
         --tool-xs-size: 20px;
+        --menu-font-size: 18px;
     }
 
     .tool--xs > .tool__character {
@@ -552,7 +589,8 @@ body {
         border-bottom: 0 none;
     }
 
-    .subpanel--tools {
+    .subpanel--tools,
+    .subpanel--menu {
         top: 0;
         right: auto;
         bottom: 0;
@@ -566,9 +604,9 @@ body {
         right: auto;
         bottom: 0;
         left: calc(var(--tool-size) * 2);
-        border-top: var(--panel-divider-size) solid var(--subpanel-divider);
         border-bottom: 0 none;
-        max-height: calc(100vh - var(--panel-divider-size));
+        border-left: var(--panel-divider-size) solid var(--subpanel-background);
+        max-height: 100vh;
     }
 
     .drawing {

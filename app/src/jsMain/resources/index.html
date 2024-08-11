@@ -7,25 +7,13 @@
     <link rel="stylesheet" type="text/css" href="style/material.css" />
     <link rel="stylesheet" type="text/css" href="style/bpe.css" />
     <link rel="stylesheet" type="text/css" href="style/specscii.css" />
-    <!-- <script type="application/javascript" src="app.js"></script> -->
-    <script type="text/javascript">
-function main() {
-    let canvas = document.getElementById("canvas");
-    let ctx = canvas.getContext("2d");
-
-    ctx.fillStyle = "#0000c0";
-    ctx.fillRect(0, 0, 352, 288);
-
-    ctx.fillStyle = "#0000ff";
-    ctx.fillRect(48, 48, 256, 192);
-}
-    </script>
+    <script type="application/javascript" src="app.js"></script>
 </head>
-<body onload="main()">
-    <div class="container">
+<body>
+    <div class="container hidden js-container">
         <div class="drawing">
-            <!-- Border is 48px -->
-            <canvas width="352" height="288" class="drawing__canvas" id="canvas"></canvas>
+            <!-- Border is 32px -->
+            <canvas width="320" height="256" class="drawing__canvas js-drawing-canvas"></canvas>
         </div>
         <div class="panel panel--palette">
             <div class="panel__pane">
@@ -61,7 +49,7 @@ function main() {
                 <div class="tool">
                     <img src="drawable/selection__copy.svg" alt="Copy" class="tool__icon" />
                 </div>
-                <div class="tool tool--active">
+                <div class="tool">
                     <img src="drawable/layers.svg" alt="Layers" class="tool__icon" />
                 </div>
             </div>
@@ -498,7 +486,7 @@ function main() {
                 </div>
             </div>
         </div>
-        <div class="layers x-hidden">
+        <div class="layers hidden">
             <div class="layers__list">
                 <div class="layers__item">
                     <div class="panel__pane">
@@ -512,7 +500,7 @@ function main() {
                     <canvas width="256" height="192" class="layers__preview"></canvas>
                     <div class="panel__pane">
                         <div class="tool tool--sm tool--marker">
-                            <img src="drawable/type__scii.svg" alt="Scii" class="tool__icon" />
+                            <img src="drawable/type__scii.svg" alt="SpecSCII" class="tool__icon" />
                         </div>
                     </div>
                 </div>
@@ -579,6 +567,22 @@ function main() {
                     </div>
                 </div>
             </div>
+            <div class="layers__toolbar layers__toolbar--extra hidden">
+                <div class="panel__pane">
+                    <div class="tool tool--md">
+                        <img src="drawable/type__hblock.svg" alt="HBlock" class="tool__icon" />
+                    </div>
+                    <div class="tool tool--md">
+                        <img src="drawable/type__vblock.svg" alt="VBlock" class="tool__icon" />
+                    </div>
+                    <div class="tool tool--md">
+                        <img src="drawable/type__qblock.svg" alt="QBlock" class="tool__icon" />
+                    </div>
+                    <div class="tool tool--md">
+                        <img src="drawable/type__scii.svg" alt="SpecSCII" class="tool__icon" />
+                    </div>
+                </div>
+            </div>
             <div class="layers__toolbar">
                 <div class="panel__pane">
                     <div class="tool tool--md">
@@ -619,6 +623,10 @@ function main() {
                     <img src="drawable/shape__fill_box.svg" alt="Fill box" class="tool__icon tool__icon--shape__fill_box" />
                 </div>
             </div>
+        </div>
+        <div class="subpanel subpanel--menu hidden">
+            <div class="menu__item">Load</div>
+            <div class="menu__item">Save</div>
         </div>
     </div>
 </body>
