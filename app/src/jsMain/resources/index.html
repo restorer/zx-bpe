@@ -482,10 +482,109 @@
                 </div>
             </div>
         </div>
-        <div class="subpanel subpanel--layers">
-            <div class="panel__pane">
-                <div class="tool tool--sm">
-                    <img src="drawable/layer__create.svg" alt="Create layer" class="tool__icon" />
+        <div class="layers x-hidden">
+            <div class="layers__list">
+                <div class="layers__item">
+                    <div class="panel__pane">
+                        <div class="tool tool--sm">
+                            <img src="drawable/layer__visible.svg" alt="Visible" class="tool__icon" />
+                        </div>
+                        <div class="tool tool--sm">
+                            <img src="drawable/layer__unlocked.svg" alt="Unlocked" class="tool__icon" />
+                        </div>
+                    </div>
+                    <canvas width="256" height="192" class="layers__preview"></canvas>
+                    <div class="panel__pane">
+                        <div class="tool tool--sm tool--marker">
+                            <img src="drawable/type__scii.svg" alt="Scii" class="tool__icon" />
+                        </div>
+                    </div>
+                </div>
+                <div class="layers__item">
+                    <div class="panel__pane">
+                        <div class="tool tool--sm">
+                            <img src="drawable/layer__invisible.svg" alt="Invisible" class="tool__icon" />
+                        </div>
+                        <div class="tool tool--sm">
+                            <img src="drawable/layer__unlocked.svg" alt="Unlocked" class="tool__icon" />
+                        </div>
+                    </div>
+                    <canvas width="256" height="192" class="layers__preview"></canvas>
+                    <div class="panel__pane">
+                        <div class="tool tool--sm tool--marker">
+                            <img src="drawable/type__vblock.svg" alt="VBlock" class="tool__icon" />
+                        </div>
+                    </div>
+                </div>
+                <div class="layers__item layers__item--active">
+                    <div class="panel__pane">
+                        <div class="tool tool--sm">
+                            <img src="drawable/layer__visible.svg" alt="Visible" class="tool__icon" />
+                        </div>
+                        <div class="tool tool--sm">
+                            <img src="drawable/layer__locked.svg" alt="Locked" class="tool__icon" />
+                        </div>
+                    </div>
+                    <canvas width="256" height="192" class="layers__preview"></canvas>
+                    <div class="panel__pane">
+                        <div class="tool tool--sm tool--marker">
+                            <img src="drawable/type__qblock.svg" alt="QBlock" class="tool__icon" />
+                        </div>
+                    </div>
+                </div>
+                <div class="layers__item">
+                    <div class="panel__pane">
+                        <div class="tool tool--sm">
+                            <img src="drawable/layer__invisible.svg" alt="Invisible" class="tool__icon" />
+                        </div>
+                        <div class="tool tool--sm">
+                            <img src="drawable/layer__locked.svg" alt="Locked" class="tool__icon" />
+                        </div>
+                    </div>
+                    <canvas width="256" height="192" class="layers__preview"></canvas>
+                    <div class="panel__pane">
+                        <div class="tool tool--sm tool--marker">
+                            <img src="drawable/type__hblock.svg" alt="HBlock" class="tool__icon" />
+                        </div>
+                    </div>
+                </div>
+                <div class="layers__item">
+                    <div class="panel__pane">
+                        <div class="tool tool--sm">
+                            <img src="drawable/layer__visible.svg" alt="Visible" class="tool__icon" />
+                        </div>
+                        <div class="tool tool--sm">
+                            <img src="drawable/layer__unlocked.svg" alt="Unlocked" class="tool__icon" />
+                        </div>
+                    </div>
+                    <canvas width="256" height="192" class="layers__preview"></canvas>
+                    <div class="panel__pane">
+                        <div class="tool tool--sm tool--marker"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="layers__toolbar">
+                <div class="panel__pane">
+                    <div class="tool tool--md">
+                        <img src="drawable/layer__create.svg" alt="Create layer" class="tool__icon" />
+                    </div>
+                    <div class="tool tool--md">
+                        <img src="drawable/layer__merge.svg" alt="Merge layer" class="tool__icon" />
+                    </div>
+                    <div class="tool tool--md">
+                        <img src="drawable/layer__convert.svg" alt="Convert layer" class="tool__icon" />
+                    </div>
+                    <div class="tool tool--md">
+                        <img src="drawable/layer__delete.svg" alt="Delete layer" class="tool__icon" />
+                    </div>
+                </div>
+                <div class="panel__pane">
+                    <div class="tool tool--md">
+                        <img src="drawable/layer__move_up.svg" alt="Move layer up" class="tool__icon" />
+                    </div>
+                    <div class="tool tool--md">
+                        <img src="drawable/layer__move_down.svg" alt="Move layer down" class="tool__icon" />
+                    </div>
                 </div>
             </div>
         </div>
