@@ -8,9 +8,25 @@
     <link rel="stylesheet" type="text/css" href="style/bpe.css" />
     <link rel="stylesheet" type="text/css" href="style/specscii.css" />
     <!-- <script type="application/javascript" src="app.js"></script> -->
+    <script type="text/javascript">
+function main() {
+    let canvas = document.getElementById("canvas");
+    let ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#0000c0";
+    ctx.fillRect(0, 0, 352, 288);
+
+    ctx.fillStyle = "#0000ff";
+    ctx.fillRect(48, 48, 256, 192);
+}
+    </script>
 </head>
-<body>
+<body onload="main()">
     <div class="container">
+        <div class="drawing">
+            <!-- Border is 48px -->
+            <canvas width="352" height="288" class="drawing__canvas" id="canvas"></canvas>
+        </div>
         <div class="panel panel--palette">
             <div class="panel__pane">
                 <div class="tool hidden">
@@ -574,12 +590,12 @@
                     <div class="tool tool--md">
                         <img src="drawable/layer__convert.svg" alt="Convert layer" class="tool__icon" />
                     </div>
-                    <div class="tool tool--md">
+                    <div class="tool tool--md tool--disabled">
                         <img src="drawable/layer__delete.svg" alt="Delete layer" class="tool__icon" />
                     </div>
                 </div>
                 <div class="panel__pane">
-                    <div class="tool tool--md">
+                    <div class="tool tool--md tool--disabled">
                         <img src="drawable/layer__move_up.svg" alt="Move layer up" class="tool__icon" />
                     </div>
                     <div class="tool tool--md">

@@ -31,6 +31,8 @@
     --layers-scrollbar-thumb: var(--material-red--500);
     --layers-scrollbar-track: var(--subpanel-divider);
     --layers-active: var(--material-red--500);
+
+    --canvas-offset: var(--tool-xs-size);
 }
 
 body {
@@ -243,8 +245,13 @@ body {
     opacity: var(--panel-focus-opacity);
 }
 
-.tool--marker:active::after {
+.tool--marker:active::after,
+.tool--disabled:active::after {
     display: none;
+}
+
+.tool--disabled {
+    opacity: 0.25;
 }
 
 .tool--active {
@@ -446,6 +453,29 @@ body {
     background: var(--spec--7);
 }
 
+.drawing {
+    position: absolute;
+
+    top: calc(var(--tool-size) + var(--panel-divider-size) + var(--canvas-offset));
+    right: var(--canvas-offset);
+    bottom: calc(var(--tool-size) + var(--panel-divider-size) + var(--canvas-offset));
+    left: var(--canvas-offset);
+}
+
+.drawing__canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+
+    image-rendering: optimizeSpeed; /* Older versions of FF */
+    image-rendering: -moz-crisp-edges; /* FF 6.0+ */
+    image-rendering: -webkit-optimize-contrast; /* Safari */
+    image-rendering: -o-crisp-edges; /* OS X & Windows Opera (12.02+) */
+    image-rendering: pixelated; /* Modern browsers */
+    -ms-interpolation-mode: nearest-neighbor; /* IE */
+}
+
 .hidden {
     display: none;
 }
@@ -539,5 +569,12 @@ body {
         border-top: var(--panel-divider-size) solid var(--subpanel-divider);
         border-bottom: 0 none;
         max-height: calc(100vh - var(--panel-divider-size));
+    }
+
+    .drawing {
+        top: var(--canvas-offset);
+        right: var(--canvas-offset);
+        bottom: var(--canvas-offset);
+        left: calc(var(--tool-size) * 2 + var(--panel-divider-size) + var(--canvas-offset));
     }
 }
