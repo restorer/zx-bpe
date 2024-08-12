@@ -13,79 +13,79 @@
     <div class="container hidden js-container">
         <div class="drawing">
             <!-- Border is 32px -->
-            <canvas width="320" height="256" class="drawing__canvas js-drawing-canvas"></canvas>
+            <canvas width="320" height="256" class="drawing__canvas js-canvas"></canvas>
         </div>
         <div class="panel panel--palette">
             <div class="panel__pane">
-                <div class="tool hidden">
-                    <div class="tool__color tool__color--transparent"></div>
+                <div class="tool js-palette-color">
+                    <div class="tool__color"></div>
                     <img src="drawable/palette__color.svg" alt="Select color" class="tool__icon" />
                 </div>
-                <div class="tool">
-                    <div class="tool__color_ink tool__color_ink--transparent"></div>
+                <div class="tool js-palette-ink">
+                    <div class="tool__color_ink"></div>
                     <img src="drawable/palette__ink.svg" alt="Select ink" class="tool__icon" />
                 </div>
-                <div class="tool">
-                    <div class="tool__color_paper tool__color_paper--transparent"></div>
+                <div class="tool js-palette-paper">
+                    <div class="tool__color_paper"></div>
                     <img src="drawable/palette__paper.svg" alt="Select paper" class="tool__icon" />
                 </div>
-                <div class="tool">
-                    <div class="tool__light tool__light--off"></div>
+                <div class="tool js-palette-bright">
+                    <div class="tool__light"></div>
                     <img src="drawable/palette__bright.svg" alt="Select bright" class="tool__icon" />
                 </div>
-                <div class="tool">
-                    <div class="tool__light tool__light--on"></div>
+                <div class="tool js-palette-flash">
+                    <div class="tool__light"></div>
                     <img src="drawable/palette__flash.svg" alt="Select flash" class="tool__icon" />
                 </div>
-                <div class="tool">
-                    <div class="tool__character tool__character--127"></div>
+                <div class="tool js-palette-character">
+                    <div class="tool__character"></div>
                     <img src="drawable/palette__character.svg" alt="Select character" class="tool" />
                 </div>
             </div>
             <div class="panel__pane">
-                <div class="tool">
+                <div class="tool js-selection-cut">
                     <img src="drawable/selection__cut.svg" alt="Cut" class="tool__icon" />
                 </div>
-                <div class="tool">
+                <div class="tool js-selection-copy">
                     <img src="drawable/selection__copy.svg" alt="Copy" class="tool__icon" />
                 </div>
-                <div class="tool">
+                <div class="tool js-layers-button">
                     <img src="drawable/layers.svg" alt="Layers" class="tool__icon" />
                 </div>
             </div>
         </div>
         <div class="panel panel--toolbox">
             <div class="panel__pane">
-                <div class="tool tool--active tool__shape tool__shape--point">
+                <div class="tool js-toolbox-paint">
+                    <img src="drawable/tool__paint.svg" alt="Paint" class="tool__icon" />
+                </div>
+                <div class="tool tool__shape js-toolbox-shape tool--active tool__shape--point">
                     <img src="drawable/shape__point.svg" alt="Point" class="tool__icon tool__icon--shape__point" />
                     <img src="drawable/shape__line.svg" alt="Line" class="tool__icon tool__icon--shape__line" />
                     <img src="drawable/shape__stroke_box.svg" alt="Stroke box" class="tool__icon tool__icon--shape__stroke_box" />
                     <img src="drawable/shape__fill_box.svg" alt="Fill box" class="tool__icon tool__icon--shape__fill_box" />
                 </div>
-                <div class="tool hidden">
-                    <img src="drawable/tool__paint.svg" alt="Paint" class="tool__icon" />
-                </div>
-                <div class="tool">
+                <div class="tool js-toolbox-erase">
                     <img src="drawable/tool__erase.svg" alt="Erase" class="tool__icon" />
                 </div>
-                <div class="tool">
+                <div class="tool js-toolbox-select">
                     <img src="drawable/tool__select.svg" alt="Select" class="tool__icon" />
                 </div>
-                <div class="tool">
+                <div class="tool js-toolbox-pick-color">
                     <img src="drawable/tool__pick_color.svg" alt="Pick color" class="tool__icon" />
                 </div>
             </div>
             <div class="panel__pane">
-                <div class="tool">
+                <div class="tool js-toolbox-paste">
                     <img src="drawable/toolbox__paste.svg" alt="Paste" class="tool__icon" />
                 </div>
-                <div class="tool">
+                <div class="tool js-toolbox-undo">
                     <img src="drawable/toolbox__undo.svg" alt="Undo" class="tool__icon" />
                 </div>
-                <div class="tool">
+                <div class="tool js-toolbox-redo">
                     <img src="drawable/toolbox__redo.svg" alt="Redo" class="tool__icon" />
                 </div>
-                <div class="tool">
+                <div class="tool js-toolbox-menu">
                     <img src="drawable/menu.svg" alt="Menu" class="tool__icon" />
                 </div>
             </div>
