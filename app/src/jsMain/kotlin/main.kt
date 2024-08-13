@@ -1,12 +1,27 @@
+import com.eightsines.bpe.engine.BpeEngine
+import com.eightsines.bpe.engine.GraphicsEngine
+import com.eightsines.bpe.engine.Renderer
+import com.eightsines.bpe.graphics.Painter
+import com.eightsines.bpe.presentation.UiEngine
+import com.eightsines.bpe.presentation.UiView
+import com.eightsines.bpe.util.UidFactoryImpl
 import kotlinx.browser.window
-import kotlinx.dom.removeClass
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
-import org.w3c.dom.HTMLElement
 import org.w3c.dom.asList
 
 fun onBpeLoaded() {
-    window.document.querySelectorAll(".js-drawing-canvas").asList()
+    val graphicsEngine = GraphicsEngine(
+        uidFactory = UidFactoryImpl(),
+        painter = Painter(),
+        renderer = Renderer(),
+    )
+
+    val bpeEngine = BpeEngine(graphicsEngine)
+    val uiEngine = UiEngine(bpeEngine)
+    val uiView = UiView(window.document)
+
+    window.document.querySelectorAll(".js-canvas").asList()
         .filterIsInstance<HTMLCanvasElement>()
         .forEach {
             val ctx = it.getContext("2d") as CanvasRenderingContext2D
@@ -18,9 +33,12 @@ fun onBpeLoaded() {
             ctx.fillRect(32.0, 32.0, 256.0, 192.0)
         }
 
-    window.document.querySelectorAll(".js-container").asList()
-        .filterIsInstance<HTMLElement>()
-        .forEach { it.removeClass("hidden") }
+    uiView.render(uiEngine.state)
+
+    uiView.onAction = {
+        uiEngine.execute(it)
+        uiView.render(uiEngine.state)
+    }
 }
 
 fun main() {

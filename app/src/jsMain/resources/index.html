@@ -43,13 +43,13 @@
                 </div>
             </div>
             <div class="panel__pane">
-                <div class="tool js-selection-cut">
+                <div class="tool js-palette-selection-cut">
                     <img src="drawable/selection__cut.svg" alt="Cut" class="tool__icon" />
                 </div>
-                <div class="tool js-selection-copy">
+                <div class="tool js-palette-selection-copy">
                     <img src="drawable/selection__copy.svg" alt="Copy" class="tool__icon" />
                 </div>
-                <div class="tool js-layers-button">
+                <div class="tool js-palette-layers">
                     <img src="drawable/layers.svg" alt="Layers" class="tool__icon" />
                 </div>
             </div>
@@ -59,7 +59,7 @@
                 <div class="tool js-toolbox-paint">
                     <img src="drawable/tool__paint.svg" alt="Paint" class="tool__icon" />
                 </div>
-                <div class="tool tool__shape js-toolbox-shape tool--active tool__shape--point">
+                <div class="tool tool__shape js-toolbox-shape">
                     <img src="drawable/shape__point.svg" alt="Point" class="tool__icon tool__icon--shape__point" />
                     <img src="drawable/shape__line.svg" alt="Line" class="tool__icon tool__icon--shape__line" />
                     <img src="drawable/shape__stroke_box.svg" alt="Stroke box" class="tool__icon tool__icon--shape__stroke_box" />
@@ -90,7 +90,7 @@
                 </div>
             </div>
         </div>
-        <div class="subpanel subpanel--palette hidden">
+        <div class="subpanel subpanel--palette js-colors">
             <div class="panel__pane">
                 <div class="tool tool--md">
                     <div class="tool__color tool__color--0"></div>
@@ -121,7 +121,7 @@
                 </div>
             </div>
         </div>
-        <div class="subpanel subpanel--palette hidden">
+        <div class="subpanel subpanel--palette js-lights">
             <div class="panel__pane">
                 <div class="tool">
                     <div class="tool__light tool__light--off"></div>
@@ -134,7 +134,7 @@
                 </div>
             </div>
         </div>
-        <div class="subpanel subpanel--palette subpanel--palette_characters hidden">
+        <div class="subpanel subpanel--palette subpanel--palette_characters js-characters">
             <div class="panel__pane">
                 <div class="tool tool--xs">
                     <div class="tool__character tool__character--32"></div>
@@ -486,7 +486,7 @@
                 </div>
             </div>
         </div>
-        <div class="layers hidden">
+        <div class="layers js-layers">
             <div class="layers__list">
                 <div class="layers__item">
                     <div class="panel__pane">
@@ -520,7 +520,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="layers__item layers__item--active">
+                <div class="layers__item"><!-- layers__item--active -->
                     <div class="panel__pane">
                         <div class="tool tool--sm">
                             <img src="drawable/layer__visible.svg" alt="Visible" class="tool__icon" />
@@ -608,7 +608,7 @@
                 </div>
             </div>
         </div>
-        <div class="subpanel subpanel--tools hidden">
+        <div class="subpanel subpanel--tools js-shapes">
             <div class="panel__pane">
                 <div class="tool">
                     <img src="drawable/shape__point.svg" alt="Point" class="tool__icon tool__icon--shape__point" />
@@ -624,7 +624,7 @@
                 </div>
             </div>
         </div>
-        <div class="subpanel subpanel--menu hidden">
+        <div class="subpanel subpanel--menu js-menu">
             <div class="menu__item">Load</div>
             <div class="menu__item">Save</div>
         </div>

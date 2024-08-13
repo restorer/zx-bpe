@@ -1,17 +1,20 @@
 package com.eightsines.bpe.presentation
 
-import com.eightsines.bpe.engine.BpeState
+import com.eightsines.bpe.engine.BpeShape
 import com.eightsines.bpe.model.SciiChar
 import com.eightsines.bpe.model.SciiColor
 import com.eightsines.bpe.model.SciiLight
 import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
 import org.w3c.dom.Document
+import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.ParentNode
 
 class UiView(document: Document) {
+    var onAction: ((UiAction) -> Unit)? = null
+
     private val container = document.find<HTMLElement>(".js-container")
     val canvas = document.find<HTMLCanvasElement>(".js-canvas")
 
@@ -27,14 +30,13 @@ class UiView(document: Document) {
     private val paletteFlashIndicator = paletteFlash?.find<HTMLElement>(".tool__light")
     private val paletteChar = document.find<HTMLElement>(".js-palette-character")
     private val paletteCharIndicator = paletteChar?.find<HTMLElement>(".tool__character")
-
-    private val selectionCut = document.find<HTMLElement>(".js-selection-cut")
-    private val selectionCopy = document.find<HTMLElement>(".js-selection-copy")
-    private val layersButton = document.find<HTMLElement>(".js-layers")
+    private val paletteSelectionCut = document.find<HTMLElement>(".js-palette-selection-cut")
+    private val paletteSelectionCopy = document.find<HTMLElement>(".js-palette-selection-copy")
+    private val paletteLayers = document.find<HTMLElement>(".js-palette-layers")
 
     private val toolboxPaint = document.find<HTMLElement>(".js-toolbox-paint")
-    private val toolboxErase = document.find<HTMLElement>(".js-toolbox-erase")
     private val toolboxShape = document.find<HTMLElement>(".js-toolbox-shape")
+    private val toolboxErase = document.find<HTMLElement>(".js-toolbox-erase")
     private val toolboxSelect = document.find<HTMLElement>(".js-toolbox-select")
     private val toolboxPickColor = document.find<HTMLElement>(".js-toolbox-pick-color")
     private val toolboxPaste = document.find<HTMLElement>(".js-toolbox-paste")
@@ -42,69 +44,112 @@ class UiView(document: Document) {
     private val toolboxRedo = document.find<HTMLElement>(".js-toolbox-redo")
     private val toolboxMenu = document.find<HTMLElement>(".js-toolbox-menu")
 
-    fun render(state: BpeState) {
-        container?.removeClass(HIDDEN)
+    private val colorsPanel = document.find<HTMLElement>(".js-colors")
+    private val lightsPanel = document.find<HTMLElement>(".js-lights")
+    private val charactersPanel = document.find<HTMLElement>(".js-characters")
+    private val layersPanel = document.find<HTMLElement>(".js-layers")
+    private val shapesPanel = document.find<HTMLElement>(".js-shapes")
+    private val menuPanel = document.find<HTMLElement>(".js-menu")
 
-        if (state.palettePaper == null) {
-            paletteColor?.setVisibility(true)
-            paletteColorIndicator?.className = "tool__color tool__color--${getColorClassSuffix(state.paletteInk)}"
+    init {
+        toolboxMenu?.addEventListener("click", { onAction?.invoke(UiAction.ToolboxMenuClick) })
+    }
 
-            paletteInk?.setVisibility(false)
-            palettePaper?.setVisibility(false)
-        } else {
-            paletteColor?.setVisibility(false)
+    fun render(state: UiState) {
+        container?.removeClass(CLASS_HIDDEN)
 
-            paletteInk?.setVisibility(true)
-            paletteInkIndicator?.className = "tool__color_ink tool__color_ink--${getColorClassSuffix(state.paletteInk)}"
-
-            palettePaper?.setVisibility(true)
-            palettePaperIndicator?.className = "tool__color_paper tool__color_paper--${getColorClassSuffix(state.palettePaper)}"
+        paletteColor?.setToolState(state.paletteColor) {
+            paletteColorIndicator?.replaceClassModifier("tool__color--", getColorClassSuffix(it))
         }
 
-        paletteBright?.setVisibility(state.paletteBright != null)
-        state.paletteBright?.let { paletteBrightIndicator?.className = "tool__light tool__light--${getLightClassSuffix(it)}" }
+        paletteInk?.setToolState(state.paletteInk) {
+            paletteInkIndicator?.replaceClassModifier("tool__color_ink--", getColorClassSuffix(it))
+        }
 
-        paletteFlash?.setVisibility(state.paletteFlash != null)
-        state.paletteFlash?.let { paletteFlashIndicator?.className = "tool__light tool__light--${getLightClassSuffix(it)}" }
+        palettePaper?.setToolState(state.palettePaper) {
+            palettePaperIndicator?.replaceClassModifier("tool__color_paper--", getColorClassSuffix(it))
+        }
 
-        paletteChar?.setVisibility(state.paletteChar != null)
-        state.paletteChar?.let { paletteCharIndicator?.className = "tool__character tool__character--${getCharClassSuffix(it)}" }
+        paletteBright?.setToolState(state.paletteBright) {
+            paletteBrightIndicator?.replaceClassModifier("tool__light--", getLightClassSuffix(it))
+        }
 
-        selectionCut?.setVisibility(state.selectionCanCut)
-        selectionCopy?.setVisibility(state.selectionCanCopy)
+        paletteFlash?.setToolState(state.paletteFlash) {
+            paletteFlashIndicator?.replaceClassModifier("tool__light--", getLightClassSuffix(it))
+        }
 
-        // toolboxPaint
-        // toolboxErase
-        // toolboxShape
+        paletteChar?.setToolState(state.paletteChar) {
+            paletteCharIndicator?.replaceClassModifier("tool__character--", getCharClassSuffix(it))
+        }
 
-        toolboxSelect?.setToolEnabled(state.toolboxCanSelect)
-        toolboxPaste?.setVisibility(state.toolboxCanPaste)
-        toolboxUndo?.setToolEnabled(state.toolboxCanUndo)
-        toolboxRedo?.setToolEnabled(state.toolboxCanRedo)
+        paletteSelectionCut?.setToolState(state.paletteSelectionCut)
+        paletteSelectionCopy?.setToolState(state.paletteSelectionCopy)
+        paletteLayers?.setToolState(state.paletteLayers)
+
+        toolboxPaint?.setToolState(state.toolboxPaint)
+
+        toolboxShape?.setToolState(state.toolboxShape) {
+            toolboxShape.replaceClassModifier("tool__shape--", getShapeClassSuffix(it))
+        }
+
+        toolboxErase?.setToolState(state.toolboxErase)
+        toolboxSelect?.setToolState(state.toolboxSelect)
+        toolboxPickColor?.setToolState(state.toolboxPickColor)
+        toolboxPaste?.setToolState(state.toolboxPaste)
+        toolboxUndo?.setToolState(state.toolboxUndo)
+        toolboxRedo?.setToolState(state.toolboxRedo)
+        toolboxMenu?.setToolState(state.toolboxMenu)
+
+        colorsPanel?.setVisible(state.panel == UiPanel.Colors)
+        lightsPanel?.setVisible(state.panel == UiPanel.Lights)
+        charactersPanel?.setVisible(state.panel == UiPanel.Characters)
+        layersPanel?.setVisible(state.panel == UiPanel.Layers)
+        shapesPanel?.setVisible(state.panel == UiPanel.Shapes)
+        menuPanel?.setVisible(state.panel == UiPanel.Menu)
     }
 
-    private inline fun <reified T> ParentNode.find(selectors: String) = this.querySelector(selectors) as? T
+    private inline fun <reified T> ParentNode.find(selectors: String) = querySelector(selectors) as? T
 
-    private fun HTMLElement.setVisibility(isVisible: Boolean) = if (isVisible) {
-        this.removeClass(HIDDEN)
-    } else {
-        this.addClass(HIDDEN)
+    private fun Element.replaceClassModifier(prefix: String, suffix: String) {
+        val cssClasses = className.trim().split("\\s+".toRegex())
+        val filteredCssClasses = cssClasses.filterNot { it.startsWith(prefix) } + listOf(prefix + suffix)
+
+        if (cssClasses != filteredCssClasses) {
+            className = filteredCssClasses.joinToString(" ")
+        }
     }
 
-    private fun HTMLElement.setToolEnabled(isEnabled: Boolean) = if (isEnabled) {
-        this.removeClass(TOOL_DISABLED)
-    } else {
-        this.addClass(TOOL_DISABLED)
+    private fun <T> HTMLElement.setToolState(state: UiToolState<T>, block: (T) -> Unit = {}) {
+        when (state) {
+            is UiToolState.Hidden -> addClass(CLASS_HIDDEN)
+
+            is UiToolState.Disabled -> apply {
+                removeClass(CLASS_HIDDEN, CLASS_TOOL_ACTIVE)
+                addClass(CLASS_TOOL_DISABLED)
+                block(state.value)
+            }
+
+            is UiToolState.Visible -> apply {
+                removeClass(CLASS_HIDDEN, CLASS_TOOL_ACTIVE, CLASS_TOOL_DISABLED)
+                block(state.value)
+            }
+
+            is UiToolState.Active -> apply {
+                removeClass(CLASS_HIDDEN, CLASS_TOOL_DISABLED)
+                addClass(CLASS_TOOL_ACTIVE)
+                block(state.value)
+            }
+        }
     }
 
-    private fun HTMLElement.setToolActive(isActive: Boolean) = if (isActive) {
-        this.removeClass(TOOL_ACTIVE)
+    private fun HTMLElement.setVisible(isVisible: Boolean) = if (isVisible) {
+        removeClass(CLASS_HIDDEN)
     } else {
-        this.addClass(TOOL_ACTIVE)
+        addClass(CLASS_HIDDEN)
     }
 
     private fun getColorClassSuffix(color: SciiColor) = if (color == SciiColor.Transparent) {
-        TRANSPARENT
+        CLASS_TRANSPARENT
     } else {
         color.value.toString()
     }
@@ -112,19 +157,26 @@ class UiView(document: Document) {
     private fun getLightClassSuffix(light: SciiLight) = when (light) {
         SciiLight.On -> "on"
         SciiLight.Off -> "off"
-        else -> TRANSPARENT
+        else -> CLASS_TRANSPARENT
     }
 
     private fun getCharClassSuffix(character: SciiChar) = if (character == SciiChar.Transparent) {
-        TRANSPARENT
+        CLASS_TRANSPARENT
     } else {
         character.value.toString()
     }
 
+    private fun getShapeClassSuffix(shape: BpeShape) = when (shape) {
+        BpeShape.Point -> "point"
+        BpeShape.Line -> "point"
+        BpeShape.StrokeBox -> "stroke_box"
+        BpeShape.FillBox -> "fill_box"
+    }
+
     private companion object {
-        private const val HIDDEN = "hidden"
-        private const val TRANSPARENT = "transparent"
-        private const val TOOL_DISABLED = "tool--disabled"
-        private const val TOOL_ACTIVE = "tool--active"
+        private const val CLASS_HIDDEN = "hidden"
+        private const val CLASS_TRANSPARENT = "transparent"
+        private const val CLASS_TOOL_DISABLED = "tool--disabled"
+        private const val CLASS_TOOL_ACTIVE = "tool--active"
     }
 }
