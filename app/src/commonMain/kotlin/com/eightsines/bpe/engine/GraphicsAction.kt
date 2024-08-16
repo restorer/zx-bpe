@@ -1,14 +1,14 @@
 package com.eightsines.bpe.engine
 
-import com.eightsines.bpe.model.Cell
-import com.eightsines.bpe.model.SciiCell
-import com.eightsines.bpe.model.SciiColor
-import com.eightsines.bpe.model.SciiLight
 import com.eightsines.bpe.graphics.CanvasType
 import com.eightsines.bpe.graphics.Crate
 import com.eightsines.bpe.graphics.Shape
 import com.eightsines.bpe.layer.CanvasLayer
 import com.eightsines.bpe.layer.LayerUid
+import com.eightsines.bpe.model.Cell
+import com.eightsines.bpe.model.SciiCell
+import com.eightsines.bpe.model.SciiColor
+import com.eightsines.bpe.model.SciiLight
 
 sealed interface GraphicsAction {
     data class SetBackgroundBorder(val color: SciiColor) : GraphicsAction
@@ -16,7 +16,7 @@ sealed interface GraphicsAction {
     data class SetBackgroundBright(val light: SciiLight) : GraphicsAction
     data class SetBackgroundVisible(val isVisible: Boolean) : GraphicsAction
     data class SetBackgroundLocked(val isLocked: Boolean) : GraphicsAction
-    data class CreateLayer(val canvasType: CanvasType, val onTopOfLayerUid: LayerUid) : GraphicsAction
+    data class CreateLayer(val canvasType: CanvasType, val layerUid: LayerUid, val onTopOfLayerUid: LayerUid) : GraphicsAction
     data class ReplaceLayer(val layer: CanvasLayer<*>) : GraphicsAction
     data class InsertLayer(val layer: CanvasLayer<*>, val onTopOfLayerUid: LayerUid) : GraphicsAction
     data class DeleteLayer(val layerUid: LayerUid) : GraphicsAction

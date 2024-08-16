@@ -12,12 +12,15 @@ import org.w3c.dom.asList
 
 fun onBpeLoaded() {
     val graphicsEngine = GraphicsEngine(
-        uidFactory = UidFactoryImpl(),
         painter = Painter(),
         renderer = Renderer(),
     )
 
-    val bpeEngine = BpeEngine(graphicsEngine)
+    val bpeEngine = BpeEngine(
+        uidFactory = UidFactoryImpl(),
+        graphicsEngine = graphicsEngine,
+    )
+
     val uiEngine = UiEngine(bpeEngine)
     val uiView = UiView(window.document)
 

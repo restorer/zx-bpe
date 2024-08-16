@@ -21,12 +21,10 @@ import com.eightsines.bpe.model.SciiLight
 import com.eightsines.bpe.util.BagStuffPacker
 import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.PackableBag
-import com.eightsines.bpe.util.UidFactory
 import com.eightsines.bpe.util.UnpackableBag
 import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
 
 class GraphicsEngine(
-    private val uidFactory: UidFactory,
     private val painter: Painter,
     private val renderer: Renderer,
 ) {
@@ -188,7 +186,7 @@ class GraphicsEngine(
 
     private fun executeCreateLayer(action: GraphicsAction.CreateLayer): GraphicsAction {
         val layer = MutableCanvasLayer(
-            uid = LayerUid(uidFactory.createUid()),
+            uid = action.layerUid,
             canvas = MutableCanvas.create(action.canvasType, SCREEN_SCII_WIDTH, SCREEN_SCII_HEIGHT),
         )
 
@@ -236,7 +234,7 @@ class GraphicsEngine(
     private fun executeDeleteLayer(action: GraphicsAction.DeleteLayer): GraphicsAction? {
         val layer = canDeleteLayer(action) ?: return null
 
-        val layerIndex = getLayerInsertIndex(layer.uid)
+        val layerIndex = getLayerIndex(layer.uid)
         val undoAction = GraphicsAction.InsertLayer(layer = layer, onTopOfLayerUid = getLayerUidBelow(layerIndex))
 
         canvasLayers.removeAt(layerIndex)

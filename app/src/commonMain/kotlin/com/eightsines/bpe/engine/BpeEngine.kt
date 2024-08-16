@@ -18,8 +18,10 @@ import com.eightsines.bpe.model.SciiLight
 import com.eightsines.bpe.state.BackgroundLayerView
 import com.eightsines.bpe.state.CanvasLayerView
 import com.eightsines.bpe.state.CanvasView
+import com.eightsines.bpe.util.UidFactory
 
 class BpeEngine(
+    private val uidFactory: UidFactory,
     private val graphicsEngine: GraphicsEngine,
     private val historyMaxSteps: Int = 10000,
 ) {
@@ -40,9 +42,12 @@ class BpeEngine(
     private var historyPosition: Int = 0
 
     private var currentLayer: Layer = graphicsEngine.state.backgroundLayer
-    private var canvasLayerAbove: CanvasLayer<*>? = null
-    private var canvasLayerBelow: CanvasLayer<*>? = null
     private var startPoint: Pair<Int, Int>? = null
+
+    private var cachedMoveUpOnTopOfLayer: Layer? = null
+    private var cachedMoveDownOnTopOfLayer: Layer? = null
+    private var cachedMergeWithLayer: CanvasLayer<*>? = null
+
     private var shouldRefresh: Boolean = false
 
     var state: BpeState = refresh()
@@ -170,14 +175,14 @@ class BpeEngine(
     }
 
     private fun executeLayersMoveUp() {
-        canvasLayerAbove?.let {
+        cachedMoveUpOnTopOfLayer?.let {
             anchorSelection()
             executeGraphicsAction(GraphicsAction.MoveLayer(layerUid = currentLayer.uid, onTopOfLayerUid = it.uid))
         }
     }
 
     private fun executeLayersMoveDown() {
-        canvasLayerBelow?.let {
+        cachedMoveDownOnTopOfLayer?.let {
             anchorSelection()
             executeGraphicsAction(GraphicsAction.MoveLayer(layerUid = currentLayer.uid, onTopOfLayerUid = it.uid))
         }
@@ -185,21 +190,50 @@ class BpeEngine(
 
     private fun executeLayersCreate(action: BpeAction.LayersCreate) {
         anchorSelection()
-        executeGraphicsAction(GraphicsAction.CreateLayer(canvasType = action.canvasType, onTopOfLayerUid = currentLayer.uid))
+        val newLayerUid = LayerUid(uidFactory.createUid())
+
+        val graphicsAction = GraphicsAction.CreateLayer(
+            canvasType = action.canvasType,
+            layerUid = newLayerUid,
+            onTopOfLayerUid = currentLayer.uid,
+        )
+
+        val undoGraphicsAction = graphicsEngine.execute(graphicsAction)
+
+        historyAppend(
+            HistoryAction.Composite(
+                listOf(
+                    HistoryAction.Graphics(graphicsAction),
+                    HistoryAction.CurrentLayer(newLayerUid),
+                ),
+            ),
+            HistoryAction.Composite(
+                listOfNotNull(
+                    HistoryAction.CurrentLayer(currentLayer.uid),
+                    undoGraphicsAction?.let {  HistoryAction.Graphics(it) },
+                ),
+            )
+        )
+
+        currentLayer = graphicsEngine.state.canvasLayersMap[newLayerUid.value] ?: graphicsEngine.state.backgroundLayer
+        shouldRefresh = true
     }
 
     private fun executeLayersDelete() {
         if (currentLayer is CanvasLayer<*>) {
             anchorSelection()
             executeGraphicsAction(GraphicsAction.DeleteLayer(currentLayer.uid))
+            // TODO: set currentLayer to layer below, and append proper history
         }
     }
 
     private fun executeLayersMerge() {
-        canvasLayerBelow?.let {
+        cachedMergeWithLayer?.let {
             anchorSelection()
             executeGraphicsAction(GraphicsAction.MergeLayers(layerUid = currentLayer.uid, ontoLayerUid = it.uid))
         }
+
+        // TODO: set currentLayer to merged layer if needed, and append proper history
     }
 
     private fun executeLayersConvert(action: BpeAction.LayersConvert) {
@@ -407,6 +441,7 @@ class BpeEngine(
     }
 
     private fun executeCanvasUp(action: BpeAction.CanvasUp) {
+        // TODO
     }
 
     @Suppress("NOTHING_TO_INLINE")
@@ -417,6 +452,11 @@ class BpeEngine(
     //
 
     private fun executeHistoryAction(action: HistoryAction): Unit = when (action) {
+        is HistoryAction.CurrentLayer -> {
+            currentLayer = graphicsEngine.state.canvasLayersMap[action.layerUid.value] ?: graphicsEngine.state.backgroundLayer
+            shouldRefresh = true
+        }
+
         is HistoryAction.SelectionState -> {
             selectionState = action.selectionState
             shouldRefresh = true
@@ -490,13 +530,19 @@ class BpeEngine(
             -1
         }
 
-        val canvasLayerAbove = if (currentLayerIndex < graphicsState.canvasLayers.size - 1) {
+        val moveUpOnTopOfLayer = if (currentLayerIndex < graphicsState.canvasLayers.size - 1) {
             graphicsState.canvasLayers[currentLayerIndex + 1]
         } else {
             null
         }
 
-        val canvasLayerBelow = if (currentLayerIndex > 0) {
+        val moveDownOnTopOfLayer = when {
+            currentLayerIndex > 1 -> graphicsState.canvasLayers[currentLayerIndex - 2]
+            currentLayerIndex == 1 -> graphicsState.backgroundLayer
+            else -> null
+        }
+
+        val mergeWithLayer = if (currentLayerIndex > 0) {
             graphicsState.canvasLayers[currentLayerIndex - 1]
         } else {
             null
@@ -504,8 +550,9 @@ class BpeEngine(
 
         val backgroundLayerView = BackgroundLayerView(graphicsState.backgroundLayer)
 
-        this.canvasLayerAbove = canvasLayerAbove
-        this.canvasLayerBelow = canvasLayerBelow
+        cachedMoveUpOnTopOfLayer = moveUpOnTopOfLayer
+        cachedMoveDownOnTopOfLayer = moveDownOnTopOfLayer
+        cachedMergeWithLayer = mergeWithLayer
 
         return BpeState(
             background = backgroundLayerView,
@@ -527,16 +574,28 @@ class BpeEngine(
             layers = graphicsState.canvasLayers.reversed().map(::CanvasLayerView) + listOf(backgroundLayerView),
             layersCurrentUid = currentLayer.uid,
 
-            layersCanMoveUp = canvasLayerAbove != null &&
-                    graphicsEngine.canExecute(GraphicsAction.MoveLayer(layerUid = currentLayer.uid, onTopOfLayerUid = canvasLayerAbove.uid)),
+            layersCanMoveUp = moveUpOnTopOfLayer != null && graphicsEngine.canExecute(
+                GraphicsAction.MoveLayer(
+                    layerUid = currentLayer.uid,
+                    onTopOfLayerUid = moveUpOnTopOfLayer.uid,
+                ),
+            ),
 
-            layersCanMoveDown = canvasLayerBelow != null &&
-                    graphicsEngine.canExecute(GraphicsAction.MoveLayer(layerUid = currentLayer.uid, onTopOfLayerUid = canvasLayerBelow.uid)),
+            layersCanMoveDown = moveDownOnTopOfLayer != null && graphicsEngine.canExecute(
+                GraphicsAction.MoveLayer(
+                    layerUid = currentLayer.uid,
+                    onTopOfLayerUid = moveDownOnTopOfLayer.uid,
+                ),
+            ),
 
             layersCanDelete = graphicsEngine.canExecute(GraphicsAction.DeleteLayer(currentLayer.uid)),
 
-            layersCanMerge = canvasLayerBelow != null &&
-                    graphicsEngine.canExecute(GraphicsAction.MergeLayers(layerUid = currentLayer.uid, ontoLayerUid = canvasLayerBelow.uid)),
+            layersCanMerge = mergeWithLayer != null && graphicsEngine.canExecute(
+                GraphicsAction.MergeLayers(
+                    layerUid = currentLayer.uid,
+                    ontoLayerUid = mergeWithLayer.uid,
+                ),
+            ),
 
             layersCanConvert = graphicsEngine.canExecute(GraphicsAction.ConvertLayer(currentLayer.uid, CanvasType.Scii)) ||
                     graphicsEngine.canExecute(GraphicsAction.ConvertLayer(currentLayer.uid, CanvasType.HBlock)) ||

@@ -1,18 +1,26 @@
 package com.eightsines.bpe.presentation
 
 import com.eightsines.bpe.engine.BpeShape
+import com.eightsines.bpe.graphics.CanvasType
+import com.eightsines.bpe.layer.CanvasLayer
+import com.eightsines.bpe.layer.LayerUid
 import com.eightsines.bpe.model.SciiChar
 import com.eightsines.bpe.model.SciiColor
 import com.eightsines.bpe.model.SciiLight
+import com.eightsines.bpe.state.LayerView
 import kotlinx.dom.addClass
+import kotlinx.dom.createElement
 import kotlinx.dom.removeClass
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLImageElement
+import org.w3c.dom.Node
 import org.w3c.dom.ParentNode
+import org.w3c.dom.events.Event
 
-class UiView(document: Document) {
+class UiView(private val document: Document) {
     var onAction: ((UiAction) -> Unit)? = null
 
     private val container = document.find<HTMLElement>(".js-container")
@@ -28,31 +36,77 @@ class UiView(document: Document) {
     private val paletteBrightIndicator = paletteBright?.find<HTMLElement>(".tool__light")
     private val paletteFlash = document.find<HTMLElement>(".js-palette-flash")
     private val paletteFlashIndicator = paletteFlash?.find<HTMLElement>(".tool__light")
-    private val paletteChar = document.find<HTMLElement>(".js-palette-character")
-    private val paletteCharIndicator = paletteChar?.find<HTMLElement>(".tool__character")
-    private val paletteSelectionCut = document.find<HTMLElement>(".js-palette-selection-cut")
-    private val paletteSelectionCopy = document.find<HTMLElement>(".js-palette-selection-copy")
-    private val paletteLayers = document.find<HTMLElement>(".js-palette-layers")
+    private val paletteChar = document.find<HTMLElement>(".js-palette-char")
+    private val paletteCharIndicator = paletteChar?.find<HTMLElement>(".tool__char")
+
+    private val selectionCut = document.find<HTMLElement>(".js-selection-cut")
+    private val selectionCopy = document.find<HTMLElement>(".js-selection-copy")
+    private val layers = document.find<HTMLElement>(".js-layers")
 
     private val toolboxPaint = document.find<HTMLElement>(".js-toolbox-paint")
     private val toolboxShape = document.find<HTMLElement>(".js-toolbox-shape")
     private val toolboxErase = document.find<HTMLElement>(".js-toolbox-erase")
     private val toolboxSelect = document.find<HTMLElement>(".js-toolbox-select")
     private val toolboxPickColor = document.find<HTMLElement>(".js-toolbox-pick-color")
+
     private val toolboxPaste = document.find<HTMLElement>(".js-toolbox-paste")
     private val toolboxUndo = document.find<HTMLElement>(".js-toolbox-undo")
     private val toolboxRedo = document.find<HTMLElement>(".js-toolbox-redo")
-    private val toolboxMenu = document.find<HTMLElement>(".js-toolbox-menu")
+    private val menu = document.find<HTMLElement>(".js-menu")
 
-    private val colorsPanel = document.find<HTMLElement>(".js-colors")
-    private val lightsPanel = document.find<HTMLElement>(".js-lights")
-    private val charactersPanel = document.find<HTMLElement>(".js-characters")
-    private val layersPanel = document.find<HTMLElement>(".js-layers")
-    private val shapesPanel = document.find<HTMLElement>(".js-shapes")
-    private val menuPanel = document.find<HTMLElement>(".js-menu")
+    private val colorsPanel = document.find<HTMLElement>(".js-colors-panel")
+    private val lightsPanel = document.find<HTMLElement>(".js-lights-panel")
+    private val charsPanel = document.find<HTMLElement>(".js-chars-panel")
+
+    private val layersPanel = document.find<HTMLElement>(".js-layers-panel")
+    private val layersItems = layersPanel?.find<HTMLElement>(".layers__items")
+    private val layersTypes = layersPanel?.find<HTMLElement>(".layers__toolbar--types")
+    private val layersCreate = document.find<HTMLElement>(".js-layers-create")
+    private val layersMerge = document.find<HTMLElement>(".js-layers-merge")
+    private val layersConvert = document.find<HTMLElement>(".js-layers-convert")
+    private val layersDelete = document.find<HTMLElement>(".js-layers-delete")
+    private val layersMoveUp = document.find<HTMLElement>(".js-layers-move-up")
+    private val layersMoveDown = document.find<HTMLElement>(".js-layers-move-down")
+
+    private val shapesPanel = document.find<HTMLElement>(".js-shapes-panel")
+    private val menuPanel = document.find<HTMLElement>(".js-menu-panel")
+
+    private var layersItemsCache = mutableMapOf<LayerView<*>, Element>()
 
     init {
-        toolboxMenu?.addEventListener("click", { onAction?.invoke(UiAction.ToolboxMenuClick) })
+        createColorItems()
+        createLightItems()
+        createCharItems()
+        createLayerTypeItems()
+
+        paletteColor?.addClickListener { onAction?.invoke(UiAction.PaletteColorClick) }
+        paletteInk?.addClickListener { onAction?.invoke(UiAction.PaletteInkClick) }
+        palettePaper?.addClickListener { onAction?.invoke(UiAction.PalettePaperClick) }
+        paletteBright?.addClickListener { onAction?.invoke(UiAction.PaletteBrightClick) }
+        paletteFlash?.addClickListener { onAction?.invoke(UiAction.PaletteFlashClick) }
+        paletteChar?.addClickListener { onAction?.invoke(UiAction.PaletteCharClick) }
+
+        selectionCut?.addClickListener { onAction?.invoke(UiAction.SelectionCutClick) }
+        selectionCopy?.addClickListener { onAction?.invoke(UiAction.SelectionCopyClick) }
+        layers?.addClickListener { onAction?.invoke(UiAction.LayersClick) }
+
+        toolboxPaint?.addClickListener { onAction?.invoke(UiAction.ToolboxPaintClick) }
+        toolboxShape?.addClickListener { onAction?.invoke(UiAction.ToolboxShapeClick) }
+        toolboxErase?.addClickListener { onAction?.invoke(UiAction.ToolboxEraseClick) }
+        toolboxSelect?.addClickListener { onAction?.invoke(UiAction.ToolboxSelectClick) }
+        toolboxPickColor?.addClickListener { onAction?.invoke(UiAction.ToolboxPickColorClick) }
+
+        toolboxPaste?.addClickListener { onAction?.invoke(UiAction.ToolboxPasteClick) }
+        toolboxUndo?.addClickListener { onAction?.invoke(UiAction.ToolboxUndoClick) }
+        toolboxRedo?.addClickListener { onAction?.invoke(UiAction.ToolboxRedoClick) }
+        menu?.addClickListener { onAction?.invoke(UiAction.MenuClick) }
+
+        layersCreate?.addClickListener { onAction?.invoke(UiAction.LayerCreateClick) }
+        layersMerge?.addClickListener { onAction?.invoke(UiAction.LayerMergeClick) }
+        layersConvert?.addClickListener { onAction?.invoke(UiAction.LayerConvertClick) }
+        layersDelete?.addClickListener { onAction?.invoke(UiAction.LayerDeleteClick) }
+        layersMoveUp?.addClickListener { onAction?.invoke(UiAction.LayerMoveUpClick) }
+        layersMoveDown?.addClickListener { onAction?.invoke(UiAction.LayerMoveDownClick) }
     }
 
     fun render(state: UiState) {
@@ -79,12 +133,12 @@ class UiView(document: Document) {
         }
 
         paletteChar?.setToolState(state.paletteChar) {
-            paletteCharIndicator?.replaceClassModifier("tool__character--", getCharClassSuffix(it))
+            paletteCharIndicator?.replaceClassModifier("tool__char--", getCharClassSuffix(it))
         }
 
-        paletteSelectionCut?.setToolState(state.paletteSelectionCut)
-        paletteSelectionCopy?.setToolState(state.paletteSelectionCopy)
-        paletteLayers?.setToolState(state.paletteLayers)
+        selectionCut?.setToolState(state.selectionCut)
+        selectionCopy?.setToolState(state.selectionCopy)
+        layers?.setToolState(state.layers)
 
         toolboxPaint?.setToolState(state.toolboxPaint)
 
@@ -98,17 +152,228 @@ class UiView(document: Document) {
         toolboxPaste?.setToolState(state.toolboxPaste)
         toolboxUndo?.setToolState(state.toolboxUndo)
         toolboxRedo?.setToolState(state.toolboxRedo)
-        toolboxMenu?.setToolState(state.toolboxMenu)
+        menu?.setToolState(state.menu)
 
-        colorsPanel?.setVisible(state.panel == UiPanel.Colors)
-        lightsPanel?.setVisible(state.panel == UiPanel.Lights)
-        charactersPanel?.setVisible(state.panel == UiPanel.Characters)
-        layersPanel?.setVisible(state.panel == UiPanel.Layers)
-        shapesPanel?.setVisible(state.panel == UiPanel.Shapes)
-        menuPanel?.setVisible(state.panel == UiPanel.Menu)
+        colorsPanel?.setVisible(state.activePanel == UiPanel.Colors)
+        lightsPanel?.setVisible(state.activePanel == UiPanel.Lights)
+        charsPanel?.setVisible(state.activePanel == UiPanel.Chars)
+        layersPanel?.setVisible(state.activePanel == UiPanel.Layers)
+        shapesPanel?.setVisible(state.activePanel == UiPanel.Shapes)
+        menuPanel?.setVisible(state.activePanel == UiPanel.Menu)
+
+        renderLayersItems(state.layersItems, state.layersCurrentUid)
+
+        layersCreate?.setToolState(state.layersCreate)
+        layersMerge?.setToolState(state.layersMerge)
+        layersConvert?.setToolState(state.layersConvert)
+        layersDelete?.setToolState(state.layersDelete)
+        layersMoveUp?.setToolState(state.layersMoveUp)
+        layersMoveDown?.setToolState(state.layersMoveDown)
+        layersTypes?.setVisible(state.layersTypesIsVisible)
+    }
+
+    private fun renderLayersItems(layersViews: List<LayerView<*>>, layersCurrentUid: LayerUid) {
+        val layersItems = this.layersItems ?: return
+
+        for (element in layersItemsCache.values) {
+            layersItems.removeChild(element)
+        }
+
+        val newLayersItemsCache = mutableMapOf<LayerView<*>, Element>()
+
+        for (layerView in layersViews) {
+            val layer = layerView.layer
+
+            newLayersItemsCache[layerView] = layersItemsCache.getOrPut(layerView) {
+                val startPane = document
+                    .createElement(NAME_DIV) { className = "panel__pane" }
+                    .appendChildren(
+                        document
+                            .createElement(NAME_DIV) {
+                                className = "tool tool--sm"
+                                addClickListener { onAction?.invoke(UiAction.LayerItemVisibleClick(layer.uid, layer.isVisible)) }
+                            }
+                            .appendChildren(
+                                document.createElement(NAME_IMG) {
+                                    this as HTMLImageElement
+
+                                    className = "tool__icon"
+                                    src = if (layer.isVisible) SRC_LAYER_VISIBLE else SRC_LAYER_INVISIBLE
+                                    alt = if (layer.isVisible) ALT_LAYER_VISIBLE else ALT_LAYER_INVISIBLE
+                                }
+                            ),
+                        document
+                            .createElement(NAME_DIV) {
+                                className = "tool tool--sm"
+                                addClickListener { onAction?.invoke(UiAction.LayerItemLockedClick(layer.uid, layer.isLocked)) }
+                            }
+                            .appendChildren(
+                                document.createElement(NAME_IMG) {
+                                    this as HTMLImageElement
+
+                                    className = "tool__icon"
+                                    src = if (layer.isLocked) SRC_LAYER_LOCKED else SRC_LAYER_UNLOCKED
+                                    alt = if (layer.isLocked) ALT_LAYER_LOCKED else ALT_LAYER_UNLOCKED
+                                }
+                            )
+                    )
+
+                val previewCanvas = document.createElement(NAME_CANVAS) {
+                    this as HTMLCanvasElement
+
+                    className = "layers__preview"
+                    width = PREVIEW_WIDTH
+                    height = PREVIEW_HEIGHT
+                }
+
+                val endPane = document
+                    .createElement(NAME_DIV) { className = "panel__pane" }
+                    .appendChildren(
+                        document.createElement(NAME_DIV) {
+                            className = "tool tool--sm tool--marker"
+
+                            if (layer is CanvasLayer<*>) {
+                                appendChild(createCanvasTypeIcon(layer.canvasType))
+                            }
+                        }
+                    )
+
+                document
+                    .createElement(NAME_DIV) {
+                        className = "layers__item"
+                        addClickListener { onAction?.invoke(UiAction.LayerItemClick(layer.uid)) }
+                    }
+                    .appendChildren(startPane, previewCanvas, endPane)
+            }
+        }
+
+        for (entry in newLayersItemsCache) {
+            if (entry.key.layer.uid == layersCurrentUid) {
+                entry.value.addClass("layers__item--active")
+            } else {
+                entry.value.removeClass("layers__item--active")
+            }
+
+            layersItems.appendChild(entry.value)
+        }
+
+        layersItemsCache = newLayersItemsCache
+    }
+
+    private fun createColorItems() {
+        val paneElement = document
+            .createElement(NAME_DIV) { className = "panel__pane" }
+            .appendTo(colorsPanel)
+
+        for (color in 0..7) {
+            document
+                .createElement(NAME_DIV) {
+                    className = "tool tool--md"
+                    addClickListener { onAction?.invoke(UiAction.ColorsItemClick(SciiColor(color))) }
+                }
+                .appendChildren(document.createElement(NAME_DIV) { className = "tool__color tool__color--${color}" })
+                .appendTo(paneElement)
+        }
+
+        document
+            .createElement(NAME_DIV) {
+                className = "tool tool--md"
+                addClickListener { onAction?.invoke(UiAction.ColorsItemClick(SciiColor.Transparent)) }
+            }
+            .appendChildren(document.createElement(NAME_DIV) { className = "tool__color tool__color--transparent" })
+            .appendTo(paneElement)
+    }
+
+    private fun createLightItems() {
+        val paneElement = document
+            .createElement(NAME_DIV) { className = "panel__pane" }
+            .appendTo(lightsPanel)
+
+        for (pair in listOf(SciiLight.Off to "off", SciiLight.On to "on", SciiLight.Transparent to SUFFIX_TRANSPARENT)) {
+            document
+                .createElement(NAME_DIV) {
+                    className = "tool"
+                    addClickListener { onAction?.invoke(UiAction.LightsItemClick(pair.first)) }
+                }
+                .appendChildren(document.createElement(NAME_DIV) { className = "tool__light tool__light--${pair.second}" })
+                .appendTo(paneElement)
+        }
+    }
+
+    private fun createCharItems() {
+        for (row in 0..<7) {
+            val paneElement = document
+                .createElement(NAME_DIV) { className = "panel__pane" }
+                .appendTo(charsPanel)
+
+            for (col in 0..<16) {
+                val characterValue = row * 16 + col + 32
+
+                document
+                    .createElement(NAME_DIV) {
+                        className = "tool tool--xs"
+                        addClickListener { onAction?.invoke(UiAction.CharsItemClick(SciiChar(characterValue))) }
+                    }
+                    .appendChildren(document.createElement(NAME_DIV) { className = "tool__char tool__char--${characterValue}" })
+                    .appendTo(paneElement)
+            }
+        }
+
+        document
+            .createElement(NAME_DIV) {
+                className = "tool tool--xs"
+                addClickListener { onAction?.invoke(UiAction.CharsItemClick(SciiChar.Transparent)) }
+
+            }
+            .appendChildren(document.createElement(NAME_DIV) { className = "tool__char tool__char--transparent" })
+            .appendTo(charsPanel)
+    }
+
+    private fun createLayerTypeItems() {
+        val paneElement = document
+            .createElement(NAME_DIV) { className = "panel__pane" }
+            .appendTo(layersTypes)
+
+        for (type in listOf(CanvasType.Scii, CanvasType.HBlock, CanvasType.QBlock, CanvasType.VBlock)) {
+            document
+                .createElement(NAME_DIV) {
+                    className = "tool tool--md"
+                    addClickListener { onAction?.invoke(UiAction.LayerTypeClick(type)) }
+                }
+                .appendChildren(createCanvasTypeIcon(type))
+                .appendTo(paneElement)
+        }
+    }
+
+    private fun createCanvasTypeIcon(type: CanvasType) = document.createElement(NAME_IMG) {
+        this as HTMLImageElement
+        className = "tool__icon"
+
+        src = when (type) {
+            CanvasType.Scii -> SRC_TYPE_SCII
+            CanvasType.HBlock -> SRC_TYPE_HBLOCK
+            CanvasType.VBlock -> SRC_TYPE_VBLOCK
+            CanvasType.QBlock -> SRC_TYPE_QBLOCK
+        }
+
+        alt = when (type) {
+            CanvasType.Scii -> ALT_TYPE_SCII
+            CanvasType.HBlock -> ALT_TYPE_HBLOCK
+            CanvasType.VBlock -> ALT_TYPE_VBLOCK
+            CanvasType.QBlock -> ALT_TYPE_QBLOCK
+        }
     }
 
     private inline fun <reified T> ParentNode.find(selectors: String) = querySelector(selectors) as? T
+
+    private inline fun <reified T : Node> T.appendChildren(vararg nodes: Node) = apply {
+        for (node in nodes) {
+            appendChild(node)
+        }
+    }
+
+    private inline fun <reified T : Node> T.appendTo(node: Node?) = apply { node?.appendChild(this) }
+    private inline fun Node.addClickListener(noinline listener: (Event) -> Unit) = addEventListener(EVENT_CLICK, listener)
 
     private fun Element.replaceClassModifier(prefix: String, suffix: String) {
         val cssClasses = className.trim().split("\\s+".toRegex())
@@ -149,7 +414,7 @@ class UiView(document: Document) {
     }
 
     private fun getColorClassSuffix(color: SciiColor) = if (color == SciiColor.Transparent) {
-        CLASS_TRANSPARENT
+        SUFFIX_TRANSPARENT
     } else {
         color.value.toString()
     }
@@ -157,11 +422,11 @@ class UiView(document: Document) {
     private fun getLightClassSuffix(light: SciiLight) = when (light) {
         SciiLight.On -> "on"
         SciiLight.Off -> "off"
-        else -> CLASS_TRANSPARENT
+        else -> SUFFIX_TRANSPARENT
     }
 
     private fun getCharClassSuffix(character: SciiChar) = if (character == SciiChar.Transparent) {
-        CLASS_TRANSPARENT
+        SUFFIX_TRANSPARENT
     } else {
         character.value.toString()
     }
@@ -175,8 +440,36 @@ class UiView(document: Document) {
 
     private companion object {
         private const val CLASS_HIDDEN = "hidden"
-        private const val CLASS_TRANSPARENT = "transparent"
         private const val CLASS_TOOL_DISABLED = "tool--disabled"
         private const val CLASS_TOOL_ACTIVE = "tool--active"
+        private const val SUFFIX_TRANSPARENT = "transparent"
+
+        private const val EVENT_CLICK = "click"
+        private const val NAME_DIV = "div"
+        private const val NAME_IMG = "img"
+        private const val NAME_CANVAS = "canvas"
+
+        private const val SRC_LAYER_VISIBLE = "drawable/layer__visible.svg"
+        private const val SRC_LAYER_INVISIBLE = "drawable/layer__invisible.svg"
+        private const val SRC_LAYER_LOCKED = "drawable/layer__locked.svg"
+        private const val SRC_LAYER_UNLOCKED = "drawable/layer__unlocked.svg"
+
+        private const val SRC_TYPE_SCII = "drawable/type__scii.svg"
+        private const val SRC_TYPE_HBLOCK = "drawable/type__hblock.svg"
+        private const val SRC_TYPE_VBLOCK = "drawable/type__vblock.svg"
+        private const val SRC_TYPE_QBLOCK = "drawable/type__qblock.svg"
+
+        private const val ALT_LAYER_VISIBLE = "Visible"
+        private const val ALT_LAYER_INVISIBLE = "Invisible"
+        private const val ALT_LAYER_LOCKED = "Locked"
+        private const val ALT_LAYER_UNLOCKED = "Unlocked"
+
+        private const val ALT_TYPE_SCII = "SpecSCII"
+        private const val ALT_TYPE_HBLOCK = "HBlock"
+        private const val ALT_TYPE_VBLOCK = "VBlock"
+        private const val ALT_TYPE_QBLOCK = "QBlock"
+
+        private const val PREVIEW_WIDTH = 256
+        private const val PREVIEW_HEIGHT = 192
     }
 }
