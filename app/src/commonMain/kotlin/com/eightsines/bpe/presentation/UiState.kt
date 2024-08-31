@@ -63,11 +63,11 @@ sealed interface UiToolState<out T> {
     }
 }
 
-enum class UiPanel {
-    Colors,
-    Lights,
-    Chars,
-    Layers,
-    Shapes,
-    Menu,
+sealed interface UiPanel {
+    data class Colors(val color: SciiColor) : UiPanel
+    data class Lights(val light: SciiLight) : UiPanel
+    data class Chars(val character: SciiChar) : UiPanel
+    data object Layers : UiPanel
+    data class Shapes(val shape: BpeShape) : UiPanel
+    data object Menu : UiPanel
 }

@@ -1,5 +1,6 @@
 package com.eightsines.bpe.presentation
 
+import com.eightsines.bpe.engine.BpeShape
 import com.eightsines.bpe.graphics.CanvasType
 import com.eightsines.bpe.layer.LayerUid
 import com.eightsines.bpe.model.SciiChar
@@ -32,6 +33,7 @@ sealed interface UiAction {
     data class ColorsItemClick(val color: SciiColor) : UiAction
     data class LightsItemClick(val light: SciiLight) : UiAction
     data class CharsItemClick(val character: SciiChar) : UiAction
+    data class ShapesItemClick(val shape: BpeShape) : UiAction
 
     data class LayerItemClick(val layerUid: LayerUid) : UiAction
     data class LayerItemVisibleClick(val layerUid: LayerUid, val isVisible: Boolean) : UiAction

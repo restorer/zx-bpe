@@ -20,7 +20,7 @@ import org.w3c.dom.Node
 import org.w3c.dom.ParentNode
 import org.w3c.dom.events.Event
 
-class UiView(private val document: Document) {
+class UiView(private val document: Document, private val renderer: UiRenderer) {
     var onAction: ((UiAction) -> Unit)? = null
 
     private val container = document.find<HTMLElement>(".js-container")
@@ -58,6 +58,10 @@ class UiView(private val document: Document) {
     private val lightsPanel = document.find<HTMLElement>(".js-lights-panel")
     private val charsPanel = document.find<HTMLElement>(".js-chars-panel")
 
+    private val colorItems = mutableMapOf<SciiColor, Element>()
+    private val lightItems = mutableMapOf<SciiLight, Element>()
+    private val charItems = mutableMapOf<SciiChar, Element>()
+
     private val layersPanel = document.find<HTMLElement>(".js-layers-panel")
     private val layersItems = layersPanel?.find<HTMLElement>(".layers__items")
     private val layersTypes = layersPanel?.find<HTMLElement>(".layers__toolbar--types")
@@ -69,6 +73,11 @@ class UiView(private val document: Document) {
     private val layersMoveDown = document.find<HTMLElement>(".js-layers-move-down")
 
     private val shapesPanel = document.find<HTMLElement>(".js-shapes-panel")
+    private val shapesPoint = document.find<HTMLElement>(".js-shape-point")
+    private val shapesLine = document.find<HTMLElement>(".js-shape-line")
+    private val shapesStrokeBox = document.find<HTMLElement>(".js-shape-stroke-box")
+    private val shapesFillBox = document.find<HTMLElement>(".js-shape-fill-box")
+
     private val menuPanel = document.find<HTMLElement>(".js-menu-panel")
 
     private var layersItemsCache = mutableMapOf<LayerView<*>, Element>()
@@ -99,6 +108,12 @@ class UiView(private val document: Document) {
         toolboxPaste?.addClickListener { onAction?.invoke(UiAction.ToolboxPasteClick) }
         toolboxUndo?.addClickListener { onAction?.invoke(UiAction.ToolboxUndoClick) }
         toolboxRedo?.addClickListener { onAction?.invoke(UiAction.ToolboxRedoClick) }
+
+        shapesPoint?.addClickListener { onAction?.invoke(UiAction.ShapesItemClick(BpeShape.Point)) }
+        shapesLine?.addClickListener { onAction?.invoke(UiAction.ShapesItemClick(BpeShape.Line)) }
+        shapesStrokeBox?.addClickListener { onAction?.invoke(UiAction.ShapesItemClick(BpeShape.StrokeBox)) }
+        shapesFillBox?.addClickListener { onAction?.invoke(UiAction.ShapesItemClick(BpeShape.FillBox)) }
+
         menu?.addClickListener { onAction?.invoke(UiAction.MenuClick) }
 
         layersCreate?.addClickListener { onAction?.invoke(UiAction.LayerCreateClick) }
@@ -154,12 +169,38 @@ class UiView(private val document: Document) {
         toolboxRedo?.setToolState(state.toolboxRedo)
         menu?.setToolState(state.menu)
 
-        colorsPanel?.setVisible(state.activePanel == UiPanel.Colors)
-        lightsPanel?.setVisible(state.activePanel == UiPanel.Lights)
-        charsPanel?.setVisible(state.activePanel == UiPanel.Chars)
-        layersPanel?.setVisible(state.activePanel == UiPanel.Layers)
-        shapesPanel?.setVisible(state.activePanel == UiPanel.Shapes)
-        menuPanel?.setVisible(state.activePanel == UiPanel.Menu)
+        colorsPanel?.setVisible(state.activePanel is UiPanel.Colors)
+        lightsPanel?.setVisible(state.activePanel is UiPanel.Lights)
+        charsPanel?.setVisible(state.activePanel is UiPanel.Chars)
+        layersPanel?.setVisible(state.activePanel is UiPanel.Layers)
+        shapesPanel?.setVisible(state.activePanel is UiPanel.Shapes)
+        menuPanel?.setVisible(state.activePanel is UiPanel.Menu)
+
+        when (val panel = state.activePanel) {
+            is UiPanel.Colors ->
+                for ((color, element) in colorItems) {
+                    element.setActive(color == panel.color)
+                }
+
+            is UiPanel.Lights ->
+                for ((light, element) in lightItems) {
+                    element.setActive(light == panel.light)
+                }
+
+            is UiPanel.Chars ->
+                for ((character, element) in charItems) {
+                    element.setActive(character == panel.character)
+                }
+
+            is UiPanel.Shapes -> {
+                shapesPoint?.setActive(panel.shape == BpeShape.Point)
+                shapesLine?.setActive(panel.shape == BpeShape.Line)
+                shapesStrokeBox?.setActive(panel.shape == BpeShape.StrokeBox)
+                shapesFillBox?.setActive(panel.shape == BpeShape.FillBox)
+            }
+
+            null, is UiPanel.Layers, is UiPanel.Menu -> Unit
+        }
 
         renderLayersItems(state.layersItems, state.layersCurrentUid)
 
@@ -266,13 +307,17 @@ class UiView(private val document: Document) {
             .appendTo(colorsPanel)
 
         for (color in 0..7) {
+            val sciiColor = SciiColor(color)
+
             document
                 .createElement(NAME_DIV) {
                     className = "tool tool--md"
-                    addClickListener { onAction?.invoke(UiAction.ColorsItemClick(SciiColor(color))) }
+                    addClickListener { onAction?.invoke(UiAction.ColorsItemClick(sciiColor)) }
+
                 }
                 .appendChildren(document.createElement(NAME_DIV) { className = "tool__color tool__color--${color}" })
                 .appendTo(paneElement)
+                .also { colorItems[sciiColor] = it }
         }
 
         document
@@ -282,6 +327,7 @@ class UiView(private val document: Document) {
             }
             .appendChildren(document.createElement(NAME_DIV) { className = "tool__color tool__color--transparent" })
             .appendTo(paneElement)
+            .also { colorItems[SciiColor.Transparent] = it }
     }
 
     private fun createLightItems() {
@@ -289,14 +335,15 @@ class UiView(private val document: Document) {
             .createElement(NAME_DIV) { className = "panel__pane" }
             .appendTo(lightsPanel)
 
-        for (pair in listOf(SciiLight.Off to "off", SciiLight.On to "on", SciiLight.Transparent to SUFFIX_TRANSPARENT)) {
+        for ((sciiLight, suffix) in listOf(SciiLight.Off to "off", SciiLight.On to "on", SciiLight.Transparent to SUFFIX_TRANSPARENT)) {
             document
                 .createElement(NAME_DIV) {
                     className = "tool"
-                    addClickListener { onAction?.invoke(UiAction.LightsItemClick(pair.first)) }
+                    addClickListener { onAction?.invoke(UiAction.LightsItemClick(sciiLight)) }
                 }
-                .appendChildren(document.createElement(NAME_DIV) { className = "tool__light tool__light--${pair.second}" })
+                .appendChildren(document.createElement(NAME_DIV) { className = "tool__light tool__light--${suffix}" })
                 .appendTo(paneElement)
+                .also { lightItems[sciiLight] = it }
         }
     }
 
@@ -308,14 +355,16 @@ class UiView(private val document: Document) {
 
             for (col in 0..<16) {
                 val characterValue = row * 16 + col + 32
+                val sciiChar = SciiChar(characterValue)
 
                 document
                     .createElement(NAME_DIV) {
                         className = "tool tool--xs"
-                        addClickListener { onAction?.invoke(UiAction.CharsItemClick(SciiChar(characterValue))) }
+                        addClickListener { onAction?.invoke(UiAction.CharsItemClick(sciiChar)) }
                     }
                     .appendChildren(document.createElement(NAME_DIV) { className = "tool__char tool__char--${characterValue}" })
                     .appendTo(paneElement)
+                    .also { charItems[sciiChar] = it }
             }
         }
 
@@ -327,6 +376,7 @@ class UiView(private val document: Document) {
             }
             .appendChildren(document.createElement(NAME_DIV) { className = "tool__char tool__char--transparent" })
             .appendTo(charsPanel)
+            .also { charItems[SciiChar.Transparent] = it }
     }
 
     private fun createLayerTypeItems() {
@@ -384,7 +434,7 @@ class UiView(private val document: Document) {
         }
     }
 
-    private fun <T> HTMLElement.setToolState(state: UiToolState<T>, block: (T) -> Unit = {}) {
+    private fun <T> Element.setToolState(state: UiToolState<T>, block: (T) -> Unit = {}) {
         when (state) {
             is UiToolState.Hidden -> addClass(CLASS_HIDDEN)
 
@@ -407,10 +457,16 @@ class UiView(private val document: Document) {
         }
     }
 
-    private fun HTMLElement.setVisible(isVisible: Boolean) = if (isVisible) {
+    private fun Element.setVisible(isVisible: Boolean) = if (isVisible) {
         removeClass(CLASS_HIDDEN)
     } else {
         addClass(CLASS_HIDDEN)
+    }
+
+    private fun Element.setActive(isActive: Boolean) = if (isActive) {
+        addClass(CLASS_TOOL_ACTIVE)
+    } else {
+        removeClass(CLASS_TOOL_ACTIVE)
     }
 
     private fun getColorClassSuffix(color: SciiColor) = if (color == SciiColor.Transparent) {
@@ -433,7 +489,7 @@ class UiView(private val document: Document) {
 
     private fun getShapeClassSuffix(shape: BpeShape) = when (shape) {
         BpeShape.Point -> "point"
-        BpeShape.Line -> "point"
+        BpeShape.Line -> "line"
         BpeShape.StrokeBox -> "stroke_box"
         BpeShape.FillBox -> "fill_box"
     }

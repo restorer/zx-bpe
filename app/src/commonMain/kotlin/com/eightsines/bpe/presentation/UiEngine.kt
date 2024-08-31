@@ -2,7 +2,11 @@ package com.eightsines.bpe.presentation
 
 import com.eightsines.bpe.engine.BpeAction
 import com.eightsines.bpe.engine.BpeEngine
+import com.eightsines.bpe.engine.BpeShape
 import com.eightsines.bpe.engine.BpeTool
+import com.eightsines.bpe.model.SciiChar
+import com.eightsines.bpe.model.SciiColor
+import com.eightsines.bpe.model.SciiLight
 
 class UiEngine(private val bpeEngine: BpeEngine) {
     private var activePanel: Panel? = null
@@ -38,6 +42,7 @@ class UiEngine(private val bpeEngine: BpeEngine) {
             is UiAction.ColorsItemClick -> executeColorsItemClick(action)
             is UiAction.LightsItemClick -> executeLightsItemClick(action)
             is UiAction.CharsItemClick -> executeCharsItemClick(action)
+            is UiAction.ShapesItemClick -> executeShapesItemClick(action)
 
             is UiAction.LayerItemClick -> executeLayerItemClick(action)
             is UiAction.LayerItemVisibleClick -> executeLayerItemVisibleClick(action)
@@ -93,12 +98,14 @@ class UiEngine(private val bpeEngine: BpeEngine) {
     private fun executeSelectionCutClick() {
         if (state.selectionCut.isInteractable) {
             bpeEngine.execute(BpeAction.SelectionCut)
+            activePanel = null
         }
     }
 
     private fun executeSelectionCopyClick() {
         if (state.selectionCopy.isInteractable) {
             bpeEngine.execute(BpeAction.SelectionCopy)
+            activePanel = null
         }
     }
 
@@ -109,8 +116,13 @@ class UiEngine(private val bpeEngine: BpeEngine) {
 
     private fun executeToolboxPaintClick() {
         if (state.toolboxPaint.isInteractable) {
+            activePanel = when {
+                bpeEngine.state.toolboxTool != BpeTool.Paint -> Panel.Shapes
+                activePanel == Panel.Shapes -> null
+                else -> Panel.Shapes
+            }
+
             bpeEngine.execute(BpeAction.ToolboxSetTool(BpeTool.Paint))
-            activePanel = if (activePanel == Panel.Shapes) null else Panel.Shapes
         }
     }
 
@@ -122,26 +134,34 @@ class UiEngine(private val bpeEngine: BpeEngine) {
 
     private fun executeToolboxEraseClick() {
         if (state.toolboxErase.isInteractable) {
+            activePanel = when {
+                bpeEngine.state.toolboxTool != BpeTool.Erase -> Panel.Shapes
+                activePanel == Panel.Shapes -> null
+                else -> Panel.Shapes
+            }
+
             bpeEngine.execute(BpeAction.ToolboxSetTool(BpeTool.Erase))
-            activePanel = if (activePanel == Panel.Shapes) null else Panel.Shapes
         }
     }
 
     private fun executeToolboxSelectClick() {
         if (state.toolboxSelect.isInteractable) {
             bpeEngine.execute(BpeAction.ToolboxSetTool(BpeTool.Select))
+            activePanel = null
         }
     }
 
     private fun executeToolboxPickColorClick() {
         if (state.toolboxPickColor.isInteractable) {
             bpeEngine.execute(BpeAction.ToolboxSetTool(BpeTool.PickColor))
+            activePanel = null
         }
     }
 
     private fun executeToolboxPasteClick() {
         if (state.toolboxPaste.isInteractable) {
             bpeEngine.execute(BpeAction.ToolboxPaste)
+            activePanel = null
         }
     }
 
@@ -175,6 +195,11 @@ class UiEngine(private val bpeEngine: BpeEngine) {
 
     private fun executeCharsItemClick(action: UiAction.CharsItemClick) {
         bpeEngine.execute(BpeAction.PaletteSetChar(action.character))
+    }
+
+    private fun executeShapesItemClick(action: UiAction.ShapesItemClick) {
+        bpeEngine.execute(BpeAction.ToolboxSetShape(action.shape))
+        activePanel = null
     }
 
     private fun executeLayerItemClick(action: UiAction.LayerItemClick) {
@@ -318,11 +343,13 @@ class UiEngine(private val bpeEngine: BpeEngine) {
 
             activePanel = when (activePanel) {
                 null -> null
-                Panel.Ink, Panel.Paper -> UiPanel.Colors
-                Panel.Bright, Panel.Flash -> UiPanel.Lights
-                Panel.Chars -> UiPanel.Chars
+                Panel.Ink -> UiPanel.Colors(bpeState.paletteInk)
+                Panel.Paper -> UiPanel.Colors(bpeState.palettePaper ?: SciiColor.Transparent)
+                Panel.Bright -> UiPanel.Lights(bpeState.paletteBright ?: SciiLight.Transparent)
+                Panel.Flash -> UiPanel.Lights(bpeState.paletteBright ?: SciiLight.Transparent)
+                Panel.Chars -> UiPanel.Chars(bpeState.paletteChar ?: SciiChar.Transparent)
                 Panel.Layers -> UiPanel.Layers
-                Panel.Shapes -> UiPanel.Shapes
+                Panel.Shapes -> UiPanel.Shapes(bpeState.toolboxShape ?: BpeShape.Point)
                 Panel.Menu -> UiPanel.Menu
             },
 

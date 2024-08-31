@@ -18,6 +18,7 @@
     --panel-background: var(--material-brown--900);
     --panel-divider: var(--material-brown--700);
     --panel-active: var(--material-brown--600);
+    --panel-active-highlight: var(--material-red--500);
     --panel-light-on: var(--material-red--500);
     --panel-light-off: var(--material-black);
     --panel-transparent: var(--material-gray--500);
@@ -27,10 +28,12 @@
     --subpanel-background: var(--material-brown--600);
     --subpanel-divider: var(--material-brown--800);
     --subpanel-separator: var(--material-brown--900);
+    --subpanel-active-highlight: var(--material-red--500);
 
     --layers-scrollbar-thumb: var(--material-red--500);
     --layers-scrollbar-track: var(--subpanel-divider);
     --layers-active: var(--material-red--500);
+    --layers-tool-active: var(--material-brown--700);
 
     --menu-font-size: 20px;
     --menu-offset: 24px;
@@ -292,6 +295,41 @@ body {
 
 .tool--active {
     background: var(--panel-active);
+}
+
+.tool--active::before {
+    display: none;
+    position: absolute;
+    content: " ";
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.panel--palette .tool--active::before {
+    display: block;
+    border-top: 4px solid var(--panel-active-highlight);
+}
+
+.panel--toolbox .tool--active::before {
+    display: block;
+    border-bottom: 4px solid var(--panel-active-highlight);
+}
+
+.subpanel--palette .tool--active::before {
+    display: block;
+    border-bottom: 4px solid var(--subpanel-active-highlight);
+}
+
+.subpanel--tools .tool--active::before {
+    display: block;
+    border-top: 4px solid var(--subpanel-active-highlight);
+}
+
+.layers .tool--active {
+    background: var(--layers-tool-active);
 }
 
 .tool__light {
