@@ -8,6 +8,7 @@ import com.eightsines.bpe.model.SciiChar
 import com.eightsines.bpe.model.SciiColor
 import com.eightsines.bpe.model.SciiLight
 import com.eightsines.bpe.state.LayerView
+import com.eightsines.bpe.state.SheetView
 import kotlinx.dom.addClass
 import kotlinx.dom.createElement
 import kotlinx.dom.removeClass
@@ -24,7 +25,7 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
     var onAction: ((UiAction) -> Unit)? = null
 
     private val container = document.find<HTMLElement>(".js-container")
-    val canvas = document.find<HTMLCanvasElement>(".js-canvas")
+    private val sheet = document.find<HTMLCanvasElement>(".js-sheet")
 
     private val paletteColor = document.find<HTMLElement>(".js-palette-color")
     private val paletteColorIndicator = paletteColor?.find<HTMLElement>(".tool__color")
@@ -81,6 +82,7 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
     private val menuPanel = document.find<HTMLElement>(".js-menu-panel")
 
     private var layersItemsCache = mutableMapOf<LayerView<*>, Element>()
+    private var sheetViewCache: SheetView? = null
 
     init {
         createColorItems()
@@ -211,6 +213,15 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
         layersMoveUp?.setToolState(state.layersMoveUp)
         layersMoveDown?.setToolState(state.layersMoveDown)
         layersTypes?.setVisible(state.layersTypesIsVisible)
+
+        sheet?.let {
+            val sheetView = state.sheet
+
+            if (sheetViewCache != sheetView) {
+                sheetViewCache = sheetView
+                renderer.renderSheet(it, sheetView.backgroundView.layer, sheetView.canvasView.canvas)
+            }
+        }
     }
 
     private fun renderLayersItems(layersViews: List<LayerView<*>>, layersCurrentUid: LayerUid) {
@@ -265,6 +276,8 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
                     className = "layers__preview"
                     width = PREVIEW_WIDTH
                     height = PREVIEW_HEIGHT
+
+                    renderer.renderPreview(this, layer)
                 }
 
                 val endPane = document

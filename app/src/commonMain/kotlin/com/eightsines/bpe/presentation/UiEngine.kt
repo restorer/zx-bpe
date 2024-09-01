@@ -7,6 +7,7 @@ import com.eightsines.bpe.engine.BpeTool
 import com.eightsines.bpe.model.SciiChar
 import com.eightsines.bpe.model.SciiColor
 import com.eightsines.bpe.model.SciiLight
+import com.eightsines.bpe.state.SheetView
 
 class UiEngine(private val bpeEngine: BpeEngine) {
     private var activePanel: Panel? = null
@@ -275,6 +276,8 @@ class UiEngine(private val bpeEngine: BpeEngine) {
         val isEraseActive = bpeState.toolboxTool == BpeTool.Erase && isEraseAvailable
 
         return UiState(
+            sheet = SheetView(bpeState.background, bpeState.canvas),
+
             paletteColor = when {
                 bpeState.palettePaper != null -> UiToolState.Hidden
                 activePanel == Panel.Ink -> UiToolState.Active(bpeState.paletteInk)

@@ -38,7 +38,7 @@
     --menu-font-size: 20px;
     --menu-offset: 24px;
 
-    --canvas-offset: 16px;
+    --sheet-offset: 16px;
 }
 
 body {
@@ -530,13 +530,13 @@ body {
 .drawing {
     position: absolute;
 
-    top: calc(var(--tool-size) + var(--panel-divider-size) + var(--canvas-offset));
-    right: var(--canvas-offset);
-    bottom: calc(var(--tool-size) + var(--panel-divider-size) + var(--canvas-offset));
-    left: var(--canvas-offset);
+    top: calc(var(--tool-size) + var(--panel-divider-size) + var(--sheet-offset));
+    right: var(--sheet-offset);
+    bottom: calc(var(--tool-size) + var(--panel-divider-size) + var(--sheet-offset));
+    left: var(--sheet-offset);
 }
 
-.drawing__canvas {
+.drawing__sheet {
     display: block;
     width: 100%;
     height: 100%;
@@ -648,9 +648,9 @@ body {
     }
 
     .drawing {
-        top: var(--canvas-offset);
-        right: var(--canvas-offset);
-        bottom: var(--canvas-offset);
-        left: calc(var(--tool-size) * 2 + var(--panel-divider-size) + var(--canvas-offset));
+        top: var(--sheet-offset);
+        right: var(--sheet-offset);
+        bottom: var(--sheet-offset);
+        left: calc(var(--tool-size) * 2 + var(--panel-divider-size) + var(--sheet-offset));
     }
 }

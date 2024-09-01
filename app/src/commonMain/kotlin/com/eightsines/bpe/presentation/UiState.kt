@@ -6,8 +6,11 @@ import com.eightsines.bpe.model.SciiChar
 import com.eightsines.bpe.model.SciiColor
 import com.eightsines.bpe.model.SciiLight
 import com.eightsines.bpe.state.LayerView
+import com.eightsines.bpe.state.SheetView
 
 data class UiState(
+    val sheet: SheetView,
+
     val paletteColor: UiToolState<SciiColor>,
     val paletteInk: UiToolState<SciiColor>,
     val palettePaper: UiToolState<SciiColor>,
