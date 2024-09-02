@@ -24,6 +24,7 @@ import org.w3c.dom.events.Event
 class UiView(private val document: Document, private val renderer: UiRenderer) {
     var onAction: ((UiAction) -> Unit)? = null
 
+    private val loading = document.find<HTMLElement>(".js-loading")
     private val container = document.find<HTMLElement>(".js-container")
     private val sheet = document.find<HTMLCanvasElement>(".js-sheet")
 
@@ -127,6 +128,7 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
     }
 
     fun render(state: UiState) {
+        loading?.addClass(CLASS_HIDDEN)
         container?.removeClass(CLASS_HIDDEN)
 
         paletteColor?.setToolState(state.paletteColor) {

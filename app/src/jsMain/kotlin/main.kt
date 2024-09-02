@@ -5,24 +5,29 @@ import com.eightsines.bpe.graphics.Painter
 import com.eightsines.bpe.presentation.UiEngine
 import com.eightsines.bpe.presentation.UiRenderer
 import com.eightsines.bpe.presentation.UiView
+import com.eightsines.bpe.util.ElapsedTimeProviderImpl
 import com.eightsines.bpe.util.UidFactoryImpl
 import kotlinx.browser.window
+import org.w3c.dom.Document
 
-fun onBpeLoaded() {
-    val graphicsEngine = GraphicsEngine(
-        painter = Painter(),
-        renderer = Renderer(),
-    )
+class BpeComponent(private val document: Document) {
+    private val painter by lazy { Painter() }
+    private val renderer by lazy { Renderer() }
+    private val uidFactory by lazy { UidFactoryImpl() }
+    private val elapsedTimeProvider by lazy { ElapsedTimeProviderImpl() }
+    private val graphicsEngine by lazy { GraphicsEngine(painter, renderer) }
+    private val bpeEngine by lazy { BpeEngine(uidFactory, graphicsEngine) }
+    private val uiRenderer by lazy { UiRenderer(elapsedTimeProvider) }
 
-    val bpeEngine = BpeEngine(
-        uidFactory = UidFactoryImpl(),
-        graphicsEngine = graphicsEngine,
-    )
+    val uiEngine by lazy { UiEngine(bpeEngine) }
+    val uiView by lazy { UiView(document, uiRenderer) }
+}
 
-    val uiEngine = UiEngine(bpeEngine)
-    val uiView = UiView(window.document, UiRenderer())
+fun ready(bpeComponent: BpeComponent) {
+    val uiEngine = bpeComponent.uiEngine
+    val uiView = bpeComponent.uiView
 
-    uiView.render(uiEngine.state)
+    bpeComponent.uiView.render(uiEngine.state)
 
     uiView.onAction = {
         uiEngine.execute(it)
@@ -31,5 +36,5 @@ fun onBpeLoaded() {
 }
 
 fun main() {
-    window.onload = { onBpeLoaded() }
+    window.onload = { ready(BpeComponent(window.document)) }
 }
