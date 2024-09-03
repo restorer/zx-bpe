@@ -4,6 +4,7 @@ import com.eightsines.bpe.engine.BpeAction
 import com.eightsines.bpe.engine.BpeEngine
 import com.eightsines.bpe.engine.BpeShape
 import com.eightsines.bpe.engine.BpeTool
+import com.eightsines.bpe.graphics.CanvasType
 import com.eightsines.bpe.model.SciiChar
 import com.eightsines.bpe.model.SciiColor
 import com.eightsines.bpe.model.SciiLight
@@ -12,12 +13,19 @@ import com.eightsines.bpe.state.SheetView
 class UiEngine(private val bpeEngine: BpeEngine) {
     private var activePanel: Panel? = null
     private var layerTypePanel: LayerTypePanel? = null
+    private var isSheetDown: Boolean = false
 
     var state: UiState = refresh()
         private set
 
     fun execute(action: UiAction) {
         when (action) {
+            is UiAction.SheetEnter -> executeSheetEnter(action)
+            is UiAction.SheetDown -> executeSheetDown(action)
+            is UiAction.SheetMove -> executeSheetMove(action)
+            is UiAction.SheetUp -> executeSheetUp(action)
+            is UiAction.SheetCancel -> executeSheetCancel()
+
             is UiAction.PaletteColorClick -> executePaletteColorClick()
             is UiAction.PaletteInkClick -> executePaletteInkClick()
             is UiAction.PalettePaperClick -> executePalettePaperClick()
@@ -58,6 +66,53 @@ class UiEngine(private val bpeEngine: BpeEngine) {
         }
 
         state = refresh()
+    }
+
+    private fun executeSheetEnter(action: UiAction.SheetEnter) {
+    }
+
+    private fun executeSheetDown(action: UiAction.SheetDown) {
+        activePanel = null
+        val drawingCoords = pointerToDrawing(bpeEngine.state.drawingType, action.pointerX, action.pointerY)
+
+        if (drawingCoords != null) {
+            bpeEngine.execute(BpeAction.CanvasDown(drawingCoords.first, drawingCoords.second))
+            isSheetDown = true
+        }
+    }
+
+    private fun executeSheetMove(action: UiAction.SheetMove) {
+        if (!isSheetDown) {
+            return
+        }
+
+        val drawingCoords = pointerToDrawing(bpeEngine.state.drawingType, action.pointerX, action.pointerY)
+
+        if (drawingCoords != null) {
+            bpeEngine.execute(BpeAction.CanvasMove(drawingCoords.first, drawingCoords.second))
+        }
+    }
+
+    private fun executeSheetUp(action: UiAction.SheetUp) {
+        if (!isSheetDown) {
+            return
+        }
+
+        val drawingCoords = pointerToDrawing(bpeEngine.state.drawingType, action.pointerX, action.pointerY)
+
+        if (drawingCoords == null) {
+            bpeEngine.execute(BpeAction.CanvasCancel)
+            isSheetDown = false
+        } else {
+            bpeEngine.execute(BpeAction.CanvasUp(drawingCoords.first, drawingCoords.second))
+        }
+    }
+
+    private fun executeSheetCancel() {
+        if (isSheetDown) {
+            bpeEngine.execute(BpeAction.CanvasCancel)
+            isSheetDown = false
+        }
     }
 
     private fun executePaletteColorClick() {
@@ -264,6 +319,23 @@ class UiEngine(private val bpeEngine: BpeEngine) {
 
     private fun executeMenuClick() {
         activePanel = if (activePanel == Panel.Menu) null else Panel.Menu
+    }
+
+    private fun pointerToDrawing(drawingType: CanvasType?, pointerX: Int, pointerY: Int): Pair<Int, Int>? {
+        val x = pointerX - UiSpec.BORDER_SIZE
+        val y = pointerY - UiSpec.BORDER_SIZE
+
+        if (x < 0 || x >= UiSpec.PICTURE_WIDTH || y < 0 || y >= UiSpec.PICTURE_HEIGHT) {
+            return null
+        }
+
+        return when (drawingType) {
+            null -> 0 to 0
+            is CanvasType.Scii -> x / UiSpec.SCII_CELL_SIZE to y / UiSpec.SCII_CELL_SIZE
+            is CanvasType.HBlock -> x / UiSpec.SCII_CELL_SIZE to y / UiSpec.BLOCK_CELL_SIZE
+            is CanvasType.VBlock -> x / UiSpec.BLOCK_CELL_SIZE to y / UiSpec.SCII_CELL_SIZE
+            is CanvasType.QBlock -> x / UiSpec.BLOCK_CELL_SIZE to y / UiSpec.BLOCK_CELL_SIZE
+        }
     }
 
     private fun refresh(): UiState {

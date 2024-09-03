@@ -42,7 +42,7 @@ class BpeEngine(
     private var historyPosition: Int = 0
 
     private var currentLayer: Layer = graphicsEngine.state.backgroundLayer
-    private var startPoint: Pair<Int, Int>? = null
+    private var currentCanvasAction: BpeCanvasAction? = null
 
     private var cachedMoveUpOnTopOfLayer: Layer? = null
     private var cachedMoveDownOnTopOfLayer: Layer? = null
@@ -82,6 +82,7 @@ class BpeEngine(
             is BpeAction.SelectionCopy -> executeSelectionCopy()
 
             is BpeAction.CanvasDown -> executeCanvasDown(action)
+            is BpeAction.CanvasMove -> executeCanvasMove(action)
             is BpeAction.CanvasUp -> executeCanvasUp(action)
             is BpeAction.CanvasCancel -> executeCanvasCancel()
         }
@@ -210,7 +211,7 @@ class BpeEngine(
             HistoryAction.Composite(
                 listOfNotNull(
                     HistoryAction.CurrentLayer(currentLayer.uid),
-                    undoGraphicsAction?.let {  HistoryAction.Graphics(it) },
+                    undoGraphicsAction?.let { HistoryAction.Graphics(it) },
                 ),
             )
         )
@@ -397,40 +398,46 @@ class BpeEngine(
             BpeTool.None -> Unit
 
             BpeTool.Paint -> if (currentLayer is CanvasLayer<*>) {
-                startPoint = action.drawingX to action.drawingY
-                // TODO
+                currentCanvasAction = if (toolboxPaintShape == BpeShape.Point) {
+                    BpeCanvasAction.Multiple(BpeTool.Paint, listOf(action.drawingX to action.drawingY))
+                } else {
+                    BpeCanvasAction.Single(BpeTool.Paint, toolboxPaintShape, action.drawingX, action.drawingY)
+                }
+
+                refreshCanvasAction(action.drawingX, action.drawingY)
             }
 
             BpeTool.Erase -> if (currentLayer is CanvasLayer<*>) {
-                startPoint = action.drawingX to action.drawingY
-                // TODO
+                currentCanvasAction = if (toolboxEraseShape == BpeShape.Point) {
+                    BpeCanvasAction.Multiple(BpeTool.Erase, listOf(action.drawingX to action.drawingY))
+                } else {
+                    BpeCanvasAction.Single(BpeTool.Erase, toolboxEraseShape, action.drawingX, action.drawingY)
+                }
+
+                refreshCanvasAction(action.drawingX, action.drawingY)
             }
 
-            BpeTool.Select -> {
-                startPoint = action.drawingX to action.drawingY
-                // TODO
+            BpeTool.Select -> if (currentLayer is CanvasLayer<*>) {
+                currentCanvasAction = BpeCanvasAction.Select(currentLayer.canvasType, action.drawingX, action.drawingY)
+                refreshCanvasAction(action.drawingX, action.drawingY)
             }
 
             BpeTool.PickColor -> {
                 when (currentLayer) {
                     is BackgroundLayer -> paletteInk = currentLayer.color
 
-                    is CanvasLayer<*> -> {
-                        val cell = currentLayer.canvas.getDrawingCell(action.drawingX, action.drawingY)
+                    is CanvasLayer<*> -> when (val cell = currentLayer.canvas.getDrawingCell(action.drawingX, action.drawingY)) {
+                        is SciiCell -> {
+                            paletteInk = cell.ink
+                            palettePaper = cell.paper
+                            paletteBright = cell.bright
+                            paletteFlash = cell.flash
+                            paletteChar = cell.character
+                        }
 
-                        when (cell) {
-                            is SciiCell -> {
-                                paletteInk = cell.ink
-                                palettePaper = cell.paper
-                                paletteBright = cell.bright
-                                paletteFlash = cell.flash
-                                paletteChar = cell.character
-                            }
-
-                            is BlockCell -> {
-                                paletteInk = cell.color
-                                paletteBright = cell.bright
-                            }
+                        is BlockCell -> {
+                            paletteInk = cell.color
+                            paletteBright = cell.bright
                         }
                     }
                 }
@@ -440,8 +447,29 @@ class BpeEngine(
         }
     }
 
+    private fun executeCanvasMove(action: BpeAction.CanvasMove) {
+        val currentLayer = this.currentLayer
+
+        when (toolboxTool) {
+            BpeTool.Paint, BpeTool.Erase, BpeTool.Select -> if (currentLayer is CanvasLayer<*>) {
+                refreshCanvasAction(action.drawingX, action.drawingY)
+            }
+
+            BpeTool.None, BpeTool.PickColor -> Unit
+        }
+    }
+
     private fun executeCanvasUp(action: BpeAction.CanvasUp) {
-        // TODO
+        val currentLayer = this.currentLayer
+
+        when (toolboxTool) {
+            BpeTool.Paint, BpeTool.Erase, BpeTool.Select -> if (currentLayer is CanvasLayer<*>) {
+                refreshCanvasAction(action.drawingX, action.drawingY)
+                // TODO: нужно за-apply-ить текущий action
+            }
+
+            BpeTool.None, BpeTool.PickColor -> Unit
+        }
     }
 
     @Suppress("NOTHING_TO_INLINE")
@@ -466,10 +494,35 @@ class BpeEngine(
         is HistoryAction.Composite -> action.actions.forEach(::executeHistoryAction)
     }
 
+    private fun refreshCanvasAction(drawingX: Int, drawingY: Int) {
+        when (val action = currentCanvasAction) {
+            null -> Unit
+
+            is BpeCanvasAction.Single -> {
+                // TODO
+            }
+
+            is BpeCanvasAction.Multiple -> {
+                // TODO
+            }
+
+            is BpeCanvasAction.Select -> {
+                val newSelectionState = BpeSelectionState.Selected(
+                    Selection(action.canvasType, Box.of(action.startX, action.startY, drawingX, drawingY))
+                )
+
+                if (selectionState != newSelectionState) {
+                    selectionState = newSelectionState
+                    shouldRefresh = true
+                }
+            }
+        }
+    }
+
     private fun cancelCanvasAction() {
-        if (startPoint != null) {
+        if (currentCanvasAction != null) {
             // TODO
-            startPoint = null
+            currentCanvasAction = null
         }
     }
 
@@ -635,4 +688,10 @@ class BpeEngine(
             selectionIsFloating = selectionState is BpeSelectionState.Floating,
         )
     }
+}
+
+private sealed interface BpeCanvasAction {
+    data class Single(val tool: BpeTool, val shape: BpeShape, val startX: Int, val startY: Int) : BpeCanvasAction
+    data class Multiple(val tool: BpeTool, var points: List<Pair<Int, Int>>) : BpeCanvasAction
+    data class Select(val canvasType: CanvasType, val startX: Int, val startY: Int) : BpeCanvasAction
 }

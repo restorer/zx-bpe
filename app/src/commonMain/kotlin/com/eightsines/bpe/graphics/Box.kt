@@ -9,6 +9,13 @@ data class Box(val x: Int, val y: Int, val width: Int, val height: Int) {
 
     companion object {
         @Suppress("NOTHING_TO_INLINE")
-        inline fun ofPoints(sx: Int, sy: Int, ex: Int, ey: Int) = Box(sx, sy, ex - sx + 1, ey - sy + 1)
+        inline fun of(sx: Int, sy: Int, ex: Int, ey: Int): Box {
+            val boxSx = minOf(sx, ex)
+            val boxSy = minOf(sy, ey)
+            val boxEx = maxOf(sx, ex)
+            val boxEy = maxOf(sy, ey)
+
+            return Box(boxSx, boxSy, boxEx - boxSx + 1, boxEy - boxSy + 1)
+        }
     }
 }

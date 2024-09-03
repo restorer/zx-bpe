@@ -34,6 +34,7 @@ sealed interface BpeAction {
     data object SelectionCopy : BpeAction
 
     data class CanvasDown(val drawingX: Int, val drawingY: Int) : BpeAction
+    data class CanvasMove(val drawingX: Int, val drawingY: Int) : BpeAction
     data class CanvasUp(val drawingX: Int, val drawingY: Int) : BpeAction
     data object CanvasCancel : BpeAction
 }

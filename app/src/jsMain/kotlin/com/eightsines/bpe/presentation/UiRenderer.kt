@@ -19,15 +19,15 @@ import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 
 class UiRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
-    private val specSciiCharRows = SpecSciiData.HEIGHT / SCII_SIZE
-    private val specSciiCharColumns = SpecSciiData.WIDTH / SCII_SIZE
+    private val specSciiCharRows = SpecSciiData.HEIGHT / UiSpec.SCII_CELL_SIZE
+    private val specSciiCharColumns = SpecSciiData.WIDTH / UiSpec.SCII_CELL_SIZE
 
     fun renderPreview(htmlCanvas: HTMLCanvasElement, layer: Layer) {
         val htmlContext = htmlCanvas.getContext("2d", GET_CONTEXT_OPTIONS) as CanvasRenderingContext2D
-        htmlContext.clearRect(0.0, 0.0, SPEC_WIDTH, SPEC_HEIGHT)
+        htmlContext.clearRect(0.0, 0.0, PICTURE_WIDTH, PICTURE_HEIGHT)
 
         when (layer) {
-            is BackgroundLayer -> renderBackground(htmlContext, layer, SPEC_WIDTH - BORDER_SIZE * 2.0, SPEC_HEIGHT - BORDER_SIZE * 2.0)
+            is BackgroundLayer -> renderBackground(htmlContext, layer, BACKGROUND_PREVIEW_PICTURE_WIDTH, BACKGROUND_PREVIEW_PICTURE_HEIGHT)
 
             is CanvasLayer<*> -> when (val canvas = layer.canvas) {
                 is SciiCanvas -> renderSciiCanvas(htmlContext, canvas, 0.0, 0.0)
@@ -40,30 +40,36 @@ class UiRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
 
     fun renderSheet(htmlCanvas: HTMLCanvasElement, backgroundLayer: BackgroundLayer, canvas: SciiCanvas) {
         val htmlContext = htmlCanvas.getContext("2d", GET_CONTEXT_OPTIONS) as CanvasRenderingContext2D
-        htmlContext.clearRect(0.0, 0.0, SPEC_WIDTH + BORDER_SIZE * 2.0, SPEC_HEIGHT + BORDER_SIZE * 2.0)
+        htmlContext.clearRect(0.0, 0.0, FULL_WIDTH, FULL_HEIGHT)
 
         if (backgroundLayer.border == SciiColor.Transparent) {
-            renderTransparent(htmlContext, TRANSPARENT_BORDER, 0.0, 0.0, SPEC_WIDTH + BORDER_SIZE * 2.0, BORDER_SIZE)
-            renderTransparent(htmlContext, TRANSPARENT_BORDER, 0.0, BORDER_SIZE, BORDER_SIZE, SPEC_HEIGHT)
-            renderTransparent(htmlContext, TRANSPARENT_BORDER, SPEC_WIDTH + BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, SPEC_HEIGHT)
-            renderTransparent(htmlContext, TRANSPARENT_BORDER, 0.0, SPEC_HEIGHT + BORDER_SIZE, SPEC_WIDTH + BORDER_SIZE * 2.0, BORDER_SIZE)
+            renderTransparent(htmlContext, TRANSPARENT_BORDER, 0.0, 0.0, FULL_WIDTH, BORDER_SIZE)
+            renderTransparent(htmlContext, TRANSPARENT_BORDER, 0.0, BORDER_SIZE, BORDER_SIZE, PICTURE_HEIGHT)
+            renderTransparent(htmlContext, TRANSPARENT_BORDER, PICTURE_WIDTH + BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, PICTURE_HEIGHT)
+            renderTransparent(htmlContext, TRANSPARENT_BORDER, 0.0, PICTURE_HEIGHT + BORDER_SIZE, FULL_WIDTH, BORDER_SIZE)
         }
 
         if (backgroundLayer.color == SciiColor.Transparent) {
-            renderTransparent(htmlContext, TRANSPARENT_SCREEN, BORDER_SIZE, BORDER_SIZE, SPEC_WIDTH, SPEC_HEIGHT)
+            renderTransparent(htmlContext, TRANSPARENT_SCREEN, BORDER_SIZE, BORDER_SIZE, PICTURE_WIDTH, PICTURE_HEIGHT)
         }
 
-        renderBackground(htmlContext, backgroundLayer, SPEC_WIDTH, SPEC_HEIGHT)
+        renderBackground(htmlContext, backgroundLayer, PICTURE_WIDTH, PICTURE_HEIGHT)
         renderSciiCanvas(htmlContext, canvas, BORDER_SIZE, BORDER_SIZE)
     }
 
     private fun renderSciiCanvas(htmlContext: CanvasRenderingContext2D, canvas: SciiCanvas, top: Double, left: Double) {
-        val imageData = htmlContext.getImageData(top, left, SPEC_WIDTH, SPEC_HEIGHT)
+        val imageData = htmlContext.getImageData(top, left, PICTURE_WIDTH, PICTURE_HEIGHT)
         val elapsedTimeMs = elapsedTimeProvider.getElapsedTimeMs()
 
         for (sciiY in 0..<canvas.sciiHeight) {
             for (sciiX in 0..<canvas.sciiWidth) {
-                renderSciiCell(imageData.data, elapsedTimeMs, sciiX * SCII_SIZE, sciiY * SCII_SIZE, canvas.getSciiCell(sciiX, sciiY))
+                renderSciiCell(
+                    imageData.data,
+                    elapsedTimeMs,
+                    sciiX * UiSpec.SCII_CELL_SIZE,
+                    sciiY * UiSpec.SCII_CELL_SIZE,
+                    canvas.getSciiCell(sciiX, sciiY),
+                )
             }
         }
 
@@ -109,22 +115,22 @@ class UiRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         }
     }
 
-    private fun renderBackground(htmlContext: CanvasRenderingContext2D, layer: BackgroundLayer, width: Double, height: Double) {
+    private fun renderBackground(htmlContext: CanvasRenderingContext2D, layer: BackgroundLayer, fullWidth: Double, fullHeight: Double) {
         val borderColor = getColor(layer.border, SciiLight.Off)
         val paperColor = getColor(layer.color, layer.bright)
 
         if (borderColor != null) {
             htmlContext.fillStyle = borderColor.value
 
-            htmlContext.fillRect(0.0, 0.0, width + BORDER_SIZE * 2.0, BORDER_SIZE)
-            htmlContext.fillRect(0.0, BORDER_SIZE, BORDER_SIZE, height)
-            htmlContext.fillRect(width + BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, height)
-            htmlContext.fillRect(0.0, height + BORDER_SIZE, width + BORDER_SIZE * 2.0, BORDER_SIZE)
+            htmlContext.fillRect(0.0, 0.0, fullWidth + BORDER_SIZE * 2.0, BORDER_SIZE)
+            htmlContext.fillRect(0.0, BORDER_SIZE, BORDER_SIZE, fullHeight)
+            htmlContext.fillRect(fullWidth + BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, fullHeight)
+            htmlContext.fillRect(0.0, fullHeight + BORDER_SIZE, fullWidth + BORDER_SIZE * 2.0, BORDER_SIZE)
         }
 
         if (paperColor != null) {
             htmlContext.fillStyle = paperColor.value
-            htmlContext.fillRect(BORDER_SIZE, BORDER_SIZE, width, height)
+            htmlContext.fillRect(BORDER_SIZE, BORDER_SIZE, fullWidth, fullHeight)
         }
     }
 
@@ -154,17 +160,17 @@ class UiRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
             paperColor = tmpColor
         }
 
-        val charX = (charValue % specSciiCharColumns) * SCII_SIZE
-        val charY = charRow * SCII_SIZE
+        val charX = (charValue % specSciiCharColumns) * UiSpec.SCII_CELL_SIZE
+        val charY = charRow * UiSpec.SCII_CELL_SIZE
 
         val pixelsDataDyn = pixelsData.asDynamic()
         val charsData = SpecSciiData.DATA
 
-        for (row in 0..<SCII_SIZE) {
-            var pixelsIndex = ((y + row) * SPEC_WIDTH_PX + x) * 4
+        for (row in 0..<UiSpec.SCII_CELL_SIZE) {
+            var pixelsIndex = ((y + row) * UiSpec.PICTURE_WIDTH + x) * 4
             var charsIndex = (charY + row) * SpecSciiData.WIDTH + charX
 
-            for (col in 0..<SCII_SIZE) {
+            for (col in 0..<UiSpec.SCII_CELL_SIZE) {
                 val color = if (charsData[charsIndex] == 1) inkColor else paperColor
 
                 if (color != null) {
@@ -223,10 +229,14 @@ class UiRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
     }
 
     private companion object {
-        private const val SPEC_WIDTH = 256.0
-        private const val SPEC_HEIGHT = 192.0
-        private const val BORDER_SIZE = 32.0
-        private const val SPEC_WIDTH_PX = 256
+        private const val PICTURE_WIDTH = UiSpec.PICTURE_WIDTH.toDouble()
+        private const val PICTURE_HEIGHT = UiSpec.PICTURE_HEIGHT.toDouble()
+        private const val BORDER_SIZE = UiSpec.BORDER_SIZE.toDouble()
+        private const val FULL_WIDTH = UiSpec.FULL_WIDTH.toDouble()
+        private const val FULL_HEIGHT = UiSpec.FULL_HEIGHT.toDouble()
+
+        private const val BACKGROUND_PREVIEW_PICTURE_WIDTH = (UiSpec.PICTURE_WIDTH - UiSpec.BORDER_SIZE * 2).toDouble()
+        private const val BACKGROUND_PREVIEW_PICTURE_HEIGHT = (UiSpec.PICTURE_HEIGHT - UiSpec.BORDER_SIZE * 2).toDouble()
 
         private val COLORS = listOf(
             UiColor(0, 0, 0),
@@ -247,11 +257,10 @@ class UiRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
             UiColor(255, 255, 255),
         )
 
-        private const val TRANSPARENT_SIZE = 4.0
+        private const val TRANSPARENT_SIZE = UiSpec.BLOCK_CELL_SIZE.toDouble()
         private val TRANSPARENT_SCREEN = listOf("#9e9e9e", "#e0e0e0")
         private val TRANSPARENT_BORDER = listOf("#757575", "#bdbdbd")
 
-        private const val SCII_SIZE = 8
         private const val FLASH_MS = 16000 / 50
         private const val FLASH_FULL_MS = 16000 / 50
 

@@ -8,6 +8,12 @@ import com.eightsines.bpe.model.SciiColor
 import com.eightsines.bpe.model.SciiLight
 
 sealed interface UiAction {
+    data class SheetEnter(val pointerX: Int, val pointerY: Int) : UiAction
+    data class SheetDown(val pointerX: Int, val pointerY: Int) : UiAction
+    data class SheetMove(val pointerX: Int, val pointerY: Int) : UiAction
+    data class SheetUp(val pointerX: Int, val pointerY: Int) : UiAction
+    data object SheetCancel : UiAction
+
     data object PaletteColorClick : UiAction
     data object PaletteInkClick : UiAction
     data object PalettePaperClick : UiAction

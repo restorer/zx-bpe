@@ -13,6 +13,6 @@ data class Selection(
         val (sx, sy) = canvasType.toSciiPosition(drawingBox.x, drawingBox.y)
         val (ex, ey) = canvasType.toSciiPosition(drawingBox.ex, drawingBox.ey)
 
-        return Box.ofPoints(sx, sy, ex, ey)
+        return Box.of(sx, sy, ex, ey)
     }
 }

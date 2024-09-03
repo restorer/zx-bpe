@@ -20,6 +20,7 @@ import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.Node
 import org.w3c.dom.ParentNode
 import org.w3c.dom.events.Event
+import org.w3c.dom.events.MouseEvent
 
 class UiView(private val document: Document, private val renderer: UiRenderer) {
     var onAction: ((UiAction) -> Unit)? = null
@@ -90,6 +91,34 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
         createLightItems()
         createCharItems()
         createLayerTypeItems()
+
+        sheet?.let { sheet ->
+            sheet.addEventListener(
+                EVENT_MOUSE_ENTER,
+                {
+                    it as MouseEvent
+                    onAction?.invoke(UiAction.SheetEnter(it.clientX, it.clientY))
+                }
+            )
+
+            sheet.addEventListener(
+                EVENT_MOUSE_DOWN,
+                {
+                    it as MouseEvent
+                    onAction?.invoke(UiAction.SheetDown(it.clientX, it.clientY))
+                }
+            )
+
+            sheet.addEventListener(
+                EVENT_MOUSE_UP,
+                {
+                    it as MouseEvent
+                    onAction?.invoke(UiAction.SheetUp(it.clientX, it.clientY))
+                }
+            )
+
+            sheet.addEventListener(EVENT_MOUSE_LEAVE, { onAction?.invoke(UiAction.SheetCancel) })
+        }
 
         paletteColor?.addClickListener { onAction?.invoke(UiAction.PaletteColorClick) }
         paletteInk?.addClickListener { onAction?.invoke(UiAction.PaletteInkClick) }
@@ -516,6 +545,11 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
         private const val SUFFIX_TRANSPARENT = "transparent"
 
         private const val EVENT_CLICK = "click"
+        private const val EVENT_MOUSE_ENTER = "mouseenter"
+        private const val EVENT_MOUSE_DOWN = "mousedown"
+        private const val EVENT_MOUSE_UP = "mouseup"
+        private const val EVENT_MOUSE_LEAVE = "mouseleave"
+
         private const val NAME_DIV = "div"
         private const val NAME_IMG = "img"
         private const val NAME_CANVAS = "canvas"
