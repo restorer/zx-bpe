@@ -14,6 +14,7 @@ import com.eightsines.bpe.model.SciiChar
 import com.eightsines.bpe.model.SciiColor
 import com.eightsines.bpe.model.SciiLight
 import com.eightsines.bpe.util.ElapsedTimeProvider
+import com.eightsines.bpe.util.Material
 import org.khronos.webgl.Uint8ClampedArray
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
@@ -43,18 +44,91 @@ class UiRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         htmlContext.clearRect(0.0, 0.0, FULL_WIDTH, FULL_HEIGHT)
 
         if (backgroundLayer.border == SciiColor.Transparent) {
-            renderTransparent(htmlContext, TRANSPARENT_BORDER, 0.0, 0.0, FULL_WIDTH, BORDER_SIZE)
-            renderTransparent(htmlContext, TRANSPARENT_BORDER, 0.0, BORDER_SIZE, BORDER_SIZE, PICTURE_HEIGHT)
-            renderTransparent(htmlContext, TRANSPARENT_BORDER, PICTURE_WIDTH + BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, PICTURE_HEIGHT)
-            renderTransparent(htmlContext, TRANSPARENT_BORDER, 0.0, PICTURE_HEIGHT + BORDER_SIZE, FULL_WIDTH, BORDER_SIZE)
+            renderTransparent(htmlContext, TRANSPARENT_COLORS_BORDER, 0.0, 0.0, FULL_WIDTH, BORDER_SIZE)
+            renderTransparent(htmlContext, TRANSPARENT_COLORS_BORDER, 0.0, BORDER_SIZE, BORDER_SIZE, PICTURE_HEIGHT)
+            renderTransparent(htmlContext, TRANSPARENT_COLORS_BORDER, PICTURE_WIDTH + BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, PICTURE_HEIGHT)
+            renderTransparent(htmlContext, TRANSPARENT_COLORS_BORDER, 0.0, PICTURE_HEIGHT + BORDER_SIZE, FULL_WIDTH, BORDER_SIZE)
         }
 
         if (backgroundLayer.color == SciiColor.Transparent) {
-            renderTransparent(htmlContext, TRANSPARENT_SCREEN, BORDER_SIZE, BORDER_SIZE, PICTURE_WIDTH, PICTURE_HEIGHT)
+            renderTransparent(htmlContext, TRANSPARENT_COLORS_SCREEN, BORDER_SIZE, BORDER_SIZE, PICTURE_WIDTH, PICTURE_HEIGHT)
         }
 
         renderBackground(htmlContext, backgroundLayer, PICTURE_WIDTH, PICTURE_HEIGHT)
         renderSciiCanvas(htmlContext, canvas, BORDER_SIZE, BORDER_SIZE)
+    }
+
+    fun renderArea(htmlCanvas: HTMLCanvasElement, area: UiArea?, isCursor: Boolean) {
+        val htmlContext = htmlCanvas.getContext("2d", GET_CONTEXT_OPTIONS) as CanvasRenderingContext2D
+        htmlContext.clearRect(0.0, 0.0, FULL_WIDTH, FULL_HEIGHT)
+
+        if (area == null) {
+            return
+        }
+
+        val colors = if (isCursor) AREA_COLORS_CURSOR else AREA_COLORS_SELECTION
+
+        val dash = if (area.pointerWidth <= AREA_DASH_MD && area.pointerHeight <= AREA_DASH_MD) {
+            AREA_DASH_XS
+        } else {
+            AREA_DASH_MD
+        }
+
+        val sx = area.pointerX
+        val sy = area.pointerY
+        val ex = sx + area.pointerWidth
+        val ey = sy + area.pointerHeight
+
+        var x = sx
+        var y = sy
+        var colorIndex = 0
+
+        while (x < ex) {
+            htmlContext.fillStyle = colors[colorIndex]
+            htmlContext.fillRect(x.toDouble(), y.toDouble(), minOf(dash, ex - x).toDouble(), 1.0)
+
+            x += dash
+            colorIndex = 1 - colorIndex
+        }
+
+        x = ex - 1
+        colorIndex = 1 - colorIndex
+
+        while (y < ey) {
+            htmlContext.fillStyle = colors[colorIndex]
+            htmlContext.fillRect(x.toDouble(), y.toDouble(), 1.0, minOf(dash, ey - y).toDouble())
+
+            y += dash
+            colorIndex = 1 - colorIndex
+        }
+
+        y = ey - 1
+        x = ex
+        colorIndex = 1 - colorIndex
+
+        while (x > sx) {
+            val tx = maxOf(sx, x - dash)
+
+            htmlContext.fillStyle = colors[colorIndex]
+            htmlContext.fillRect(tx.toDouble(), y.toDouble(), minOf(dash, x - tx).toDouble(), 1.0)
+
+            x -= dash
+            colorIndex = 1 - colorIndex
+        }
+
+        x = sx
+        y = ey
+        colorIndex = 1 - colorIndex
+
+        while (y > sy) {
+            val ty = maxOf(sy, y - dash)
+
+            htmlContext.fillStyle = colors[colorIndex]
+            htmlContext.fillRect(x.toDouble(), ty.toDouble(), 1.0, minOf(dash, y - ty).toDouble())
+
+            y -= dash
+            colorIndex = 1 - colorIndex
+        }
     }
 
     private fun renderSciiCanvas(htmlContext: CanvasRenderingContext2D, canvas: SciiCanvas, top: Double, left: Double) {
@@ -258,8 +332,13 @@ class UiRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         )
 
         private const val TRANSPARENT_SIZE = UiSpec.BLOCK_CELL_SIZE.toDouble()
-        private val TRANSPARENT_SCREEN = listOf("#9e9e9e", "#e0e0e0")
-        private val TRANSPARENT_BORDER = listOf("#757575", "#bdbdbd")
+        private val TRANSPARENT_COLORS_SCREEN = listOf(Material.Gray500, Material.Gray300)
+        private val TRANSPARENT_COLORS_BORDER = listOf(Material.Gray600, Material.Gray400)
+
+        private val AREA_COLORS_CURSOR = listOf(Material.BlueGray900, Material.BlueGray50)
+        private val AREA_COLORS_SELECTION = listOf(Material.Amber900, Material.Amber50)
+        private const val AREA_DASH_XS = 2
+        private const val AREA_DASH_MD = 4
 
         private const val FLASH_MS = 16000 / 50
         private const val FLASH_FULL_MS = 16000 / 50

@@ -10,6 +10,8 @@ import com.eightsines.bpe.state.SheetView
 
 data class UiState(
     val sheet: SheetView,
+    val cursorArea: UiArea?,
+    val selectionArea: UiArea?,
 
     val paletteColor: UiToolState<SciiColor>,
     val paletteInk: UiToolState<SciiColor>,
@@ -45,6 +47,8 @@ data class UiState(
     val layersMoveDown: UiToolState<Unit>,
     val layersTypesIsVisible: Boolean,
 )
+
+data class UiArea(val pointerX: Int, val pointerY: Int, val pointerWidth: Int, val pointerHeight: Int)
 
 sealed interface UiToolState<out T> {
     val isInteractable: Boolean

@@ -12,6 +12,7 @@ import com.eightsines.bpe.state.SheetView
 import kotlinx.dom.addClass
 import kotlinx.dom.createElement
 import kotlinx.dom.removeClass
+import org.w3c.dom.DOMRect
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
@@ -28,6 +29,7 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
     private val loading = document.find<HTMLElement>(".js-loading")
     private val container = document.find<HTMLElement>(".js-container")
     private val sheet = document.find<HTMLCanvasElement>(".js-sheet")
+    private val areas = document.find<HTMLCanvasElement>(".js-areas")
 
     private val paletteColor = document.find<HTMLElement>(".js-palette-color")
     private val paletteColorIndicator = paletteColor?.find<HTMLElement>(".tool__color")
@@ -85,6 +87,8 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
 
     private var layersItemsCache = mutableMapOf<LayerView<*>, Element>()
     private var sheetViewCache: SheetView? = null
+    private var selectionAreaCache: UiArea? = null
+    private var cursorAreaCache: UiArea? = null
 
     init {
         createColorItems()
@@ -92,32 +96,40 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
         createCharItems()
         createLayerTypeItems()
 
-        sheet?.let { sheet ->
-            sheet.addEventListener(
+        areas?.let { areas ->
+            areas.addEventListener(
                 EVENT_MOUSE_ENTER,
                 {
-                    it as MouseEvent
-                    onAction?.invoke(UiAction.SheetEnter(it.clientX, it.clientY))
+                    val point = translateMouseToCanvas(areas, it as MouseEvent)
+                    onAction?.invoke(UiAction.SheetEnter(point.first, point.second))
                 }
             )
 
-            sheet.addEventListener(
+            areas.addEventListener(
                 EVENT_MOUSE_DOWN,
                 {
-                    it as MouseEvent
-                    onAction?.invoke(UiAction.SheetDown(it.clientX, it.clientY))
+                    val point = translateMouseToCanvas(areas, it as MouseEvent)
+                    onAction?.invoke(UiAction.SheetDown(point.first, point.second))
                 }
             )
 
-            sheet.addEventListener(
+            areas.addEventListener(
+                EVENT_MOUSE_MOVE,
+                {
+                    val point = translateMouseToCanvas(areas, it as MouseEvent)
+                    onAction?.invoke(UiAction.SheetMove(point.first, point.second))
+                }
+            )
+
+            areas.addEventListener(
                 EVENT_MOUSE_UP,
                 {
-                    it as MouseEvent
-                    onAction?.invoke(UiAction.SheetUp(it.clientX, it.clientY))
+                    val point = translateMouseToCanvas(areas, it as MouseEvent)
+                    onAction?.invoke(UiAction.SheetUp(point.first, point.second))
                 }
             )
 
-            sheet.addEventListener(EVENT_MOUSE_LEAVE, { onAction?.invoke(UiAction.SheetCancel) })
+            areas.addEventListener(EVENT_MOUSE_LEAVE, { onAction?.invoke(UiAction.SheetLeave) })
         }
 
         paletteColor?.addClickListener { onAction?.invoke(UiAction.PaletteColorClick) }
@@ -251,6 +263,19 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
             if (sheetViewCache != sheetView) {
                 sheetViewCache = sheetView
                 renderer.renderSheet(it, sheetView.backgroundView.layer, sheetView.canvasView.canvas)
+            }
+        }
+
+        areas?.let {
+            val selectionArea = state.selectionArea
+            val cursorArea = state.cursorArea
+
+            if (selectionAreaCache != selectionArea || cursorAreaCache != cursorArea) {
+                cursorAreaCache = cursorArea
+                selectionAreaCache = selectionArea
+
+                renderer.renderArea(it, selectionArea, false)
+                renderer.renderArea(it, cursorArea, true)
             }
         }
     }
@@ -428,7 +453,7 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
             .createElement(NAME_DIV) { className = "panel__pane" }
             .appendTo(layersTypes)
 
-        for (type in listOf(CanvasType.Scii, CanvasType.HBlock, CanvasType.QBlock, CanvasType.VBlock)) {
+        for (type in listOf(CanvasType.Scii, CanvasType.HBlock, CanvasType.VBlock, CanvasType.QBlock)) {
             document
                 .createElement(NAME_DIV) {
                     className = "tool tool--md"
@@ -456,6 +481,33 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
             CanvasType.VBlock -> ALT_TYPE_VBLOCK
             CanvasType.QBlock -> ALT_TYPE_QBLOCK
         }
+    }
+
+    private fun translateMouseToCanvas(canvas: HTMLCanvasElement, event: MouseEvent): Pair<Int, Int> {
+        val bbox: DOMRect = canvas.getBoundingClientRect()
+
+        if (bbox.width < 1.0 || bbox.height < 1.0) {
+            return 0 to 0
+        }
+
+        val scale: Double
+        val offsetX: Double
+        val offsetY: Double
+
+        if (canvas.height / bbox.height > canvas.width / bbox.width) {
+            scale = bbox.height / canvas.height
+            offsetX = (bbox.width - canvas.width * scale) * 0.5
+            offsetY = 0.0
+        } else {
+            scale = bbox.width / canvas.width
+            offsetX = 0.0
+            offsetY = (bbox.height - canvas.height * scale) * 0.5
+        }
+
+        val x = (event.clientX - bbox.left - offsetX) / scale
+        val y = (event.clientY - bbox.top - offsetY) / scale
+
+        return x.toInt() to y.toInt()
     }
 
     private inline fun <reified T> ParentNode.find(selectors: String) = querySelector(selectors) as? T
@@ -547,6 +599,7 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
         private const val EVENT_CLICK = "click"
         private const val EVENT_MOUSE_ENTER = "mouseenter"
         private const val EVENT_MOUSE_DOWN = "mousedown"
+        private const val EVENT_MOUSE_MOVE = "mousemove"
         private const val EVENT_MOUSE_UP = "mouseup"
         private const val EVENT_MOUSE_LEAVE = "mouseleave"
 

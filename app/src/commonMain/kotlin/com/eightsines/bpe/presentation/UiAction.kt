@@ -12,7 +12,7 @@ sealed interface UiAction {
     data class SheetDown(val pointerX: Int, val pointerY: Int) : UiAction
     data class SheetMove(val pointerX: Int, val pointerY: Int) : UiAction
     data class SheetUp(val pointerX: Int, val pointerY: Int) : UiAction
-    data object SheetCancel : UiAction
+    data object SheetLeave : UiAction
 
     data object PaletteColorClick : UiAction
     data object PaletteInkClick : UiAction

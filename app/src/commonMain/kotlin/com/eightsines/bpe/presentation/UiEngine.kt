@@ -13,6 +13,7 @@ import com.eightsines.bpe.state.SheetView
 class UiEngine(private val bpeEngine: BpeEngine) {
     private var activePanel: Panel? = null
     private var layerTypePanel: LayerTypePanel? = null
+    private var cursorArea: UiArea? = null
     private var isSheetDown: Boolean = false
 
     var state: UiState = refresh()
@@ -24,7 +25,7 @@ class UiEngine(private val bpeEngine: BpeEngine) {
             is UiAction.SheetDown -> executeSheetDown(action)
             is UiAction.SheetMove -> executeSheetMove(action)
             is UiAction.SheetUp -> executeSheetUp(action)
-            is UiAction.SheetCancel -> executeSheetCancel()
+            is UiAction.SheetLeave -> executeSheetLeave()
 
             is UiAction.PaletteColorClick -> executePaletteColorClick()
             is UiAction.PaletteInkClick -> executePaletteInkClick()
@@ -69,27 +70,28 @@ class UiEngine(private val bpeEngine: BpeEngine) {
     }
 
     private fun executeSheetEnter(action: UiAction.SheetEnter) {
+        val drawingPoint = pointerToDrawing(bpeEngine.state.drawingType, action.pointerX, action.pointerY)
+        cursorArea = drawingPoint?.let { drawingToArea(bpeEngine.state.drawingType, it.first, it.second) }
     }
 
     private fun executeSheetDown(action: UiAction.SheetDown) {
         activePanel = null
-        val drawingCoords = pointerToDrawing(bpeEngine.state.drawingType, action.pointerX, action.pointerY)
 
-        if (drawingCoords != null) {
-            bpeEngine.execute(BpeAction.CanvasDown(drawingCoords.first, drawingCoords.second))
+        val drawingPoint = pointerToDrawing(bpeEngine.state.drawingType, action.pointerX, action.pointerY)
+        cursorArea = drawingPoint?.let { drawingToArea(bpeEngine.state.drawingType, it.first, it.second) }
+
+        if (drawingPoint != null) {
+            bpeEngine.execute(BpeAction.CanvasDown(drawingPoint.first, drawingPoint.second))
             isSheetDown = true
         }
     }
 
     private fun executeSheetMove(action: UiAction.SheetMove) {
-        if (!isSheetDown) {
-            return
-        }
+        val drawingPoint = pointerToDrawing(bpeEngine.state.drawingType, action.pointerX, action.pointerY)
+        cursorArea = drawingPoint?.let { drawingToArea(bpeEngine.state.drawingType, it.first, it.second) }
 
-        val drawingCoords = pointerToDrawing(bpeEngine.state.drawingType, action.pointerX, action.pointerY)
-
-        if (drawingCoords != null) {
-            bpeEngine.execute(BpeAction.CanvasMove(drawingCoords.first, drawingCoords.second))
+        if (isSheetDown && drawingPoint != null) {
+            bpeEngine.execute(BpeAction.CanvasMove(drawingPoint.first, drawingPoint.second))
         }
     }
 
@@ -98,21 +100,24 @@ class UiEngine(private val bpeEngine: BpeEngine) {
             return
         }
 
-        val drawingCoords = pointerToDrawing(bpeEngine.state.drawingType, action.pointerX, action.pointerY)
+        val drawingPoint = pointerToDrawing(bpeEngine.state.drawingType, action.pointerX, action.pointerY)
+        cursorArea = drawingPoint?.let { drawingToArea(bpeEngine.state.drawingType, it.first, it.second) }
 
-        if (drawingCoords == null) {
+        if (drawingPoint == null) {
             bpeEngine.execute(BpeAction.CanvasCancel)
             isSheetDown = false
         } else {
-            bpeEngine.execute(BpeAction.CanvasUp(drawingCoords.first, drawingCoords.second))
+            bpeEngine.execute(BpeAction.CanvasUp(drawingPoint.first, drawingPoint.second))
         }
     }
 
-    private fun executeSheetCancel() {
+    private fun executeSheetLeave() {
         if (isSheetDown) {
             bpeEngine.execute(BpeAction.CanvasCancel)
             isSheetDown = false
         }
+
+        cursorArea = null
     }
 
     private fun executePaletteColorClick() {
@@ -338,6 +343,39 @@ class UiEngine(private val bpeEngine: BpeEngine) {
         }
     }
 
+    private fun drawingToArea(drawingType: CanvasType?, drawingX: Int, drawingY: Int, drawingWidth: Int = 1, drawingHeight: Int = 1) =
+        when (drawingType) {
+            null -> UiArea(UiSpec.BORDER_SIZE, UiSpec.BORDER_SIZE, UiSpec.PICTURE_WIDTH, UiSpec.PICTURE_HEIGHT)
+
+            is CanvasType.Scii -> UiArea(
+                UiSpec.BORDER_SIZE + drawingX * UiSpec.SCII_CELL_SIZE,
+                UiSpec.BORDER_SIZE + drawingY * UiSpec.SCII_CELL_SIZE,
+                drawingWidth * UiSpec.SCII_CELL_SIZE,
+                drawingHeight * UiSpec.SCII_CELL_SIZE
+            )
+
+            is CanvasType.HBlock -> UiArea(
+                UiSpec.BORDER_SIZE + drawingX * UiSpec.SCII_CELL_SIZE,
+                UiSpec.BORDER_SIZE + drawingY * UiSpec.BLOCK_CELL_SIZE,
+                drawingWidth * UiSpec.SCII_CELL_SIZE,
+                drawingHeight * UiSpec.BLOCK_CELL_SIZE
+            )
+
+            is CanvasType.VBlock -> UiArea(
+                UiSpec.BORDER_SIZE + drawingX * UiSpec.BLOCK_CELL_SIZE,
+                UiSpec.BORDER_SIZE + drawingY * UiSpec.SCII_CELL_SIZE,
+                drawingWidth * UiSpec.BLOCK_CELL_SIZE,
+                drawingHeight * UiSpec.SCII_CELL_SIZE
+            )
+
+            is CanvasType.QBlock -> UiArea(
+                UiSpec.BORDER_SIZE + drawingX * UiSpec.BLOCK_CELL_SIZE,
+                UiSpec.BORDER_SIZE + drawingY * UiSpec.BLOCK_CELL_SIZE,
+                drawingWidth * UiSpec.BLOCK_CELL_SIZE,
+                drawingHeight * UiSpec.BLOCK_CELL_SIZE
+            )
+        }
+
     private fun refresh(): UiState {
         val bpeState = bpeEngine.state
 
@@ -349,6 +387,17 @@ class UiEngine(private val bpeEngine: BpeEngine) {
 
         return UiState(
             sheet = SheetView(bpeState.background, bpeState.canvas),
+            cursorArea = cursorArea,
+
+            selectionArea = bpeState.selection?.let {
+                drawingToArea(
+                    it.canvasType,
+                    it.drawingBox.x,
+                    it.drawingBox.y,
+                    it.drawingBox.width,
+                    it.drawingBox.height,
+                )
+            },
 
             paletteColor = when {
                 bpeState.palettePaper != null -> UiToolState.Hidden
