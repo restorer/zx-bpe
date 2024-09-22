@@ -46,9 +46,11 @@ class BpeEngine(
 
     private var cachedMoveUpOnTopOfLayer: Layer? = null
     private var cachedMoveDownOnTopOfLayer: Layer? = null
-    private var cachedMergeWithLayer: CanvasLayer<*>? = null
+    private var cachedLayerBelow: Layer? = null
 
     private var shouldRefresh: Boolean = false
+    private val historyPendingActions = mutableListOf<HistoryAction>()
+    private val historyPendingUndoActions = mutableListOf<HistoryAction>()
 
     var state: BpeState = refresh()
         private set
@@ -86,6 +88,8 @@ class BpeEngine(
             is BpeAction.CanvasUp -> executeCanvasUp(action)
             is BpeAction.CanvasCancel -> executeCanvasCancel()
         }
+
+        historyPendingApply()
 
         if (shouldRefresh) {
             shouldRefresh = false
@@ -193,48 +197,51 @@ class BpeEngine(
         anchorSelection()
         val newLayerUid = LayerUid(uidFactory.createUid())
 
-        val graphicsAction = GraphicsAction.CreateLayer(
-            canvasType = action.canvasType,
-            layerUid = newLayerUid,
-            onTopOfLayerUid = currentLayer.uid,
-        )
+        executeGraphicsAction(
+            GraphicsAction.CreateLayer(canvasType = action.canvasType, layerUid = newLayerUid, onTopOfLayerUid = currentLayer.uid),
+        ) { graphicsAction, undoGraphicsAction ->
+            val prevCurrentLayer = currentLayer
+            currentLayer = graphicsEngine.state.canvasLayersMap[newLayerUid.value] ?: graphicsEngine.state.backgroundLayer
 
-        val undoGraphicsAction = graphicsEngine.execute(graphicsAction)
-
-        historyAppend(
-            HistoryAction.Composite(
-                listOf(
-                    HistoryAction.Graphics(graphicsAction),
-                    HistoryAction.CurrentLayer(newLayerUid),
-                ),
-            ),
-            HistoryAction.Composite(
-                listOfNotNull(
-                    HistoryAction.CurrentLayer(currentLayer.uid),
-                    undoGraphicsAction?.let { HistoryAction.Graphics(it) },
-                ),
-            )
-        )
-
-        currentLayer = graphicsEngine.state.canvasLayersMap[newLayerUid.value] ?: graphicsEngine.state.backgroundLayer
-        shouldRefresh = true
+            HistoryAction.Composite(listOf(graphicsAction, HistoryAction.CurrentLayer(newLayerUid))) to
+                    HistoryAction.Composite(listOf(undoGraphicsAction, HistoryAction.CurrentLayer(prevCurrentLayer.uid)))
+        }
     }
 
     private fun executeLayersDelete() {
-        if (currentLayer is CanvasLayer<*>) {
-            anchorSelection()
-            executeGraphicsAction(GraphicsAction.DeleteLayer(currentLayer.uid))
-            // TODO: set currentLayer to layer below, and append proper history
+        if (currentLayer !is CanvasLayer<*>) {
+            return
+        }
+
+        anchorSelection()
+        val layerBelow = cachedLayerBelow
+
+        executeGraphicsAction(GraphicsAction.DeleteLayer(currentLayer.uid)) { graphicsAction, undoGraphicsAction ->
+            if (layerBelow != null) {
+                val prevCurrentLayer = currentLayer
+                currentLayer = layerBelow
+
+                HistoryAction.Composite(listOf(graphicsAction, HistoryAction.CurrentLayer(layerBelow.uid))) to
+                        HistoryAction.Composite(listOf(undoGraphicsAction, HistoryAction.CurrentLayer(prevCurrentLayer.uid)))
+            } else {
+                graphicsAction to undoGraphicsAction
+            }
         }
     }
 
     private fun executeLayersMerge() {
-        cachedMergeWithLayer?.let {
-            anchorSelection()
-            executeGraphicsAction(GraphicsAction.MergeLayers(layerUid = currentLayer.uid, ontoLayerUid = it.uid))
-        }
+        val layerBelow = cachedLayerBelow as? CanvasLayer<*> ?: return
+        anchorSelection()
 
-        // TODO: set currentLayer to merged layer if needed, and append proper history
+        executeGraphicsAction(
+            GraphicsAction.MergeLayers(layerUid = currentLayer.uid, ontoLayerUid = layerBelow.uid),
+        ) { graphicsAction, undoGraphicsAction ->
+            val prevCurrentLayer = currentLayer
+            currentLayer = graphicsEngine.state.canvasLayersMap[layerBelow.uid.value] ?: graphicsEngine.state.backgroundLayer
+
+            HistoryAction.Composite(listOf(graphicsAction, HistoryAction.CurrentLayer(layerBelow.uid))) to
+                    HistoryAction.Composite(listOf(undoGraphicsAction, HistoryAction.CurrentLayer(prevCurrentLayer.uid)))
+        }
     }
 
     private fun executeLayersConvert(action: BpeAction.LayersConvert) {
@@ -529,7 +536,7 @@ class BpeEngine(
     private fun anchorSelection() {
         val floatingState = selectionState as? BpeSelectionState.Floating ?: return
 
-        historyAppend(
+        historyPendingAppend(
             HistoryAction.Composite(
                 listOfNotNull(
                     floatingState.cutAction?.let(HistoryAction::Graphics),
@@ -550,16 +557,50 @@ class BpeEngine(
         shouldRefresh = true
     }
 
-    private fun executeGraphicsAction(graphicsAction: GraphicsAction) {
+    private fun executeGraphicsAction(
+        graphicsAction: GraphicsAction,
+        historyTransformer: ((HistoryAction, HistoryAction) -> Pair<HistoryAction, HistoryAction>)? = null,
+    ) {
         val undoAction = graphicsEngine.execute(graphicsAction)
 
         if (undoAction != null) {
-            historyAppend(HistoryAction.Graphics(graphicsAction), HistoryAction.Graphics(undoAction))
+            if (historyTransformer != null) {
+                val (transformedAction, transformedUndoAction) = historyTransformer(
+                    HistoryAction.Graphics(graphicsAction),
+                    HistoryAction.Graphics(undoAction),
+                )
+
+                historyPendingAppend(transformedAction, transformedUndoAction)
+            } else {
+                historyPendingAppend(HistoryAction.Graphics(graphicsAction), HistoryAction.Graphics(undoAction))
+            }
+
             shouldRefresh = true
         }
     }
 
-    private fun historyAppend(action: HistoryAction, undoAction: HistoryAction) {
+    private fun historyPendingAppend(action: HistoryAction?, undoAction: HistoryAction?) {
+        action?.let(historyPendingActions::add)
+        undoAction?.let(historyPendingUndoActions::add)
+    }
+
+    private fun historyPendingApply() {
+        if (historyPendingActions.isEmpty() && historyPendingUndoActions.isEmpty()) {
+            return
+        }
+
+        val action = when (historyPendingActions.size) {
+            0 -> HistoryAction.Composite(emptyList())
+            1 -> historyPendingActions.first()
+            else -> HistoryAction.Composite(historyPendingActions)
+        }
+
+        val undoAction = when (historyPendingUndoActions.size) {
+            0 -> HistoryAction.Composite(emptyList())
+            1 -> historyPendingUndoActions.first()
+            else -> HistoryAction.Composite(historyPendingUndoActions.reversed())
+        }
+
         val step = HistoryStep(action, undoAction)
 
         if (historyPosition == historyMaxSteps) {
@@ -571,41 +612,44 @@ class BpeEngine(
         }
 
         historyPosition = history.size
+
+        historyPendingActions.clear()
+        historyPendingUndoActions.clear()
     }
 
     private fun refresh(): BpeState {
         val graphicsState = graphicsEngine.state
         val currentLayer = this.currentLayer
 
-        val currentLayerIndex = if (currentLayer is CanvasLayer<*>) {
+        val currentCanvasLayerIndex = if (currentLayer is CanvasLayer<*>) {
             graphicsState.canvasLayers.indexOfFirst { it.uid.value == currentLayer.uid.value }
         } else {
             -1
         }
 
-        val moveUpOnTopOfLayer = if (currentLayerIndex < graphicsState.canvasLayers.size - 1) {
-            graphicsState.canvasLayers[currentLayerIndex + 1]
+        val moveUpOnTopOfLayer = if (currentCanvasLayerIndex < graphicsState.canvasLayers.size - 1) {
+            graphicsState.canvasLayers[currentCanvasLayerIndex + 1]
         } else {
             null
         }
 
         val moveDownOnTopOfLayer = when {
-            currentLayerIndex > 1 -> graphicsState.canvasLayers[currentLayerIndex - 2]
-            currentLayerIndex == 1 -> graphicsState.backgroundLayer
+            currentCanvasLayerIndex > 1 -> graphicsState.canvasLayers[currentCanvasLayerIndex - 2]
+            currentCanvasLayerIndex == 1 -> graphicsState.backgroundLayer
             else -> null
         }
 
-        val mergeWithLayer = if (currentLayerIndex > 0) {
-            graphicsState.canvasLayers[currentLayerIndex - 1]
-        } else {
-            null
+        val layerBelow = when {
+            currentCanvasLayerIndex > 0 -> graphicsState.canvasLayers[currentCanvasLayerIndex - 1]
+            currentCanvasLayerIndex == 0 -> graphicsState.backgroundLayer
+            else -> null
         }
 
         val backgroundLayerView = BackgroundLayerView(graphicsState.backgroundLayer)
 
         cachedMoveUpOnTopOfLayer = moveUpOnTopOfLayer
         cachedMoveDownOnTopOfLayer = moveDownOnTopOfLayer
-        cachedMergeWithLayer = mergeWithLayer
+        cachedLayerBelow = layerBelow
 
         return BpeState(
             background = backgroundLayerView,
@@ -643,10 +687,10 @@ class BpeEngine(
 
             layersCanDelete = graphicsEngine.canExecute(GraphicsAction.DeleteLayer(currentLayer.uid)),
 
-            layersCanMerge = mergeWithLayer != null && graphicsEngine.canExecute(
+            layersCanMerge = layerBelow is CanvasLayer<*> && graphicsEngine.canExecute(
                 GraphicsAction.MergeLayers(
                     layerUid = currentLayer.uid,
-                    ontoLayerUid = mergeWithLayer.uid,
+                    ontoLayerUid = layerBelow.uid,
                 ),
             ),
 

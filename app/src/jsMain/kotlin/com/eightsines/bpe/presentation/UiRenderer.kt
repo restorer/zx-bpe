@@ -58,16 +58,15 @@ class UiRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         renderSciiCanvas(htmlContext, canvas, BORDER_SIZE, BORDER_SIZE)
     }
 
-    fun renderArea(htmlCanvas: HTMLCanvasElement, area: UiArea?, isCursor: Boolean) {
+    fun renderAreas(htmlCanvas: HTMLCanvasElement, selectionArea: UiArea?, cursorArea: UiArea?) {
         val htmlContext = htmlCanvas.getContext("2d", GET_CONTEXT_OPTIONS) as CanvasRenderingContext2D
         htmlContext.clearRect(0.0, 0.0, FULL_WIDTH, FULL_HEIGHT)
 
-        if (area == null) {
-            return
-        }
+        selectionArea?.let { renderSingleArea(htmlContext, it, AREA_COLORS_SELECTION) }
+        cursorArea?.let { renderSingleArea(htmlContext, it, AREA_COLORS_CURSOR) }
+    }
 
-        val colors = if (isCursor) AREA_COLORS_CURSOR else AREA_COLORS_SELECTION
-
+    private fun renderSingleArea(htmlContext: CanvasRenderingContext2D, area: UiArea, colors: List<String>) {
         val dash = if (area.pointerWidth <= AREA_DASH_MD && area.pointerHeight <= AREA_DASH_MD) {
             AREA_DASH_XS
         } else {
@@ -332,8 +331,8 @@ class UiRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         )
 
         private const val TRANSPARENT_SIZE = UiSpec.BLOCK_CELL_SIZE.toDouble()
-        private val TRANSPARENT_COLORS_SCREEN = listOf(Material.Gray500, Material.Gray300)
-        private val TRANSPARENT_COLORS_BORDER = listOf(Material.Gray600, Material.Gray400)
+        private val TRANSPARENT_COLORS_SCREEN = listOf(Material.Gray700, Material.Gray500)
+        private val TRANSPARENT_COLORS_BORDER = listOf(Material.Gray800, Material.Gray600)
 
         private val AREA_COLORS_CURSOR = listOf(Material.BlueGray900, Material.BlueGray50)
         private val AREA_COLORS_SELECTION = listOf(Material.Amber900, Material.Amber50)

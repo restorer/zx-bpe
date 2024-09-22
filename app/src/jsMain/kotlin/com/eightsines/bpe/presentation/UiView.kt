@@ -274,8 +274,7 @@ class UiView(private val document: Document, private val renderer: UiRenderer) {
                 cursorAreaCache = cursorArea
                 selectionAreaCache = selectionArea
 
-                renderer.renderArea(it, selectionArea, false)
-                renderer.renderArea(it, cursorArea, true)
+                renderer.renderAreas(it, selectionArea, cursorArea)
             }
         }
     }
