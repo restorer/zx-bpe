@@ -186,6 +186,11 @@ class MutableHBlockCanvas(
             val bottomColor: SciiColor
 
             when (cell.character) {
+                SciiChar.Transparent -> {
+                    topColor = SciiColor.Transparent
+                    bottomColor = SciiColor.Transparent
+                }
+
                 SciiChar.Space, SciiChar.BlockSpace -> {
                     topColor = cell.paper
                     bottomColor = cell.paper
@@ -328,6 +333,11 @@ class MutableVBlockCanvas(
             val rightColor: SciiColor
 
             when (cell.character) {
+                SciiChar.Transparent -> {
+                    leftColor = SciiColor.Transparent
+                    rightColor = SciiColor.Transparent
+                }
+
                 SciiChar.Space, SciiChar.BlockSpace -> {
                     leftColor = cell.paper
                     rightColor = cell.paper
@@ -472,19 +482,19 @@ class MutableQBlockCanvas(
             modifyDrawingCell(drawingX, drawingY, cell) { cell.color != SciiColor.Transparent }
 
         override fun replaceSciiCell(sciiX: Int, sciiY: Int, cell: SciiCell) {
-            if (sciiX < 0 ||
-                sciiY < 0 ||
-                sciiX >= canvas.sciiWidth ||
-                sciiY >= canvas.sciiHeight ||
-                cell.character.value < SciiChar.BLOCK_VALUE_FIRST ||
-                cell.character.value > SciiChar.BLOCK_VALUE_LAST
-            ) {
+            if (sciiX < 0 || sciiY < 0 || sciiX >= canvas.sciiWidth || sciiY >= canvas.sciiHeight) {
                 return
             }
 
             val drawingX = sciiX * 2
             val drawingY = sciiY * 2
-            val charValue = cell.character.value
+            var charValue = cell.character.value
+
+            if (charValue == SciiChar.VALUE_TRANSPARENT) {
+                charValue = 0
+            } else if (charValue < SciiChar.BLOCK_VALUE_FIRST || charValue > SciiChar.BLOCK_VALUE_LAST) {
+                return
+            }
 
             canvas.pixels[drawingY][drawingX + 1] = ((charValue and SciiChar.BLOCK_BIT_TR) != 0)
             canvas.pixels[drawingY][drawingX] = ((charValue and SciiChar.BLOCK_BIT_TL) != 0)

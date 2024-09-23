@@ -11,7 +11,7 @@ value class SciiChar(val value: Int) {
         if (value != VALUE_TRANSPARENT) this else onto
 
     companion object {
-        private const val VALUE_TRANSPARENT = -1
+        const val VALUE_TRANSPARENT = -1
 
         const val BLOCK_VALUE_FIRST = 0x80
         const val BLOCK_VALUE_LAST = 0x8F

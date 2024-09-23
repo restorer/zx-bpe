@@ -1,6 +1,7 @@
 package com.eightsines.bpe.graphics
 
 import com.eightsines.bpe.model.Cell
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class Painter {
@@ -9,7 +10,30 @@ class Painter {
     }
 
     fun getBBox(shape: Shape<*>) = when (shape) {
-        is Shape.Point -> Box(shape.x, shape.y, 1, 1)
+        is Shape.Points -> if (shape.points.isEmpty()) {
+            Box(0, 0, 0, 0)
+        } else {
+            var sx = 0
+            var sy = 0
+            var ex = 0
+            var ey = 0
+
+            shape.points.forEachIndexed { index, point ->
+                if (index == 0) {
+                    sx = point.first
+                    sy = point.second
+                    ex = sx
+                    ey = sy
+                } else {
+                    sx = minOf(sx, point.first)
+                    sy = minOf(sy, point.second)
+                    ex = maxOf(ex, point.first)
+                    ey = maxOf(ey, point.second)
+                }
+            }
+
+            Box.of(sx, sy, ex, ey)
+        }
 
         is Shape.Line -> {
             val sx = minOf(shape.sx, shape.ex)
@@ -43,7 +67,9 @@ class Painter {
 
     fun <T : Cell> paint(shape: Shape<T>, pencil: Pencil<T>) {
         when (shape) {
-            is Shape.Point -> pencil.put(shape.x, shape.y, shape.cell)
+            is Shape.Points -> for (point in shape.points) {
+                pencil.put(point.first, point.second, shape.cell)
+            }
 
             is Shape.Line -> {
                 val sx = shape.sx
@@ -51,25 +77,25 @@ class Painter {
                 val sy = shape.sy
                 val ey = shape.ey
 
-                val absSx = minOf(sx, ex)
-                val absEx = maxOf(sx, ex)
-                val absSy = minOf(sy, ey)
-                val absEy = maxOf(sy, ey)
+                val dx = ex - sx
+                val dy = ey - sy
 
-                val absDx = absEx - absSx
-                val absDy = absEy - absSy
+                val absDx = abs(dx)
+                val absDy = abs(dy)
 
                 if (absDx > absDy) {
-                    val my = if (absDx == 0) 0.0 else (ey - sy).toDouble() / absDx.toDouble()
+                    val mx = if (dx < 0) -1 else 1
+                    val my = if (dx == 0) 0.0 else (ey - sy).toDouble() / absDx.toDouble()
 
-                    for (x in 0..absDx) {
-                        pencil.put(absSx + x, sy + (x * my).roundToInt(), shape.cell)
+                    for (i in 0..absDx) {
+                        pencil.put(sx + i * mx, sy + (i * my).roundToInt(), shape.cell)
                     }
                 } else {
-                    val mx = if (absDy == 0) 0.0 else (ex - sx).toDouble() / absDy.toDouble()
+                    val mx = if (dy == 0) 0.0 else (ex - sx).toDouble() / absDy.toDouble()
+                    val my = if (dy < 0) -1 else 1
 
-                    for (y in 0..absDy) {
-                        pencil.put(sx + (y * mx).roundToInt(), absSy + y, shape.cell)
+                    for (i in 0..absDy) {
+                        pencil.put(sx + (i * mx).roundToInt(), sy + i * my, shape.cell)
                     }
                 }
             }

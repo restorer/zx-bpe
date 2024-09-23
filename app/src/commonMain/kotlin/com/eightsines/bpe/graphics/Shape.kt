@@ -10,7 +10,7 @@ import com.eightsines.bpe.util.UnpackableBag
 import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
 
 enum class ShapeType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Shape<*>>) {
-    Point(1, Shape.Point.Polymorphic),
+    Points(1, Shape.Points.Polymorphic),
     Line(2, Shape.Line.Polymorphic),
     FillBox(3, Shape.FillBox.Polymorphic),
     StrokeBox(4, Shape.StrokeBox.Polymorphic),
@@ -37,7 +37,7 @@ sealed interface Shape<T : Cell> {
             }
 
             return when (val type = bag.getInt()) {
-                ShapeType.Point.value -> bag.getStuff(Point.Polymorphic)
+                ShapeType.Points.value -> bag.getStuff(Points.Polymorphic)
                 ShapeType.Line.value -> bag.getStuff(Line.Polymorphic)
                 ShapeType.FillBox.value -> bag.getStuff(FillBox.Polymorphic)
                 ShapeType.StrokeBox.value -> bag.getStuff(StrokeBox.Polymorphic)
@@ -47,27 +47,38 @@ sealed interface Shape<T : Cell> {
         }
     }
 
-    data class Point<T : Cell>(val x: Int, val y: Int, val cell: T) : Shape<T> {
-        override val type = ShapeType.Point
+    data class Points<T : Cell>(val points: List<Pair<Int, Int>>, val cell: T) : Shape<T> {
+        override val type = ShapeType.Points
         override val cellType = cell.type
 
-        internal object Polymorphic : BagStuffPacker<Point<*>>, BagStuffUnpacker<Point<*>> {
+        internal object Polymorphic : BagStuffPacker<Points<*>>, BagStuffUnpacker<Points<*>> {
             override val putInTheBagVersion = 1
 
-            override fun putInTheBag(bag: PackableBag, value: Point<*>) {
-                bag.put(value.x)
-                bag.put(value.y)
+            override fun putInTheBag(bag: PackableBag, value: Points<*>) {
+                bag.put(value.points.size)
+
+                for (point in value.points) {
+                    bag.put(point.first)
+                    bag.put(point.second)
+                }
+
                 bag.put(Cell, value.cell)
             }
 
-            override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Point<*> {
+            override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Points<*> {
                 if (version != 1) {
-                    throw UnsupportedVersionBagUnpackException("Shape.Point", version)
+                    throw UnsupportedVersionBagUnpackException("Shape.Points", version)
                 }
 
-                return Point(
-                    x = bag.getInt(),
-                    y = bag.getInt(),
+                val points = mutableListOf<Pair<Int, Int>>()
+                val numPoints = bag.getInt()
+
+                for (i in 0..<numPoints) {
+                    points.add(bag.getInt() to bag.getInt())
+                }
+
+                return Points(
+                    points = points,
                     cell = bag.getStuff(Cell)
                 )
             }

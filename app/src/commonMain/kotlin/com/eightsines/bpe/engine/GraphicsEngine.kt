@@ -327,6 +327,7 @@ class GraphicsEngine(
             }
         }
 
+        updatePreview(Box.of(sciiSX, sciiSY, sciiEX, sciiEY))
         return undoAction
     }
 
@@ -359,6 +360,7 @@ class GraphicsEngine(
             }
         }
 
+        updatePreview(Box.of(sciiSX, sciiSY, sciiEX, sciiEY))
         return undoAction
     }
 
@@ -379,9 +381,9 @@ class GraphicsEngine(
         )
 
         layer.canvas.mutate { mutator ->
-            for (cy in action.y..<(action.y + crate.height)) {
-                for (cx in action.x..<(action.x + crate.width)) {
-                    mutator.replaceSciiCell(cx, cy, crate.cells[cy][cx])
+            for (cy in 0..<crate.height) {
+                for (cx in 0..<crate.width) {
+                    mutator.replaceSciiCell(action.x + cx, action.y + cy, crate.cells[cy][cx])
                 }
             }
         }
@@ -505,6 +507,7 @@ class GraphicsEngine(
         canvasLayers[getLayerIndex(data.layer.uid)] = convertedLayer
         canvasLayersMap[data.layer.uid.value] = convertedLayer
 
+        updatePreview(ScreenBox)
         return undoAction
     }
 

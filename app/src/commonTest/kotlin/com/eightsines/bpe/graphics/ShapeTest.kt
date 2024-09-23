@@ -13,33 +13,32 @@ class ShapeTest {
     @Test
     fun shouldPackPoint() = performTest(
         arrange = {
-            val sut = Shape.Point(5, 8, BlockCellMother.White)
+            val sut = Shape.Points(listOf(5 to 8), BlockCellMother.White)
             sut to PackableStringBag()
         },
         act = { (sut, bag) ->
             bag.put(Shape, sut)
             bag.toString()
         },
-        assert = { assertEquals("BAG1u1i1u1i5I08u1i2u1i7i1", it) },
+        assert = { assertEquals("BAG1u1i1u1i1i5I08u1i2u1i7i1", it) },
     )
 
     @Test
     fun shouldUnpackPoint() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1i1u1i5I08u1i2u1i7i1") },
+        arrange = { UnpackableStringBag("BAG1u1i1u1i1i5I08u1i2u1i7i1") },
         act = {
             val sut = it.getStuff(Shape)
 
             sut to listOf(
                 sut.type,
                 sut.cellType,
-                (sut as? Shape.Point<*>)?.x,
-                (sut as? Shape.Point<*>)?.y,
-                (sut as? Shape.Point<*>)?.cell,
+                (sut as? Shape.Points<*>)?.points,
+                (sut as? Shape.Points<*>)?.cell,
             )
         },
         assert = { (sut, props) ->
-            assertIs<Shape.Point<*>>(sut)
-            assertEquals(listOf(ShapeType.Point, CellType.Block, 5, 8, BlockCellMother.White), props)
+            assertIs<Shape.Points<*>>(sut)
+            assertEquals(listOf(ShapeType.Points, CellType.Block, listOf(5 to 8), BlockCellMother.White), props)
         }
     )
 
