@@ -1,22 +1,22 @@
 package com.eightsines.bpe.middlware
 
-import com.eightsines.bpe.core.Box
-import com.eightsines.bpe.foundation.CanvasType
-import com.eightsines.bpe.foundation.Crate
-import com.eightsines.bpe.foundation.Selection
-import com.eightsines.bpe.graphics.Shape
-import com.eightsines.bpe.foundation.BackgroundLayer
-import com.eightsines.bpe.foundation.CanvasLayer
-import com.eightsines.bpe.foundation.Layer
-import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.core.BlockCell
+import com.eightsines.bpe.core.Box
 import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
+import com.eightsines.bpe.foundation.BackgroundLayer
+import com.eightsines.bpe.foundation.CanvasLayer
+import com.eightsines.bpe.foundation.CanvasType
+import com.eightsines.bpe.foundation.Crate
+import com.eightsines.bpe.foundation.Layer
+import com.eightsines.bpe.foundation.LayerUid
+import com.eightsines.bpe.foundation.Selection
 import com.eightsines.bpe.graphics.GraphicsAction
 import com.eightsines.bpe.graphics.GraphicsEngine
+import com.eightsines.bpe.graphics.Shape
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.UidFactory
 
@@ -58,7 +58,7 @@ class BpeEngine(
         private set
 
     fun execute(action: BpeAction) {
-        logger.trace("BpeEngine.execute:start") {
+        logger.trace("BpeEngine.execute:begin") {
             put("action", action.toString())
         }
 
@@ -102,7 +102,7 @@ class BpeEngine(
             state = refresh()
         }
 
-        logger.trace("BpeEngine.execute:finish") {
+        logger.trace("BpeEngine.execute:end") {
             put("state", state.toString())
         }
     }
@@ -410,67 +410,15 @@ class BpeEngine(
     //
 
     private fun executeCanvasDown(action: BpeAction.CanvasDown) {
-        val currentLayer = this.currentLayer
-
         currentPaintingSpec = null
         currentPaintingActions = null
 
         when (toolboxTool) {
             BpeTool.None -> Unit
-
-            BpeTool.Paint -> if (currentLayer is CanvasLayer<*>) {
-                currentPaintingSpec = if (toolboxPaintShape == BpeShape.Point) {
-                    BpePaintingSpec.Multiple(
-                        BpeTool.Paint,
-                        LinkedHashSet<Pair<Int, Int>>().apply { add(action.drawingX to action.drawingY) },
-                    )
-                } else {
-                    BpePaintingSpec.Single(BpeTool.Paint, toolboxPaintShape, action.drawingX, action.drawingY)
-                }
-
-                updatePainting(action.drawingX, action.drawingY)
-            }
-
-            BpeTool.Erase -> if (currentLayer is CanvasLayer<*>) {
-                currentPaintingSpec = if (toolboxEraseShape == BpeShape.Point) {
-                    BpePaintingSpec.Multiple(
-                        BpeTool.Erase,
-                        LinkedHashSet<Pair<Int, Int>>().apply { listOf(action.drawingX to action.drawingY) },
-                    )
-                } else {
-                    BpePaintingSpec.Single(BpeTool.Erase, toolboxEraseShape, action.drawingX, action.drawingY)
-                }
-
-                updatePainting(action.drawingX, action.drawingY)
-            }
-
-            BpeTool.Select -> if (currentLayer is CanvasLayer<*>) {
-                currentPaintingSpec = BpePaintingSpec.Select(currentLayer.canvasType, action.drawingX, action.drawingY)
-                updatePainting(action.drawingX, action.drawingY)
-            }
-
-            BpeTool.PickColor -> {
-                when (currentLayer) {
-                    is BackgroundLayer -> paletteInk = currentLayer.color
-
-                    is CanvasLayer<*> -> when (val cell = currentLayer.canvas.getDrawingCell(action.drawingX, action.drawingY)) {
-                        is SciiCell -> {
-                            paletteInk = cell.ink
-                            palettePaper = cell.paper
-                            paletteBright = cell.bright
-                            paletteFlash = cell.flash
-                            paletteChar = cell.character
-                        }
-
-                        is BlockCell -> {
-                            paletteInk = cell.color
-                            paletteBright = cell.bright
-                        }
-                    }
-                }
-
-                shouldRefresh = true
-            }
+            BpeTool.Paint -> startPainting(toolboxTool, toolboxPaintShape, action.drawingX, action.drawingX)
+            BpeTool.Erase -> startPainting(toolboxTool, toolboxEraseShape, action.drawingX, action.drawingX)
+            BpeTool.Select -> startPainting(toolboxTool, null, action.drawingX, action.drawingX)
+            BpeTool.PickColor -> executePickColor(action.drawingX, action.drawingY)
         }
     }
 
@@ -532,6 +480,46 @@ class BpeEngine(
         is HistoryAction.Composite -> action.actions.forEach(::executeHistoryAction)
     }
 
+    private fun executePickColor(drawingX: Int, drawingY: Int) {
+        when (val currentLayer = this.currentLayer) {
+            is BackgroundLayer -> paletteInk = currentLayer.color
+
+            is CanvasLayer<*> -> when (val cell = currentLayer.canvas.getDrawingCell(drawingX, drawingY)) {
+                is SciiCell -> {
+                    paletteInk = cell.ink
+                    palettePaper = cell.paper
+                    paletteBright = cell.bright
+                    paletteFlash = cell.flash
+                    paletteChar = cell.character
+                }
+
+                is BlockCell -> {
+                    paletteInk = cell.color
+                    paletteBright = cell.bright
+                }
+            }
+        }
+
+        shouldRefresh = true
+    }
+
+    private fun startPainting(bpeTool: BpeTool, bpeShape: BpeShape?, drawingX: Int, drawingY: Int) {
+        val currentLayer = this.currentLayer as? CanvasLayer<*> ?: return
+
+        currentPaintingSpec = when {
+            bpeTool == BpeTool.Select || bpeShape == null -> BpePaintingSpec.Select(currentLayer.canvasType, drawingX, drawingY)
+
+            bpeShape == BpeShape.Point -> BpePaintingSpec.Multiple(
+                bpeTool,
+                LinkedHashSet<Pair<Int, Int>>().apply { add(drawingX to drawingY) },
+            )
+
+            else -> BpePaintingSpec.Single(bpeTool, bpeShape, drawingX, drawingY)
+        }
+
+        updatePainting(drawingX, drawingY)
+    }
+
     private fun updatePainting(drawingX: Int, drawingY: Int) {
         val descriptor = getPaintingDescriptor()
         currentPaintingActions?.let { graphicsEngine.execute(it.second) }
@@ -541,10 +529,10 @@ class BpeEngine(
 
             is BpePaintingSpec.Single -> if (descriptor != null) {
                 val shape = when (spec.shape) {
+                    BpeShape.Point -> null
                     BpeShape.Line -> Shape.Line(spec.startX, spec.startY, drawingX, drawingY, descriptor.first)
                     BpeShape.FillBox -> Shape.FillBox(spec.startX, spec.startY, drawingX, drawingY, descriptor.first)
                     BpeShape.StrokeBox -> Shape.StrokeBox(spec.startX, spec.startY, drawingX, drawingY, descriptor.first)
-                    else -> null
                 }
 
                 if (shape != null) {

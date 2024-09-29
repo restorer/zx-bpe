@@ -24,7 +24,7 @@ class LoggerImpl : Logger {
         if (argumentsBuilder != null) {
             val arguments = LinkedHashMap<String, String>().also { argumentsBuilder(it) }
             sb.append(if (message.isEmpty()) " " else "\n")
-            sb.append(arguments.entries.joinToString(separator = "\n") { "${it.key}: ${it.value}" })
+            sb.append(arguments.entries.joinToString(separator = "\n") { "${it.key} = ${it.value}" })
         }
 
         return sb.toString()

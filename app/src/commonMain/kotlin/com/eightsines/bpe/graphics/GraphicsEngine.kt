@@ -80,7 +80,7 @@ class GraphicsEngine(
     }
 
     fun execute(action: GraphicsAction): GraphicsAction? {
-        logger.trace("GraphicsEngine.execute:start") {
+        logger.trace("GraphicsEngine.execute:begin") {
             put("action", action.toString())
         }
 
@@ -105,9 +105,9 @@ class GraphicsEngine(
             is GraphicsAction.ConvertLayer -> executeConvertLayer(action)
         }
 
-        logger.trace("GraphicsEngine.execute:finish") {
-            put("undoAction", undoAction.toString())
+        logger.trace("GraphicsEngine.execute:end") {
             put("state", state.toString())
+            put("undoAction", undoAction.toString())
         }
 
         return undoAction

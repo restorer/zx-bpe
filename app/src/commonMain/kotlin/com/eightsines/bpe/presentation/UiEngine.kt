@@ -20,7 +20,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         private set
 
     fun execute(action: UiAction) {
-        logger.trace("UiEngine.execute:start") {
+        logger.trace("UiEngine.execute:begin") {
             put("action", action.toString())
         }
 
@@ -72,7 +72,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
         state = refresh()
 
-        logger.trace("UiEngine.execute:finish") {
+        logger.trace("UiEngine.execute:end") {
             put("state", state.toString())
         }
     }

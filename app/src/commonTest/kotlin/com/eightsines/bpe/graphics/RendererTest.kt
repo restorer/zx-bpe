@@ -1,4 +1,4 @@
-package com.eightsines.bpe.engine
+package com.eightsines.bpe.graphics
 
 import com.eightsines.bpe.core.Box
 import com.eightsines.bpe.foundation.MutableHBlockCanvas
@@ -16,7 +16,6 @@ import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
 import com.eightsines.bpe.core.VBlockMergeCell
-import com.eightsines.bpe.graphics.Renderer
 import com.eightsines.bpe.testing.BlockCellMother
 import com.eightsines.bpe.testing.SciiCellMother
 import com.eightsines.bpe.testing.performTest
