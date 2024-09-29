@@ -180,22 +180,31 @@ class MutableHBlockCanvas(
                 return
             }
 
-            val charValue = if (cell.character.value in SciiChar.BLOCK_VALUE_FIRST..SciiChar.BLOCK_VALUE_LAST) {
+            var ink = cell.ink
+            var paper = cell.paper
+
+            var charValue = if (cell.character.value in SciiChar.BLOCK_VALUE_FIRST..SciiChar.BLOCK_VALUE_LAST) {
                 cell.character.value
             } else {
                 SciiChar.BLOCK_VALUE_FIRST
             }
 
+            if (ink == SciiColor.Transparent && paper != SciiColor.Transparent) {
+                ink = paper
+                paper = SciiColor.Transparent
+                charValue = charValue xor SciiChar.BLOCK_MASK
+            }
+
             val topColor = if ((charValue and SciiChar.BLOCK_BIT_TR) != 0 || (charValue and SciiChar.BLOCK_BIT_TL) != 0) {
-                cell.ink
+                ink
             } else {
-                cell.paper
+                paper
             }
 
             val bottomColor = if ((charValue and SciiChar.BLOCK_BIT_BR) != 0 || (charValue and SciiChar.BLOCK_BIT_BL) != 0) {
-                cell.ink
+                ink
             } else {
-                cell.paper
+                paper
             }
 
             val drawingY = sciiY * 2
@@ -312,22 +321,31 @@ class MutableVBlockCanvas(
                 return
             }
 
-            val charValue = if (cell.character.value in SciiChar.BLOCK_VALUE_FIRST..SciiChar.BLOCK_VALUE_LAST) {
+            var ink = cell.ink
+            var paper = cell.paper
+
+            var charValue = if (cell.character.value in SciiChar.BLOCK_VALUE_FIRST..SciiChar.BLOCK_VALUE_LAST) {
                 cell.character.value
             } else {
                 SciiChar.BLOCK_VALUE_FIRST
             }
 
+            if (ink == SciiColor.Transparent && paper != SciiColor.Transparent) {
+                ink = paper
+                paper = SciiColor.Transparent
+                charValue = charValue xor SciiChar.BLOCK_MASK
+            }
+
             val leftColor = if ((charValue and SciiChar.BLOCK_BIT_TL) != 0 || (charValue and SciiChar.BLOCK_BIT_BL) != 0) {
-                cell.ink
+                ink
             } else {
-                cell.paper
+                paper
             }
 
             val rightColor = if ((charValue and SciiChar.BLOCK_BIT_TR) != 0 || (charValue and SciiChar.BLOCK_BIT_BR) != 0) {
-                cell.ink
+                ink
             } else {
-                cell.paper
+                paper
             }
 
             val drawingX = sciiX * 2
@@ -469,7 +487,12 @@ class MutableQBlockCanvas(
                     cell.paper
                 }
 
-                else -> cell.ink
+                cell.paper == SciiColor.Transparent -> cell.ink
+
+                else -> {
+                    charValue = SciiChar.BLOCK_VALUE_LAST
+                    cell.ink
+                }
             }
 
             canvas.pixels[drawingY][drawingX + 1] = ((charValue and SciiChar.BLOCK_BIT_TR) != 0)

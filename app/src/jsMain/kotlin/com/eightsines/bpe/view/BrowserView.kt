@@ -1,4 +1,4 @@
-package com.eightsines.bpe.presentation
+package com.eightsines.bpe.view
 
 import com.eightsines.bpe.middlware.BpeShape
 import com.eightsines.bpe.foundation.CanvasType
@@ -8,6 +8,12 @@ import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
 import com.eightsines.bpe.middlware.LayerView
+import com.eightsines.bpe.presentation.UiAction
+import com.eightsines.bpe.presentation.UiArea
+import com.eightsines.bpe.presentation.UiPanel
+import com.eightsines.bpe.presentation.UiSheetView
+import com.eightsines.bpe.presentation.UiState
+import com.eightsines.bpe.presentation.UiToolState
 import kotlinx.dom.addClass
 import kotlinx.dom.createElement
 import kotlinx.dom.removeClass

@@ -1,4 +1,4 @@
-package com.eightsines.bpe.presentation
+package com.eightsines.bpe.view
 
 import com.eightsines.bpe.util.SpecScii
 import com.eightsines.bpe.foundation.BlockCanvas
@@ -13,6 +13,8 @@ import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
+import com.eightsines.bpe.presentation.UiArea
+import com.eightsines.bpe.presentation.UiSpec
 import com.eightsines.bpe.util.ElapsedTimeProvider
 import com.eightsines.bpe.util.Material
 import org.khronos.webgl.Uint8ClampedArray

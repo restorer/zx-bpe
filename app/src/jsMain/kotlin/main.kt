@@ -2,12 +2,12 @@ import com.eightsines.bpe.graphics.GraphicsEngine
 import com.eightsines.bpe.graphics.Painter
 import com.eightsines.bpe.graphics.Renderer
 import com.eightsines.bpe.middlware.BpeEngine
-import com.eightsines.bpe.presentation.BrowserRenderer
-import com.eightsines.bpe.presentation.BrowserView
 import com.eightsines.bpe.presentation.UiEngine
 import com.eightsines.bpe.util.ElapsedTimeProviderImpl
 import com.eightsines.bpe.util.LoggerImpl
 import com.eightsines.bpe.util.UidFactoryImpl
+import com.eightsines.bpe.view.BrowserRenderer
+import com.eightsines.bpe.view.BrowserView
 import kotlinx.browser.window
 import org.w3c.dom.Document
 
@@ -27,13 +27,13 @@ class BpeComponent(private val document: Document) {
 
 fun ready(bpeComponent: BpeComponent) {
     val uiEngine = bpeComponent.uiEngine
-    val uiView = bpeComponent.browserView
+    val browserView = bpeComponent.browserView
 
-    bpeComponent.browserView.render(uiEngine.state)
+    browserView.render(uiEngine.state)
 
-    uiView.onAction = {
+    browserView.onAction = {
         uiEngine.execute(it)
-        uiView.render(uiEngine.state)
+        browserView.render(uiEngine.state)
     }
 }
 

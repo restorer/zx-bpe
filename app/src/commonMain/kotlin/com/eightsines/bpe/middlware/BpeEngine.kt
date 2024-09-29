@@ -58,7 +58,7 @@ class BpeEngine(
         private set
 
     fun execute(action: BpeAction) {
-        logger.trace("BpeEngine.execute:begin") {
+        logger.note("BpeEngine.execute:begin") {
             put("action", action.toString())
         }
 
@@ -102,7 +102,7 @@ class BpeEngine(
             state = refresh()
         }
 
-        logger.trace("BpeEngine.execute:end") {
+        logger.note("BpeEngine.execute:end") {
             put("state", state.toString())
         }
     }
@@ -415,9 +415,9 @@ class BpeEngine(
 
         when (toolboxTool) {
             BpeTool.None -> Unit
-            BpeTool.Paint -> startPainting(toolboxTool, toolboxPaintShape, action.drawingX, action.drawingX)
-            BpeTool.Erase -> startPainting(toolboxTool, toolboxEraseShape, action.drawingX, action.drawingX)
-            BpeTool.Select -> startPainting(toolboxTool, null, action.drawingX, action.drawingX)
+            BpeTool.Paint -> startPainting(toolboxTool, toolboxPaintShape, action.drawingX, action.drawingY)
+            BpeTool.Erase -> startPainting(toolboxTool, toolboxEraseShape, action.drawingX, action.drawingY)
+            BpeTool.Select -> startPainting(toolboxTool, null, action.drawingX, action.drawingY)
             BpeTool.PickColor -> executePickColor(action.drawingX, action.drawingY)
         }
     }

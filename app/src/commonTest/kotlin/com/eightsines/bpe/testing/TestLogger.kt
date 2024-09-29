@@ -1,9 +1,8 @@
 package com.eightsines.bpe.testing
 
 import com.eightsines.bpe.util.Logger
+import com.eightsines.bpe.util.Severity
 
 class TestLogger : Logger {
-    override fun trace(message: String, argumentsBuilder: (MutableMap<String, String>.() -> Unit)?) = Unit
-    override fun log(message: String, argumentsBuilder: (MutableMap<String, String>.() -> Unit)?) = Unit
-    override fun critical(message: String, argumentsBuilder: (MutableMap<String, String>.() -> Unit)?) = Unit
+    override fun log(severity: Severity, message: String, argumentsBuilder: (MutableMap<String, String>.() -> Unit)?) = Unit
 }
