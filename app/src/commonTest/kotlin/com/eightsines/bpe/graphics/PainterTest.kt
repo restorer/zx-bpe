@@ -1,9 +1,12 @@
 package com.eightsines.bpe.graphics
 
-import com.eightsines.bpe.model.BlockCell
-import com.eightsines.bpe.test.BlockCellMother
-import com.eightsines.bpe.test.TestPencil
-import com.eightsines.bpe.test.performTest
+import com.eightsines.bpe.foundation.CanvasType
+import com.eightsines.bpe.core.BlockCell
+import com.eightsines.bpe.core.Box
+import com.eightsines.bpe.foundation.Crate
+import com.eightsines.bpe.testing.BlockCellMother
+import com.eightsines.bpe.testing.TestPencil
+import com.eightsines.bpe.testing.performTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -108,10 +111,10 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(2, 3, BlockCellMother.White),
-                    TestPencil.Point(3, 3, BlockCellMother.White),
-                    TestPencil.Point(4, 3, BlockCellMother.White),
                     TestPencil.Point(5, 3, BlockCellMother.White),
+                    TestPencil.Point(4, 3, BlockCellMother.White),
+                    TestPencil.Point(3, 3, BlockCellMother.White),
+                    TestPencil.Point(2, 3, BlockCellMother.White),
                 ),
                 it.testPoints,
             )
@@ -150,10 +153,10 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(3, 2, BlockCellMother.White),
-                    TestPencil.Point(3, 3, BlockCellMother.White),
-                    TestPencil.Point(3, 4, BlockCellMother.White),
                     TestPencil.Point(3, 5, BlockCellMother.White),
+                    TestPencil.Point(3, 4, BlockCellMother.White),
+                    TestPencil.Point(3, 3, BlockCellMother.White),
+                    TestPencil.Point(3, 2, BlockCellMother.White),
                 ),
                 it.testPoints,
             )
@@ -171,13 +174,13 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(2, 1, BlockCellMother.White),
-                    TestPencil.Point(3, 2, BlockCellMother.White),
-                    TestPencil.Point(4, 2, BlockCellMother.White),
+                    TestPencil.Point(8, 1, BlockCellMother.White),
+                    TestPencil.Point(7, 2, BlockCellMother.White),
+                    TestPencil.Point(6, 2, BlockCellMother.White),
                     TestPencil.Point(5, 3, BlockCellMother.White),
-                    TestPencil.Point(6, 4, BlockCellMother.White),
-                    TestPencil.Point(7, 4, BlockCellMother.White),
-                    TestPencil.Point(8, 5, BlockCellMother.White),
+                    TestPencil.Point(4, 4, BlockCellMother.White),
+                    TestPencil.Point(3, 4, BlockCellMother.White),
+                    TestPencil.Point(2, 5, BlockCellMother.White),
                 ),
                 it.testPoints,
             )
@@ -219,13 +222,13 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(1, 2, BlockCellMother.White),
-                    TestPencil.Point(2, 3, BlockCellMother.White),
-                    TestPencil.Point(2, 4, BlockCellMother.White),
+                    TestPencil.Point(1, 8, BlockCellMother.White),
+                    TestPencil.Point(2, 7, BlockCellMother.White),
+                    TestPencil.Point(2, 6, BlockCellMother.White),
                     TestPencil.Point(3, 5, BlockCellMother.White),
-                    TestPencil.Point(4, 6, BlockCellMother.White),
-                    TestPencil.Point(4, 7, BlockCellMother.White),
-                    TestPencil.Point(5, 8, BlockCellMother.White),
+                    TestPencil.Point(4, 4, BlockCellMother.White),
+                    TestPencil.Point(4, 3, BlockCellMother.White),
+                    TestPencil.Point(5, 2, BlockCellMother.White),
                 ),
                 it.testPoints,
             )

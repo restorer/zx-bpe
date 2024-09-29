@@ -1,6 +1,7 @@
 package com.eightsines.bpe.graphics
 
-import com.eightsines.bpe.model.Cell
+import com.eightsines.bpe.core.Box
+import com.eightsines.bpe.core.Cell
 import kotlin.math.abs
 import kotlin.math.roundToInt
 

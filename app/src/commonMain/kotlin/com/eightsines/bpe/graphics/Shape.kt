@@ -1,7 +1,8 @@
 package com.eightsines.bpe.graphics
 
-import com.eightsines.bpe.model.Cell
-import com.eightsines.bpe.model.CellType
+import com.eightsines.bpe.core.Cell
+import com.eightsines.bpe.core.CellType
+import com.eightsines.bpe.foundation.Crate
 import com.eightsines.bpe.util.BagStuffPacker
 import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.PackableBag

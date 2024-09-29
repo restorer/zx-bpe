@@ -1,8 +1,8 @@
 package com.eightsines.bpe.util
 
-import com.eightsines.bpe.test.TestBagStuff
-import com.eightsines.bpe.test.TestBagStuffMother
-import com.eightsines.bpe.test.performTest
+import com.eightsines.bpe.testing.TestBagStuff
+import com.eightsines.bpe.testing.TestBagStuffMother
+import com.eightsines.bpe.testing.performTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

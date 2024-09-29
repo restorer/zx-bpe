@@ -1,8 +1,10 @@
 package com.eightsines.bpe.graphics
 
-import com.eightsines.bpe.model.CellType
-import com.eightsines.bpe.test.BlockCellMother
-import com.eightsines.bpe.test.performTest
+import com.eightsines.bpe.foundation.CanvasType
+import com.eightsines.bpe.core.CellType
+import com.eightsines.bpe.foundation.Crate
+import com.eightsines.bpe.testing.BlockCellMother
+import com.eightsines.bpe.testing.performTest
 import com.eightsines.bpe.util.PackableStringBag
 import com.eightsines.bpe.util.UnpackableStringBag
 import kotlin.test.Test

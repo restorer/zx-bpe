@@ -1,11 +1,11 @@
 package com.eightsines.bpe.presentation
 
-import com.eightsines.bpe.engine.BpeShape
-import com.eightsines.bpe.graphics.CanvasType
-import com.eightsines.bpe.layer.LayerUid
-import com.eightsines.bpe.model.SciiChar
-import com.eightsines.bpe.model.SciiColor
-import com.eightsines.bpe.model.SciiLight
+import com.eightsines.bpe.foundation.CanvasType
+import com.eightsines.bpe.foundation.LayerUid
+import com.eightsines.bpe.core.SciiChar
+import com.eightsines.bpe.core.SciiColor
+import com.eightsines.bpe.core.SciiLight
+import com.eightsines.bpe.middlware.BpeShape
 
 sealed interface UiAction {
     data class SheetEnter(val pointerX: Int, val pointerY: Int) : UiAction

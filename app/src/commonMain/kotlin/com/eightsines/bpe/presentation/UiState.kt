@@ -1,15 +1,14 @@
 package com.eightsines.bpe.presentation
 
-import com.eightsines.bpe.engine.BpeShape
-import com.eightsines.bpe.layer.LayerUid
-import com.eightsines.bpe.model.SciiChar
-import com.eightsines.bpe.model.SciiColor
-import com.eightsines.bpe.model.SciiLight
-import com.eightsines.bpe.state.LayerView
-import com.eightsines.bpe.state.SheetView
+import com.eightsines.bpe.foundation.LayerUid
+import com.eightsines.bpe.core.SciiChar
+import com.eightsines.bpe.core.SciiColor
+import com.eightsines.bpe.core.SciiLight
+import com.eightsines.bpe.middlware.BpeShape
+import com.eightsines.bpe.middlware.LayerView
 
 data class UiState(
-    val sheet: SheetView,
+    val sheet: UiSheetView,
     val cursorArea: UiArea?,
     val selectionArea: UiArea?,
 
@@ -59,14 +58,17 @@ sealed interface UiToolState<out T> {
 
     data class Disabled<T>(val value: T) : UiToolState<T> {
         override val isInteractable = false
+        override fun toString() = "Disabled(${if (value == Unit) "" else value.toString() })"
     }
 
     data class Visible<T>(val value: T) : UiToolState<T> {
         override val isInteractable = true
+        override fun toString() = "Visible(${if (value == Unit) "" else value.toString() })"
     }
 
     data class Active<T>(val value: T) : UiToolState<T> {
         override val isInteractable = true
+        override fun toString() = "Active(${if (value == Unit) "" else value.toString() })"
     }
 }
 

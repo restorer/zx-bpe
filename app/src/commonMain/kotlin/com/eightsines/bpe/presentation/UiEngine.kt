@@ -1,16 +1,16 @@
 package com.eightsines.bpe.presentation
 
-import com.eightsines.bpe.engine.BpeAction
-import com.eightsines.bpe.engine.BpeEngine
-import com.eightsines.bpe.engine.BpeShape
-import com.eightsines.bpe.engine.BpeTool
-import com.eightsines.bpe.graphics.CanvasType
-import com.eightsines.bpe.model.SciiChar
-import com.eightsines.bpe.model.SciiColor
-import com.eightsines.bpe.model.SciiLight
-import com.eightsines.bpe.state.SheetView
+import com.eightsines.bpe.core.SciiChar
+import com.eightsines.bpe.core.SciiColor
+import com.eightsines.bpe.core.SciiLight
+import com.eightsines.bpe.foundation.CanvasType
+import com.eightsines.bpe.middlware.BpeAction
+import com.eightsines.bpe.middlware.BpeEngine
+import com.eightsines.bpe.middlware.BpeShape
+import com.eightsines.bpe.middlware.BpeTool
+import com.eightsines.bpe.util.Logger
 
-class UiEngine(private val bpeEngine: BpeEngine) {
+class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     private var activePanel: Panel? = null
     private var layerTypePanel: LayerTypePanel? = null
     private var cursorArea: UiArea? = null
@@ -20,6 +20,10 @@ class UiEngine(private val bpeEngine: BpeEngine) {
         private set
 
     fun execute(action: UiAction) {
+        logger.trace("UiEngine.execute:start") {
+            put("action", action.toString())
+        }
+
         when (action) {
             is UiAction.SheetEnter -> executeSheetEnter(action)
             is UiAction.SheetDown -> executeSheetDown(action)
@@ -67,6 +71,10 @@ class UiEngine(private val bpeEngine: BpeEngine) {
         }
 
         state = refresh()
+
+        logger.trace("UiEngine.execute:finish") {
+            put("state", state.toString())
+        }
     }
 
     private fun executeSheetEnter(action: UiAction.SheetEnter) {
@@ -386,7 +394,7 @@ class UiEngine(private val bpeEngine: BpeEngine) {
         val isEraseActive = bpeState.toolboxTool == BpeTool.Erase && isEraseAvailable
 
         return UiState(
-            sheet = SheetView(bpeState.background, bpeState.canvas),
+            sheet = UiSheetView(bpeState.background, bpeState.canvas),
             cursorArea = cursorArea,
 
             selectionArea = bpeState.selection?.let {

@@ -7,7 +7,7 @@ from PIL import Image
 
 def main() -> int:
     image_path = os.path.dirname(__file__) + '/specscii__8x8.png'
-    result_path = os.path.dirname(__file__) + '/../app/src/commonMain/kotlin/com/eightsines/bpe/data/SpecSciiData.kt'
+    result_path = os.path.dirname(__file__) + '/../app/src/jsMain/kotlin/com/eightsines/bpe/util/SpecScii.kt'
 
     image = Image.open(image_path)
     pixels = image.load()
@@ -33,9 +33,9 @@ def main() -> int:
 
         content_data += ','
 
-    content = f'''package com.eightsines.bpe.data
+    content = f'''package com.eightsines.bpe.util
 
-object SpecSciiData {{
+object SpecScii {{
     const val WIDTH = {width}
     const val HEIGHT = {height}
 
