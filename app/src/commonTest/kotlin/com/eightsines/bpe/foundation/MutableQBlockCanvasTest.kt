@@ -123,7 +123,7 @@ class MutableQBlockCanvasTest {
             MutableQBlockCanvas(1, 1).also { sut ->
                 sut.mutate {
                     it.mergeDrawingCell(0, 0, BlockCellMother.Black)
-                    it.mergeDrawingCell(1, 1, BlockCellMother.White)
+                    it.mergeDrawingCell(1, 1, BlockCellMother.WhiteBright)
                 }
             }
         },
@@ -186,7 +186,7 @@ class MutableQBlockCanvasTest {
         arrange = {
             MutableQBlockCanvas(2, 1).also { sut ->
                 sut.mutate {
-                    it.replaceDrawingCell(0, 0, BlockCellMother.White)
+                    it.replaceDrawingCell(0, 0, BlockCellMother.WhiteBright)
                     it.replaceDrawingCell(2, 0, BlockCellMother.Black)
                 }
             }
@@ -199,7 +199,7 @@ class MutableQBlockCanvasTest {
                     BlockCell(color = SciiColor.Transparent, bright = SciiLight.Off),
                 )
 
-                it.mergeDrawingCell(2, 1, BlockCellMother.White)
+                it.mergeDrawingCell(2, 1, BlockCellMother.WhiteBright)
             }
 
             listOf(
@@ -211,7 +211,7 @@ class MutableQBlockCanvasTest {
             assertEquals(
                 listOf(
                     BlockCell(color = SciiColor.White, bright = SciiLight.Off),
-                    BlockCellMother.White,
+                    BlockCellMother.WhiteBright,
                 ),
                 it,
             )
@@ -223,7 +223,7 @@ class MutableQBlockCanvasTest {
         arrange = {
             MutableQBlockCanvas(1, 1).also { sut ->
                 sut.mutate {
-                    it.replaceDrawingCell(0, 0, BlockCellMother.White)
+                    it.replaceDrawingCell(0, 0, BlockCellMother.WhiteBright)
                 }
             }
         },
@@ -309,8 +309,8 @@ class MutableQBlockCanvasTest {
         assert = {
             assertEquals(
                 listOf(
-                    BlockCellMother.White,
-                    BlockCellMother.White,
+                    BlockCellMother.WhiteBright,
+                    BlockCellMother.WhiteBright,
                     BlockCell.Transparent,
                     BlockCell.Transparent,
                 ),
@@ -349,8 +349,8 @@ class MutableQBlockCanvasTest {
                 listOf(
                     BlockCell.Transparent,
                     BlockCell.Transparent,
-                    BlockCellMother.White,
-                    BlockCellMother.White,
+                    BlockCellMother.WhiteBright,
+                    BlockCellMother.WhiteBright,
                 ),
                 it,
             )
@@ -385,10 +385,10 @@ class MutableQBlockCanvasTest {
         assert = {
             assertEquals(
                 listOf(
-                    BlockCellMother.White,
-                    BlockCellMother.White,
-                    BlockCell.Transparent,
-                    BlockCell.Transparent,
+                    BlockCellMother.WhiteBright,
+                    BlockCellMother.WhiteBright,
+                    BlockCellMother.WhiteBright,
+                    BlockCellMother.WhiteBright,
                 ),
                 it,
             )
@@ -400,8 +400,8 @@ class MutableQBlockCanvasTest {
         arrange = { MutableQBlockCanvas(1, 1) },
         act = { sut ->
             sut.mutate {
-                it.mergeDrawingCell(-1, -1, BlockCellMother.White)
-                it.mergeDrawingCell(2, 2, BlockCellMother.White)
+                it.mergeDrawingCell(-1, -1, BlockCellMother.WhiteBright)
+                it.mergeDrawingCell(2, 2, BlockCellMother.WhiteBright)
             }
 
             sut.getSciiCell(0, 0)
@@ -414,8 +414,8 @@ class MutableQBlockCanvasTest {
         arrange = { MutableQBlockCanvas(1, 1) },
         act = { sut ->
             sut.mutate {
-                it.replaceDrawingCell(-1, -1, BlockCellMother.White)
-                it.replaceDrawingCell(2, 2, BlockCellMother.White)
+                it.replaceDrawingCell(-1, -1, BlockCellMother.WhiteBright)
+                it.replaceDrawingCell(2, 2, BlockCellMother.WhiteBright)
             }
 
             sut.getSciiCell(0, 0)
@@ -431,7 +431,7 @@ class MutableQBlockCanvasTest {
             val sut = MutableQBlockCanvas(2, 1)
 
             sut.mutate {
-                it.replaceDrawingCell(0, 0, BlockCellMother.White)
+                it.replaceDrawingCell(0, 0, BlockCellMother.WhiteBright)
                 it.replaceDrawingCell(2, 0, BlockCellMother.Black)
             }
 
@@ -468,7 +468,7 @@ class MutableQBlockCanvasTest {
             assertEquals(
                 listOf(
                     2 to 1,
-                    BlockCellMother.White,
+                    BlockCellMother.WhiteBright,
                     BlockCell.Transparent,
                     BlockCellMother.Black,
                     BlockCell.Transparent,

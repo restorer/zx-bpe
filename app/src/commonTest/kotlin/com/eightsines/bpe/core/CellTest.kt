@@ -23,7 +23,7 @@ class CellTest {
 
     @Test
     fun shouldPackBlockDrawing() = performTest(
-        arrange = { BlockCellMother.White to PackableStringBag() },
+        arrange = { BlockCellMother.WhiteBright to PackableStringBag() },
         act = { (sut, bag) ->
             bag.put(Cell, sut)
             bag.toString()
@@ -42,7 +42,7 @@ class CellTest {
     fun shouldUnpackBlockDrawing() = performTest(
         arrange = { UnpackableStringBag("BAG1u1i2u1i7i1") },
         act = { it.getStuff(Cell) },
-        assert = { assertEquals(BlockCellMother.White, it) },
+        assert = { assertEquals(BlockCellMother.WhiteBright, it) },
     )
 
     @Test

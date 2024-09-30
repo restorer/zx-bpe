@@ -227,7 +227,7 @@ class RendererTest {
             Renderer() to listOf(
                 Renderer.MergeType.Scii to listOf(
                     MutableQBlockCanvas(1, 1).also { canvas ->
-                        canvas.mutate { it.replaceDrawingCell(0, 0, BlockCellMother.White) }
+                        canvas.mutate { it.replaceDrawingCell(0, 0, BlockCellMother.WhiteBright) }
                     },
                     MutableQBlockCanvas(1, 1).also { canvas ->
                         canvas.mutate { it.replaceDrawingCell(1, 1, BlockCellMother.Black) }

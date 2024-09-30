@@ -62,13 +62,17 @@ data class SciiCell(
 ) : Cell {
     override val type = CellType.Scii
 
-    fun merge(onto: SciiCell) = SciiCell(
-        character = character.merge(onto.character),
-        ink = ink.merge(onto.ink),
-        paper = paper.merge(onto.paper),
-        bright = bright.merge(onto.bright),
-        flash = flash.merge(onto.flash),
-    )
+    fun merge(onto: SciiCell) = if (character == SciiChar.Transparent && onto.character == SciiChar.Transparent) {
+        Transparent
+    } else {
+        SciiCell(
+            character = character.merge(onto.character),
+            ink = ink.merge(onto.ink),
+            paper = paper.merge(onto.paper),
+            bright = bright.merge(onto.bright),
+            flash = flash.merge(onto.flash),
+        )
+    }
 
     companion object : BagStuffUnpacker<SciiCell> {
         val Transparent = SciiCell(

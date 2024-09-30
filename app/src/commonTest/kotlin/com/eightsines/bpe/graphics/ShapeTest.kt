@@ -15,7 +15,7 @@ class ShapeTest {
     @Test
     fun shouldPackPoint() = performTest(
         arrange = {
-            val sut = Shape.Points(listOf(5 to 8), BlockCellMother.White)
+            val sut = Shape.Points(listOf(5 to 8), BlockCellMother.WhiteBright)
             sut to PackableStringBag()
         },
         act = { (sut, bag) ->
@@ -40,14 +40,14 @@ class ShapeTest {
         },
         assert = { (sut, props) ->
             assertIs<Shape.Points<*>>(sut)
-            assertEquals(listOf(ShapeType.Points, CellType.Block, listOf(5 to 8), BlockCellMother.White), props)
+            assertEquals(listOf(ShapeType.Points, CellType.Block, listOf(5 to 8), BlockCellMother.WhiteBright), props)
         }
     )
 
     @Test
     fun shouldPackLine() = performTest(
         arrange = {
-            val sut = Shape.Line(1, 2, 5, 8, BlockCellMother.White)
+            val sut = Shape.Line(1, 2, 5, 8, BlockCellMother.WhiteBright)
             sut to PackableStringBag()
         },
         act = { (sut, bag) ->
@@ -75,14 +75,14 @@ class ShapeTest {
         },
         assert = { (sut, props) ->
             assertIs<Shape.Line<*>>(sut)
-            assertEquals(listOf(ShapeType.Line, CellType.Block, 1, 2, 5, 8, BlockCellMother.White), props)
+            assertEquals(listOf(ShapeType.Line, CellType.Block, 1, 2, 5, 8, BlockCellMother.WhiteBright), props)
         }
     )
 
     @Test
     fun shouldPackFillBox() = performTest(
         arrange = {
-            val sut = Shape.FillBox(1, 2, 5, 8, BlockCellMother.White)
+            val sut = Shape.FillBox(1, 2, 5, 8, BlockCellMother.WhiteBright)
             sut to PackableStringBag()
         },
         act = { (sut, bag) ->
@@ -110,14 +110,14 @@ class ShapeTest {
         },
         assert = { (sut, props) ->
             assertIs<Shape.FillBox<*>>(sut)
-            assertEquals(listOf(ShapeType.FillBox, CellType.Block, 1, 2, 5, 8, BlockCellMother.White), props)
+            assertEquals(listOf(ShapeType.FillBox, CellType.Block, 1, 2, 5, 8, BlockCellMother.WhiteBright), props)
         }
     )
 
     @Test
     fun shouldPackStrokeBox() = performTest(
         arrange = {
-            val sut = Shape.StrokeBox(1, 2, 5, 8, BlockCellMother.White)
+            val sut = Shape.StrokeBox(1, 2, 5, 8, BlockCellMother.WhiteBright)
             sut to PackableStringBag()
         },
         act = { (sut, bag) ->
@@ -145,7 +145,7 @@ class ShapeTest {
         },
         assert = { (sut, props) ->
             assertIs<Shape.StrokeBox<*>>(sut)
-            assertEquals(listOf(ShapeType.StrokeBox, CellType.Block, 1, 2, 5, 8, BlockCellMother.White), props)
+            assertEquals(listOf(ShapeType.StrokeBox, CellType.Block, 1, 2, 5, 8, BlockCellMother.WhiteBright), props)
         }
     )
 
@@ -159,7 +159,7 @@ class ShapeTest {
                     CanvasType.HBlock,
                     2,
                     1,
-                    listOf(listOf(BlockCellMother.Black, BlockCellMother.White)),
+                    listOf(listOf(BlockCellMother.Black, BlockCellMother.WhiteBright)),
                 )
             )
 
@@ -198,7 +198,7 @@ class ShapeTest {
                         CanvasType.HBlock,
                         2,
                         1,
-                        listOf(listOf(BlockCellMother.Black, BlockCellMother.White)),
+                        listOf(listOf(BlockCellMother.Black, BlockCellMother.WhiteBright)),
                     )
                 ),
                 props,

@@ -15,6 +15,8 @@ data class Crate<T : Cell>(
     val height: Int,
     val cells: List<List<T>>,
 ) {
+    override fun toString() = "Crate(canvasType=$canvasType, width=$width, height=$height)"
+
     companion object : BagStuffPacker<Crate<*>>, BagStuffUnpacker<Crate<*>> {
         fun fromCanvasScii(
             canvas: Canvas<*>,

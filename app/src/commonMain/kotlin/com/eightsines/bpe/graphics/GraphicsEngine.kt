@@ -271,6 +271,8 @@ class GraphicsEngine(
 
         val undoAction = GraphicsAction.SetLayerVisible(layer.uid, layer.isVisible)
         layer.isVisible = action.isVisible
+
+        updatePreview(ScreenBox)
         return undoAction
     }
 

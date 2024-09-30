@@ -177,7 +177,7 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
                 val color = getColor(cell.color, cell.bright)
 
                 if (color != null) {
-                    htmlContext.fillStyle = color
+                    htmlContext.fillStyle = color.value
 
                     htmlContext.fillRect(
                         left + drawingX.toDouble() * blockWidth,

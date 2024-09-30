@@ -54,7 +54,7 @@ class CrateTest {
                 canvasType = CanvasType.Scii,
                 width = 2,
                 height = 1,
-                cells = listOf(listOf(BlockCellMother.White, BlockCell.Transparent)),
+                cells = listOf(listOf(BlockCellMother.WhiteBright, BlockCell.Transparent)),
             )
 
             sut to PackableStringBag()
@@ -76,7 +76,7 @@ class CrateTest {
                     canvasType = CanvasType.Scii,
                     width = 2,
                     height = 1,
-                    cells = listOf(listOf(BlockCellMother.White, BlockCell.Transparent)),
+                    cells = listOf(listOf(BlockCellMother.WhiteBright, BlockCell.Transparent)),
                 ),
                 it,
             )

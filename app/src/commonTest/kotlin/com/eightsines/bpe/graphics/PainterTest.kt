@@ -15,28 +15,28 @@ class PainterTest {
 
     @Test
     fun shouldGetBBoxPoint() = performTest(
-        arrange = { Painter() to Shape.Points(listOf(5 to 8), BlockCellMother.White) },
+        arrange = { Painter() to Shape.Points(listOf(5 to 8), BlockCellMother.WhiteBright) },
         act = { (sut, shape) -> sut.getBBox(shape) },
         assert = { assertEquals(Box(5, 8, 1, 1), it) }
     )
 
     @Test
     fun shouldGetBBoxLine() = performTest(
-        arrange = { Painter() to Shape.Line(5, 2, 1, 8, BlockCellMother.White) },
+        arrange = { Painter() to Shape.Line(5, 2, 1, 8, BlockCellMother.WhiteBright) },
         act = { (sut, shape) -> sut.getBBox(shape) },
         assert = { assertEquals(Box(1, 2, 5, 7), it) }
     )
 
     @Test
     fun shouldGetBBoxFillBox() = performTest(
-        arrange = { Painter() to Shape.FillBox(5, 2, 1, 8, BlockCellMother.White) },
+        arrange = { Painter() to Shape.FillBox(5, 2, 1, 8, BlockCellMother.WhiteBright) },
         act = { (sut, shape) -> sut.getBBox(shape) },
         assert = { assertEquals(Box(1, 2, 5, 7), it) }
     )
 
     @Test
     fun shouldGetBBoxStrokeBox() = performTest(
-        arrange = { Painter() to Shape.StrokeBox(5, 2, 1, 8, BlockCellMother.White) },
+        arrange = { Painter() to Shape.StrokeBox(5, 2, 1, 8, BlockCellMother.WhiteBright) },
         act = { (sut, shape) -> sut.getBBox(shape) },
         assert = { assertEquals(Box(1, 2, 5, 7), it) }
     )
@@ -51,7 +51,7 @@ class PainterTest {
                     CanvasType.HBlock,
                     2,
                     1,
-                    listOf(listOf(BlockCellMother.Black, BlockCellMother.White)),
+                    listOf(listOf(BlockCellMother.Black, BlockCellMother.WhiteBright)),
                 ),
             )
         },
@@ -63,7 +63,7 @@ class PainterTest {
 
     @Test
     fun shouldPaintPoint() = performTest(
-        arrange = { Painter() to Shape.Points(listOf(5 to 8), BlockCellMother.White) },
+        arrange = { Painter() to Shape.Points(listOf(5 to 8), BlockCellMother.WhiteBright) },
         act = { (sut, shape) ->
             val pencil = TestPencil<BlockCell>()
             sut.paint(shape, pencil)
@@ -72,7 +72,7 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(5, 8, BlockCellMother.White),
+                    TestPencil.Point(5, 8, BlockCellMother.WhiteBright),
                 ),
                 it.testPoints,
             )
@@ -81,7 +81,7 @@ class PainterTest {
 
     @Test
     fun shouldPaintLineStraightDxFwd() = performTest(
-        arrange = { Painter() to Shape.Line(2, 3, 5, 3, BlockCellMother.White) },
+        arrange = { Painter() to Shape.Line(2, 3, 5, 3, BlockCellMother.WhiteBright) },
         act = { (sut, shape) ->
             val pencil = TestPencil<BlockCell>()
             sut.paint(shape, pencil)
@@ -90,10 +90,10 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(2, 3, BlockCellMother.White),
-                    TestPencil.Point(3, 3, BlockCellMother.White),
-                    TestPencil.Point(4, 3, BlockCellMother.White),
-                    TestPencil.Point(5, 3, BlockCellMother.White),
+                    TestPencil.Point(2, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(4, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(5, 3, BlockCellMother.WhiteBright),
                 ),
                 it.testPoints,
             )
@@ -102,7 +102,7 @@ class PainterTest {
 
     @Test
     fun shouldPaintLineStraightDxBkw() = performTest(
-        arrange = { Painter() to Shape.Line(5, 3, 2, 3, BlockCellMother.White) },
+        arrange = { Painter() to Shape.Line(5, 3, 2, 3, BlockCellMother.WhiteBright) },
         act = { (sut, shape) ->
             val pencil = TestPencil<BlockCell>()
             sut.paint(shape, pencil)
@@ -111,10 +111,10 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(5, 3, BlockCellMother.White),
-                    TestPencil.Point(4, 3, BlockCellMother.White),
-                    TestPencil.Point(3, 3, BlockCellMother.White),
-                    TestPencil.Point(2, 3, BlockCellMother.White),
+                    TestPencil.Point(5, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(4, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(2, 3, BlockCellMother.WhiteBright),
                 ),
                 it.testPoints,
             )
@@ -123,7 +123,7 @@ class PainterTest {
 
     @Test
     fun shouldPaintLineStraightDyFwd() = performTest(
-        arrange = { Painter() to Shape.Line(3, 2, 3, 5, BlockCellMother.White) },
+        arrange = { Painter() to Shape.Line(3, 2, 3, 5, BlockCellMother.WhiteBright) },
         act = { (sut, shape) ->
             val pencil = TestPencil<BlockCell>()
             sut.paint(shape, pencil)
@@ -132,10 +132,10 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(3, 2, BlockCellMother.White),
-                    TestPencil.Point(3, 3, BlockCellMother.White),
-                    TestPencil.Point(3, 4, BlockCellMother.White),
-                    TestPencil.Point(3, 5, BlockCellMother.White),
+                    TestPencil.Point(3, 2, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 4, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 5, BlockCellMother.WhiteBright),
                 ),
                 it.testPoints,
             )
@@ -144,7 +144,7 @@ class PainterTest {
 
     @Test
     fun shouldPaintLineStraightDyBkw() = performTest(
-        arrange = { Painter() to Shape.Line(3, 5, 3, 2, BlockCellMother.White) },
+        arrange = { Painter() to Shape.Line(3, 5, 3, 2, BlockCellMother.WhiteBright) },
         act = { (sut, shape) ->
             val pencil = TestPencil<BlockCell>()
             sut.paint(shape, pencil)
@@ -153,10 +153,10 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(3, 5, BlockCellMother.White),
-                    TestPencil.Point(3, 4, BlockCellMother.White),
-                    TestPencil.Point(3, 3, BlockCellMother.White),
-                    TestPencil.Point(3, 2, BlockCellMother.White),
+                    TestPencil.Point(3, 5, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 4, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 2, BlockCellMother.WhiteBright),
                 ),
                 it.testPoints,
             )
@@ -165,7 +165,7 @@ class PainterTest {
 
     @Test
     fun shouldPaintLineSkewDxFwd() = performTest(
-        arrange = { Painter() to Shape.Line(8, 1, 2, 5, BlockCellMother.White) },
+        arrange = { Painter() to Shape.Line(8, 1, 2, 5, BlockCellMother.WhiteBright) },
         act = { (sut, shape) ->
             val pencil = TestPencil<BlockCell>()
             sut.paint(shape, pencil)
@@ -174,13 +174,13 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(8, 1, BlockCellMother.White),
-                    TestPencil.Point(7, 2, BlockCellMother.White),
-                    TestPencil.Point(6, 2, BlockCellMother.White),
-                    TestPencil.Point(5, 3, BlockCellMother.White),
-                    TestPencil.Point(4, 4, BlockCellMother.White),
-                    TestPencil.Point(3, 4, BlockCellMother.White),
-                    TestPencil.Point(2, 5, BlockCellMother.White),
+                    TestPencil.Point(8, 1, BlockCellMother.WhiteBright),
+                    TestPencil.Point(7, 2, BlockCellMother.WhiteBright),
+                    TestPencil.Point(6, 2, BlockCellMother.WhiteBright),
+                    TestPencil.Point(5, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(4, 4, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 4, BlockCellMother.WhiteBright),
+                    TestPencil.Point(2, 5, BlockCellMother.WhiteBright),
                 ),
                 it.testPoints,
             )
@@ -189,7 +189,7 @@ class PainterTest {
 
     @Test
     fun shouldPaintLineSkewDxBkw() = performTest(
-        arrange = { Painter() to Shape.Line(2, 5, 8, 1, BlockCellMother.White) },
+        arrange = { Painter() to Shape.Line(2, 5, 8, 1, BlockCellMother.WhiteBright) },
         act = { (sut, shape) ->
             val pencil = TestPencil<BlockCell>()
             sut.paint(shape, pencil)
@@ -198,13 +198,13 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(2, 5, BlockCellMother.White),
-                    TestPencil.Point(3, 4, BlockCellMother.White),
-                    TestPencil.Point(4, 4, BlockCellMother.White),
-                    TestPencil.Point(5, 3, BlockCellMother.White),
-                    TestPencil.Point(6, 2, BlockCellMother.White),
-                    TestPencil.Point(7, 2, BlockCellMother.White),
-                    TestPencil.Point(8, 1, BlockCellMother.White),
+                    TestPencil.Point(2, 5, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 4, BlockCellMother.WhiteBright),
+                    TestPencil.Point(4, 4, BlockCellMother.WhiteBright),
+                    TestPencil.Point(5, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(6, 2, BlockCellMother.WhiteBright),
+                    TestPencil.Point(7, 2, BlockCellMother.WhiteBright),
+                    TestPencil.Point(8, 1, BlockCellMother.WhiteBright),
                 ),
                 it.testPoints,
             )
@@ -213,7 +213,7 @@ class PainterTest {
 
     @Test
     fun shouldPaintLineSkewDyFwd() = performTest(
-        arrange = { Painter() to Shape.Line(1, 8, 5, 2, BlockCellMother.White) },
+        arrange = { Painter() to Shape.Line(1, 8, 5, 2, BlockCellMother.WhiteBright) },
         act = { (sut, shape) ->
             val pencil = TestPencil<BlockCell>()
             sut.paint(shape, pencil)
@@ -222,13 +222,13 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(1, 8, BlockCellMother.White),
-                    TestPencil.Point(2, 7, BlockCellMother.White),
-                    TestPencil.Point(2, 6, BlockCellMother.White),
-                    TestPencil.Point(3, 5, BlockCellMother.White),
-                    TestPencil.Point(4, 4, BlockCellMother.White),
-                    TestPencil.Point(4, 3, BlockCellMother.White),
-                    TestPencil.Point(5, 2, BlockCellMother.White),
+                    TestPencil.Point(1, 8, BlockCellMother.WhiteBright),
+                    TestPencil.Point(2, 7, BlockCellMother.WhiteBright),
+                    TestPencil.Point(2, 6, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 5, BlockCellMother.WhiteBright),
+                    TestPencil.Point(4, 4, BlockCellMother.WhiteBright),
+                    TestPencil.Point(4, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(5, 2, BlockCellMother.WhiteBright),
                 ),
                 it.testPoints,
             )
@@ -237,7 +237,7 @@ class PainterTest {
 
     @Test
     fun shouldPaintLineSkeyDyBkw() = performTest(
-        arrange = { Painter() to Shape.Line(5, 2, 1, 8, BlockCellMother.White) },
+        arrange = { Painter() to Shape.Line(5, 2, 1, 8, BlockCellMother.WhiteBright) },
         act = { (sut, shape) ->
             val pencil = TestPencil<BlockCell>()
             sut.paint(shape, pencil)
@@ -246,13 +246,13 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(5, 2, BlockCellMother.White),
-                    TestPencil.Point(4, 3, BlockCellMother.White),
-                    TestPencil.Point(4, 4, BlockCellMother.White),
-                    TestPencil.Point(3, 5, BlockCellMother.White),
-                    TestPencil.Point(2, 6, BlockCellMother.White),
-                    TestPencil.Point(2, 7, BlockCellMother.White),
-                    TestPencil.Point(1, 8, BlockCellMother.White),
+                    TestPencil.Point(5, 2, BlockCellMother.WhiteBright),
+                    TestPencil.Point(4, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(4, 4, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 5, BlockCellMother.WhiteBright),
+                    TestPencil.Point(2, 6, BlockCellMother.WhiteBright),
+                    TestPencil.Point(2, 7, BlockCellMother.WhiteBright),
+                    TestPencil.Point(1, 8, BlockCellMother.WhiteBright),
                 ),
                 it.testPoints,
             )
@@ -261,7 +261,7 @@ class PainterTest {
 
     @Test
     fun shouldPaintFillBox() = performTest(
-        arrange = { Painter() to Shape.FillBox(3, 2, 1, 5, BlockCellMother.White) },
+        arrange = { Painter() to Shape.FillBox(3, 2, 1, 5, BlockCellMother.WhiteBright) },
         act = { (sut, shape) ->
             val pencil = TestPencil<BlockCell>()
             sut.paint(shape, pencil)
@@ -270,21 +270,21 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(1, 2, BlockCellMother.White),
-                    TestPencil.Point(2, 2, BlockCellMother.White),
-                    TestPencil.Point(3, 2, BlockCellMother.White),
+                    TestPencil.Point(1, 2, BlockCellMother.WhiteBright),
+                    TestPencil.Point(2, 2, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 2, BlockCellMother.WhiteBright),
 
-                    TestPencil.Point(1, 3, BlockCellMother.White),
-                    TestPencil.Point(2, 3, BlockCellMother.White),
-                    TestPencil.Point(3, 3, BlockCellMother.White),
+                    TestPencil.Point(1, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(2, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 3, BlockCellMother.WhiteBright),
 
-                    TestPencil.Point(1, 4, BlockCellMother.White),
-                    TestPencil.Point(2, 4, BlockCellMother.White),
-                    TestPencil.Point(3, 4, BlockCellMother.White),
+                    TestPencil.Point(1, 4, BlockCellMother.WhiteBright),
+                    TestPencil.Point(2, 4, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 4, BlockCellMother.WhiteBright),
 
-                    TestPencil.Point(1, 5, BlockCellMother.White),
-                    TestPencil.Point(2, 5, BlockCellMother.White),
-                    TestPencil.Point(3, 5, BlockCellMother.White),
+                    TestPencil.Point(1, 5, BlockCellMother.WhiteBright),
+                    TestPencil.Point(2, 5, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 5, BlockCellMother.WhiteBright),
                 ),
                 it.testPoints,
             )
@@ -293,7 +293,7 @@ class PainterTest {
 
     @Test
     fun shouldPaintStrokeBox() = performTest(
-        arrange = { Painter() to Shape.StrokeBox(3, 2, 1, 5, BlockCellMother.White) },
+        arrange = { Painter() to Shape.StrokeBox(3, 2, 1, 5, BlockCellMother.WhiteBright) },
         act = { (sut, shape) ->
             val pencil = TestPencil<BlockCell>()
             sut.paint(shape, pencil)
@@ -302,19 +302,19 @@ class PainterTest {
         assert = {
             assertEquals(
                 listOf(
-                    TestPencil.Point(1, 2, BlockCellMother.White),
-                    TestPencil.Point(2, 2, BlockCellMother.White),
-                    TestPencil.Point(3, 2, BlockCellMother.White),
+                    TestPencil.Point(1, 2, BlockCellMother.WhiteBright),
+                    TestPencil.Point(2, 2, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 2, BlockCellMother.WhiteBright),
 
-                    TestPencil.Point(1, 5, BlockCellMother.White),
-                    TestPencil.Point(2, 5, BlockCellMother.White),
-                    TestPencil.Point(3, 5, BlockCellMother.White),
+                    TestPencil.Point(1, 5, BlockCellMother.WhiteBright),
+                    TestPencil.Point(2, 5, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 5, BlockCellMother.WhiteBright),
 
-                    TestPencil.Point(1, 3, BlockCellMother.White),
-                    TestPencil.Point(1, 4, BlockCellMother.White),
+                    TestPencil.Point(1, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(1, 4, BlockCellMother.WhiteBright),
 
-                    TestPencil.Point(3, 3, BlockCellMother.White),
-                    TestPencil.Point(3, 4, BlockCellMother.White),
+                    TestPencil.Point(3, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(3, 4, BlockCellMother.WhiteBright),
                 ),
                 it.testPoints,
             )
@@ -332,8 +332,8 @@ class PainterTest {
                     3,
                     2,
                     listOf(
-                        listOf(BlockCellMother.Black, BlockCellMother.Black, BlockCellMother.White),
-                        listOf(BlockCellMother.White, BlockCellMother.White, BlockCellMother.Black),
+                        listOf(BlockCellMother.Black, BlockCellMother.Black, BlockCellMother.WhiteBright),
+                        listOf(BlockCellMother.WhiteBright, BlockCellMother.WhiteBright, BlockCellMother.Black),
                     ),
                 ),
             )
@@ -348,10 +348,10 @@ class PainterTest {
                 listOf(
                     TestPencil.Point(5, 2, BlockCellMother.Black),
                     TestPencil.Point(6, 2, BlockCellMother.Black),
-                    TestPencil.Point(7, 2, BlockCellMother.White),
+                    TestPencil.Point(7, 2, BlockCellMother.WhiteBright),
 
-                    TestPencil.Point(5, 3, BlockCellMother.White),
-                    TestPencil.Point(6, 3, BlockCellMother.White),
+                    TestPencil.Point(5, 3, BlockCellMother.WhiteBright),
+                    TestPencil.Point(6, 3, BlockCellMother.WhiteBright),
                     TestPencil.Point(7, 3, BlockCellMother.Black),
                 ),
                 it.testPoints,

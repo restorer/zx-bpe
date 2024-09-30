@@ -110,7 +110,7 @@ class MutableHBlockCanvasTest {
         arrange = {
             MutableHBlockCanvas(1, 1).also { sut ->
                 sut.mutate {
-                    it.mergeDrawingCell(0, 0, BlockCellMother.White)
+                    it.mergeDrawingCell(0, 0, BlockCellMother.WhiteBright)
                     it.mergeDrawingCell(0, 1, BlockCellMother.Black)
                 }
             }
@@ -124,7 +124,7 @@ class MutableHBlockCanvasTest {
         arrange = {
             MutableHBlockCanvas(1, 1).also { sut ->
                 sut.mutate {
-                    it.mergeDrawingCell(0, 0, BlockCellMother.White)
+                    it.mergeDrawingCell(0, 0, BlockCellMother.WhiteBright)
                     it.mergeDrawingCell(0, 1, BlockCellMother.Black)
                 }
             }
@@ -143,7 +143,7 @@ class MutableHBlockCanvasTest {
         arrange = {
             MutableHBlockCanvas(1, 1).also { sut ->
                 sut.mutate {
-                    it.mergeDrawingCell(0, 0, BlockCellMother.White)
+                    it.mergeDrawingCell(0, 0, BlockCellMother.WhiteBright)
                     it.mergeDrawingCell(0, 1, BlockCellMother.Black)
                 }
             }
@@ -206,7 +206,7 @@ class MutableHBlockCanvasTest {
         arrange = {
             MutableHBlockCanvas(2, 1).also { sut ->
                 sut.mutate {
-                    it.replaceDrawingCell(0, 0, BlockCellMother.White)
+                    it.replaceDrawingCell(0, 0, BlockCellMother.WhiteBright)
                     it.replaceDrawingCell(1, 0, BlockCellMother.Black)
                 }
             }
@@ -219,7 +219,7 @@ class MutableHBlockCanvasTest {
                     BlockCell(color = SciiColor.Transparent, bright = SciiLight.Off),
                 )
 
-                it.mergeDrawingCell(1, 1, BlockCellMother.White)
+                it.mergeDrawingCell(1, 1, BlockCellMother.WhiteBright)
             }
 
             listOf(
@@ -243,7 +243,7 @@ class MutableHBlockCanvasTest {
         arrange = {
             MutableHBlockCanvas(1, 1).also { sut ->
                 sut.mutate {
-                    it.replaceDrawingCell(0, 0, BlockCellMother.White)
+                    it.replaceDrawingCell(0, 0, BlockCellMother.WhiteBright)
                 }
             }
         },
@@ -282,7 +282,7 @@ class MutableHBlockCanvasTest {
         assert = {
             assertEquals(
                 listOf(
-                    BlockCellMother.White,
+                    BlockCellMother.WhiteBright,
                     BlockCell(color = SciiColor.Black, bright = SciiLight.On),
                     BlockCell(color = SciiColor.Red, bright = SciiLight.Transparent),
                     BlockCell(color = SciiColor.Red, bright = SciiLight.Transparent),
@@ -297,8 +297,8 @@ class MutableHBlockCanvasTest {
         arrange = { MutableHBlockCanvas(1, 1) },
         act = { sut ->
             sut.mutate {
-                it.mergeDrawingCell(-1, -1, BlockCellMother.White)
-                it.mergeDrawingCell(1, 2, BlockCellMother.White)
+                it.mergeDrawingCell(-1, -1, BlockCellMother.WhiteBright)
+                it.mergeDrawingCell(1, 2, BlockCellMother.WhiteBright)
             }
 
             sut.getSciiCell(0, 0)
@@ -311,8 +311,8 @@ class MutableHBlockCanvasTest {
         arrange = { MutableHBlockCanvas(1, 1) },
         act = { sut ->
             sut.mutate {
-                it.replaceDrawingCell(-1, -1, BlockCellMother.White)
-                it.replaceDrawingCell(1, 2, BlockCellMother.White)
+                it.replaceDrawingCell(-1, -1, BlockCellMother.WhiteBright)
+                it.replaceDrawingCell(1, 2, BlockCellMother.WhiteBright)
             }
 
             sut.getSciiCell(0, 0)
@@ -351,7 +351,7 @@ class MutableHBlockCanvasTest {
 
             sut.mutate {
                 it.replaceDrawingCell(0, 0, BlockCellMother.Black)
-                it.replaceDrawingCell(1, 1, BlockCellMother.White)
+                it.replaceDrawingCell(1, 1, BlockCellMother.WhiteBright)
             }
 
             sut to PackableStringBag()
@@ -386,7 +386,7 @@ class MutableHBlockCanvasTest {
                     BlockCellMother.Black,
                     BlockCell(color = SciiColor.Transparent, bright = SciiLight.On),
                     BlockCell.Transparent,
-                    BlockCellMother.White,
+                    BlockCellMother.WhiteBright,
                 ),
                 props,
             )
