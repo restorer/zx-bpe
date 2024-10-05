@@ -1,5 +1,6 @@
 package com.eightsines.bpe.graphics
 
+import com.eightsines.bpe.core.Box
 import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.CellType
 import com.eightsines.bpe.foundation.Crate
@@ -118,6 +119,8 @@ sealed interface Shape<T : Cell> {
     }
 
     data class FillBox<T : Cell>(val sx: Int, val sy: Int, val ex: Int, val ey: Int, val cell: T) : Shape<T> {
+        constructor(box: Box, cell: T) : this(box.x, box.y, box.ex, box.ey, cell)
+
         override val type = ShapeType.FillBox
         override val cellType = cell.type
 

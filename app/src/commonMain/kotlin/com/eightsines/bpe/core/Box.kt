@@ -7,6 +7,8 @@ data class Box(val x: Int, val y: Int, val width: Int, val height: Int) {
     fun copyWithOffset(x: Int, y: Int) = copy(x = this.x + x, y = this.y + y)
     fun copyWithOffset(point: Pair<Int, Int>) = copy(x = this.x + point.first, y = this.y + point.second)
 
+    fun contains(x: Int, y: Int) = x >= this.x && x <= ex && y >= this.y && y <= ey
+
     companion object {
         @Suppress("NOTHING_TO_INLINE")
         inline fun of(sx: Int, sy: Int, ex: Int, ey: Int): Box {

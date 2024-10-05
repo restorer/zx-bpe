@@ -1,5 +1,6 @@
 package com.eightsines.bpe.middlware
 
+import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.foundation.Crate
 import com.eightsines.bpe.foundation.SciiCanvas
@@ -65,13 +66,9 @@ sealed interface BpeSelectionState {
 
     data class Floating(
         val selection: Selection,
-        val offset: Pair<Int, Int>,
         val layerUid: LayerUid,
-        val crate: Crate<*>,
-        val cutAction: GraphicsAction?,
-        val undoCutAction: GraphicsAction?,
-        val overlayAction: GraphicsAction,
-        val undoOverlayAction: GraphicsAction,
+        val crate: Crate<Cell>,
+        val overlayActions: Pair<GraphicsAction, GraphicsAction>,
     ) : BpeSelectionState
 }
 

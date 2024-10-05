@@ -107,8 +107,8 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
         if (isDrawingInside(drawingX, drawingY)) {
             cursorArea = drawingToArea(drawingX, drawingY)
-            bpeEngine.execute(BpeAction.CanvasDown(drawingX, drawingY))
             isSheetDown = true
+            bpeEngine.execute(BpeAction.CanvasDown(drawingX, drawingY))
         } else {
             cursorArea = null
         }
@@ -121,9 +121,12 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             isSheetDown -> {
                 drawingX = drawingX.coerceIn(0, currentDrawingEX)
                 drawingY = drawingY.coerceIn(0, currentDrawingEY)
+                val newCursorArea = drawingToArea(drawingX, drawingY)
 
-                cursorArea = drawingToArea(drawingX, drawingY)
-                bpeEngine.execute(BpeAction.CanvasMove(drawingX, drawingY))
+                if (cursorArea != newCursorArea) {
+                    cursorArea = newCursorArea
+                    bpeEngine.execute(BpeAction.CanvasMove(drawingX, drawingY))
+                }
             }
 
             isDrawingInside(drawingX, drawingY) -> cursorArea = drawingToArea(drawingX, drawingY)
@@ -137,11 +140,13 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         }
 
         var (drawingX, drawingY) = pointerToDrawing(action.pointerX, action.pointerY)
+
         drawingX = drawingX.coerceIn(0, currentDrawingEX)
         drawingY = drawingY.coerceIn(0, currentDrawingEY)
 
         cursorArea = drawingToArea(drawingX, drawingY)
         bpeEngine.execute(BpeAction.CanvasUp(drawingX, drawingY))
+
         isSheetDown = false
     }
 
@@ -241,7 +246,14 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
     private fun executeToolboxSelectClick() {
         if (state.toolboxSelect.isInteractable) {
-            bpeEngine.execute(BpeAction.ToolboxSetTool(BpeTool.Select))
+            val bpeState = bpeEngine.state
+
+            if (bpeState.toolboxTool == BpeTool.Select && bpeState.selection != null) {
+                bpeEngine.execute(BpeAction.SelectionDeselect)
+            } else {
+                bpeEngine.execute(BpeAction.ToolboxSetTool(BpeTool.Select))
+            }
+
             activePanel = null
         }
     }
