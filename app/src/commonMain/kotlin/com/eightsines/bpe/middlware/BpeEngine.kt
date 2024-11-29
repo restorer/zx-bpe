@@ -351,7 +351,7 @@ class BpeEngine(
     }
 
     private fun executeToolboxRedo() {
-        if (!selectionController.isFloating && historyPosition < history.size) {
+        if (historyPosition < history.size) {
             cancelPainting()
             performHistoryActions(history[historyPosition++].actions)
         }
@@ -455,6 +455,10 @@ class BpeEngine(
         }
 
         for (action in actions) {
+            logger.note("BpeEngine.performHistoryActions:actionBegin") {
+                put("action", action.toString())
+            }
+
             when (action) {
                 is HistoryAction.CurrentLayer -> {
                     currentLayer = graphicsEngine.state.canvasLayersMap[action.layerUid.value] ?: graphicsEngine.state.backgroundLayer
@@ -462,13 +466,17 @@ class BpeEngine(
                 }
 
                 is HistoryAction.SelectionState -> {
-                    selectionController.restore(action.selectionState)
+                    selectionController.restoreFromHistory(action.selectionState)
                     shouldRefresh = true
                 }
 
                 is HistoryAction.Graphics -> if (graphicsEngine.execute(action.graphicsAction) != null) {
                     shouldRefresh = true
                 }
+            }
+
+            logger.note("BpeEngine.performHistoryActions:actionEnd") {
+                put("action", action.toString())
             }
         }
 
@@ -597,7 +605,7 @@ class BpeEngine(
             toolboxCanSelect = currentLayer is CanvasLayer<*>,
             toolboxCanPaste = clipboard?.let { it.crate.canvasType == (currentLayer as? CanvasLayer<*>)?.canvasType } ?: false,
             toolboxCanUndo = selectionController.isFloating || historyPosition > 0,
-            toolboxCanRedo = !selectionController.isFloating && historyPosition < history.size,
+            toolboxCanRedo = historyPosition < history.size,
 
             selection = selectionController.selection,
             selectionCanCut = selectionController.isSelected && currentLayer is CanvasLayer<*>,

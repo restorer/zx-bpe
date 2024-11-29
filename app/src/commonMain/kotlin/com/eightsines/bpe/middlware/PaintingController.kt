@@ -35,27 +35,24 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
             }
 
             is PaintingSpec.Selection -> {
-                selectionController.ongoingCancel()
+                selectionController.ongoingCancel(BpeSelectionState.None)
                 true
             }
 
             is PaintingSpec.Floating -> {
-                if (spec.cutActions != null) {
-                    selectionController.restore(BpeSelectionState.Selected(spec.initialState.selection))
-                    graphicsEngine.execute(spec.cutActions.undoAction)
-                } else {
-                    selectionController.restore(spec.initialState)
-                }
-
+                selectionController.ongoingCancel(BpeSelectionState.Selected(spec.initialState.selection))
+                spec.cutActions?.let { graphicsEngine.execute(it.undoAction) }
                 true
             }
         }
 
         currentPaintingSpec = null
 
-        historyActionsPerformer(pendingHistoryStep.undoActions)
-        pendingHistoryStep = HistoryStep.Empty
+        if (pendingHistoryStep.undoActions.isNotEmpty()) {
+            historyActionsPerformer(pendingHistoryStep.undoActions)
+        }
 
+        pendingHistoryStep = HistoryStep.Empty
         return shouldRefresh
     }
 
@@ -100,18 +97,37 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 listOf(HistoryAction.SelectionState(spec.initialState ?: BpeSelectionState.None)),
             )
 
-            is PaintingSpec.Floating -> spec.cutActions?.let {
-                HistoryStep(
-                    listOf(
-                        HistoryAction.Graphics(it.action),
-                        HistoryAction.SelectionState(selectionController.selectionState),
-                    ),
-                    listOf(
-                        HistoryAction.Graphics(it.undoAction),
-                        HistoryAction.SelectionState(BpeSelectionState.Selected(spec.initialState.selection)),
-                    ),
-                )
-            } ?: HistoryStep.Empty
+            is PaintingSpec.Floating -> when {
+                spec.cutActions != null ->
+                    HistoryStep(
+                        listOfNotNull(
+                            HistoryAction.Graphics(spec.cutActions.action),
+                            HistoryAction.Graphics(spec.lastState.overlayActions.action),
+                            HistoryAction.SelectionState(spec.lastState),
+                        ),
+                        listOfNotNull(
+                            HistoryAction.Graphics(spec.lastState.overlayActions.undoAction),
+                            HistoryAction.Graphics(spec.cutActions.undoAction),
+                            HistoryAction.SelectionState(BpeSelectionState.Selected(spec.initialState.selection)),
+                        ),
+                    )
+
+                spec.initialState.selection != spec.lastState.selection ->
+                    HistoryStep(
+                        listOfNotNull(
+                            HistoryAction.Graphics(spec.initialState.overlayActions.undoAction),
+                            HistoryAction.Graphics(spec.lastState.overlayActions.action),
+                            HistoryAction.SelectionState(spec.lastState),
+                        ),
+                        listOfNotNull(
+                            HistoryAction.Graphics(spec.lastState.overlayActions.undoAction),
+                            HistoryAction.Graphics(spec.initialState.overlayActions.action),
+                            HistoryAction.SelectionState(spec.initialState),
+                        ),
+                    )
+
+                else -> HistoryStep.Empty
+            }
 
             null -> HistoryStep.Empty
         }
@@ -169,6 +185,7 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 initialState = it,
                 startX = drawingX,
                 startY = drawingY,
+                lastState = it,
             ) to false
         }
 
@@ -179,6 +196,7 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 cutActions = it.cutActions,
                 startX = drawingX,
                 startY = drawingY,
+                lastState = it.floatingState,
             ) to true
         }
 
@@ -255,14 +273,15 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
         val offsetX = drawingX - spec.startX
         val offsetY = drawingY - spec.startY
 
-        if ((offsetX == spec.lastOffsetX && offsetY == spec.lastOffsetY) ||
-            !selectionController.ongoingFloatingUpdate(spec.initialState, offsetX, offsetY)
-        ) {
+        if (offsetX == spec.lastOffsetX && offsetY == spec.lastOffsetY) {
             return false
         }
 
+        val newState = selectionController.ongoingFloatingUpdate(spec.initialState, offsetX, offsetY) ?: return false
+
         spec.lastOffsetX = offsetX
         spec.lastOffsetY = offsetY
+        spec.lastState = newState
 
         return true
     }
@@ -402,6 +421,7 @@ private sealed interface PaintingSpec {
         val startY: Int,
         var lastOffsetX: Int = 0,
         var lastOffsetY: Int = 0,
+        var lastState: BpeSelectionState.Floating,
     ) : PaintingSpec
 }
 

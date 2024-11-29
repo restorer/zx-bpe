@@ -29,10 +29,8 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
             else -> null
         }
 
-    fun restore(state: BpeSelectionState) {
-        (selectionState as? BpeSelectionState.Floating)?.overlayActions?.let { graphicsEngine.execute(it.undoAction) }
+    fun restoreFromHistory(state: BpeSelectionState) {
         selectionState = state
-        (selectionState as? BpeSelectionState.Floating)?.overlayActions?.let { graphicsEngine.execute(it.action) }
     }
 
     fun anchor(layerCanvasType: CanvasType?): SelectionResult = when (val selectionState = this.selectionState) {
@@ -128,8 +126,10 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
         return SelectionResult(shouldRefresh = true, historyStep = deselectResult.historyStep)
     }
 
-    fun ongoingCancel() {
-        selectionState = BpeSelectionState.None
+    fun ongoingCancel(state: BpeSelectionState) {
+        (selectionState as? BpeSelectionState.Floating)?.overlayActions?.let { graphicsEngine.execute(it.undoAction) }
+        selectionState = state
+        (selectionState as? BpeSelectionState.Floating)?.overlayActions?.let { graphicsEngine.execute(it.action) }
     }
 
     fun ongoingFloatMove(drawingX: Int, drawingY: Int): BpeSelectionState.Floating? {
@@ -194,7 +194,7 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
         }
     }
 
-    fun ongoingFloatingUpdate(initialState: BpeSelectionState.Floating, offsetX: Int, offsetY: Int): Boolean {
+    fun ongoingFloatingUpdate(initialState: BpeSelectionState.Floating, offsetX: Int, offsetY: Int): BpeSelectionState.Floating? {
         (selectionState as? BpeSelectionState.Floating)?.overlayActions?.let { graphicsEngine.execute(it.undoAction) }
         val newSelectionBox = initialState.selection.drawingBox.copyWithOffset(offsetX, offsetY)
 
@@ -203,14 +203,15 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
                 initialState.layerUid,
                 Shape.Cells(newSelectionBox.x, newSelectionBox.y, initialState.crate),
             ),
-        ) ?: return false
+        ) ?: return null
 
-        selectionState = initialState.copy(
+        val newState = initialState.copy(
             selection = initialState.selection.copy(drawingBox = newSelectionBox),
             overlayActions = overlayActions,
         )
 
-        return true
+        selectionState = newState
+        return newState
     }
 
     private fun executeSelectedDeselect(selectedState: BpeSelectionState): SelectionResult {
@@ -236,8 +237,10 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
                     HistoryAction.SelectionState(BpeSelectionState.None),
                 ),
                 listOf(
-                    HistoryAction.Graphics(floatingState.overlayActions.undoAction),
-                    HistoryAction.SelectionState(selectionState),
+                    // Use overlayActions.action in undoActions, because we are
+                    // restoring floatingState, and need to re-apply action.
+                    HistoryAction.Graphics(floatingState.overlayActions.action),
+                    HistoryAction.SelectionState(floatingState),
                 ),
             ),
         )
