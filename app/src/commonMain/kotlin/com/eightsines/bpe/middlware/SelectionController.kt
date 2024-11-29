@@ -233,7 +233,7 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
             shouldRefresh = true,
             historyStep = HistoryStep(
                 listOf(
-                    // No need to apply overlayActions.action, because.
+                    // No need to apply overlayActions.action.
                     HistoryAction.SelectionState(BpeSelectionState.None),
                 ),
                 listOf(
