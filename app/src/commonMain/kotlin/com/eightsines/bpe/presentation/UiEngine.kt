@@ -16,10 +16,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     private var activePanel: Panel? = null
     private var layerTypePanel: LayerTypePanel? = null
     private var currentDrawingType: CanvasType? = null
-    private var currentCellWidth: Int = 0
-    private var currentCellHeight: Int = 0
-    private var currentDrawingEX: Int = 0
-    private var currentDrawingEY: Int = 0
+    private var currentAreaSpec: AreaSpec = AreaSpec(0, 0, 0, 0)
     private var cursorArea: UiArea? = null
     private var isSheetDown: Boolean = false
 
@@ -95,7 +92,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         val (drawingX, drawingY) = pointerToDrawing(action.pointerX, action.pointerY)
 
         cursorArea = if (isDrawingInside(drawingX, drawingY)) {
-            drawingToArea(drawingX, drawingY)
+            drawingToArea(currentAreaSpec, drawingX, drawingY)
         } else {
             null
         }
@@ -106,7 +103,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         val (drawingX, drawingY) = pointerToDrawing(action.pointerX, action.pointerY)
 
         if (isDrawingInside(drawingX, drawingY)) {
-            cursorArea = drawingToArea(drawingX, drawingY)
+            cursorArea = drawingToArea(currentAreaSpec, drawingX, drawingY)
             isSheetDown = true
             bpeEngine.execute(BpeAction.CanvasDown(drawingX, drawingY))
         } else {
@@ -119,9 +116,9 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
         when {
             isSheetDown -> {
-                drawingX = drawingX.coerceIn(0, currentDrawingEX)
-                drawingY = drawingY.coerceIn(0, currentDrawingEY)
-                val newCursorArea = drawingToArea(drawingX, drawingY)
+                drawingX = drawingX.coerceIn(0, currentAreaSpec.drawingEX)
+                drawingY = drawingY.coerceIn(0, currentAreaSpec.drawingEY)
+                val newCursorArea = drawingToArea(currentAreaSpec, drawingX, drawingY)
 
                 if (cursorArea != newCursorArea) {
                     cursorArea = newCursorArea
@@ -129,7 +126,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
                 }
             }
 
-            isDrawingInside(drawingX, drawingY) -> cursorArea = drawingToArea(drawingX, drawingY)
+            isDrawingInside(drawingX, drawingY) -> cursorArea = drawingToArea(currentAreaSpec, drawingX, drawingY)
             else -> cursorArea = null
         }
     }
@@ -141,10 +138,10 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
         var (drawingX, drawingY) = pointerToDrawing(action.pointerX, action.pointerY)
 
-        drawingX = drawingX.coerceIn(0, currentDrawingEX)
-        drawingY = drawingY.coerceIn(0, currentDrawingEY)
+        drawingX = drawingX.coerceIn(0, currentAreaSpec.drawingEX)
+        drawingY = drawingY.coerceIn(0, currentAreaSpec.drawingEY)
 
-        cursorArea = drawingToArea(drawingX, drawingY)
+        cursorArea = drawingToArea(currentAreaSpec, drawingX, drawingY)
         bpeEngine.execute(BpeAction.CanvasUp(drawingX, drawingY))
 
         isSheetDown = false
@@ -376,61 +373,63 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         val x = pointerX - UiSpec.BORDER_SIZE
         val y = pointerY - UiSpec.BORDER_SIZE
 
-        return (x / currentCellWidth - if (x < 0) 1 else 0) to (y / currentCellHeight - if (y < 0) 1 else 0)
+        return (x / currentAreaSpec.cellWidth - if (x < 0) 1 else 0) to (y / currentAreaSpec.cellHeight - if (y < 0) 1 else 0)
     }
 
-    private fun drawingToArea(drawingX: Int, drawingY: Int, drawingWidth: Int = 1, drawingHeight: Int = 1) =
+    private fun drawingToArea(areaSpec: AreaSpec, drawingX: Int, drawingY: Int, drawingWidth: Int = 1, drawingHeight: Int = 1) =
         UiArea(
-            UiSpec.BORDER_SIZE + drawingX * currentCellWidth,
-            UiSpec.BORDER_SIZE + drawingY * currentCellHeight,
-            drawingWidth * currentCellWidth,
-            drawingHeight * currentCellHeight,
+            UiSpec.BORDER_SIZE + drawingX * areaSpec.cellWidth,
+            UiSpec.BORDER_SIZE + drawingY * areaSpec.cellHeight,
+            drawingWidth * areaSpec.cellWidth,
+            drawingHeight * areaSpec.cellHeight,
         )
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun isDrawingInside(drawingX: Int, drawingY: Int) =
-        drawingX in 0..currentDrawingEX && drawingY in 0..currentDrawingEY
+        drawingX in 0..currentAreaSpec.drawingEX && drawingY in 0..currentAreaSpec.drawingEY
+
+    private fun computeAreaSpec(canvasType: CanvasType?) = when (canvasType) {
+        null -> AreaSpec(
+            cellWidth = UiSpec.PICTURE_WIDTH,
+            cellHeight = UiSpec.PICTURE_HEIGHT,
+            drawingEX = 0,
+            drawingEY = 0,
+        )
+
+        is CanvasType.Scii -> AreaSpec(
+            cellWidth = UiSpec.SCII_CELL_SIZE,
+            cellHeight = UiSpec.SCII_CELL_SIZE,
+            drawingEX = GraphicsEngine.SCREEN_SCII_WIDTH - 1,
+            drawingEY = GraphicsEngine.SCREEN_SCII_HEIGHT - 1,
+        )
+
+        is CanvasType.HBlock -> AreaSpec(
+            cellWidth = UiSpec.SCII_CELL_SIZE,
+            cellHeight = UiSpec.BLOCK_CELL_SIZE,
+            drawingEX = GraphicsEngine.SCREEN_SCII_WIDTH - 1,
+            drawingEY = GraphicsEngine.SCREEN_SCII_HEIGHT * 2 - 1,
+        )
+
+        is CanvasType.VBlock -> AreaSpec(
+            cellWidth = UiSpec.BLOCK_CELL_SIZE,
+            cellHeight = UiSpec.SCII_CELL_SIZE,
+            drawingEX = GraphicsEngine.SCREEN_SCII_WIDTH * 2 - 1,
+            drawingEY = GraphicsEngine.SCREEN_SCII_HEIGHT - 1,
+        )
+
+        is CanvasType.QBlock -> AreaSpec(
+            cellWidth = UiSpec.BLOCK_CELL_SIZE,
+            cellHeight = UiSpec.BLOCK_CELL_SIZE,
+            drawingEX = GraphicsEngine.SCREEN_SCII_WIDTH * 2 - 1,
+            drawingEY = GraphicsEngine.SCREEN_SCII_HEIGHT * 2 - 1,
+        )
+    }
 
     private fun refresh(): UiState {
         val bpeState = bpeEngine.state
+
         currentDrawingType = bpeState.drawingType
-
-        when (bpeState.drawingType) {
-            null -> {
-                currentCellWidth = UiSpec.PICTURE_WIDTH
-                currentCellHeight = UiSpec.PICTURE_HEIGHT
-                currentDrawingEX = 0
-                currentDrawingEY = 0
-            }
-
-            is CanvasType.Scii -> {
-                currentCellWidth = UiSpec.SCII_CELL_SIZE
-                currentCellHeight = UiSpec.SCII_CELL_SIZE
-                currentDrawingEX = GraphicsEngine.SCREEN_SCII_WIDTH - 1
-                currentDrawingEY = GraphicsEngine.SCREEN_SCII_HEIGHT - 1
-            }
-
-            is CanvasType.HBlock -> {
-                currentCellWidth = UiSpec.SCII_CELL_SIZE
-                currentCellHeight = UiSpec.BLOCK_CELL_SIZE
-                currentDrawingEX = GraphicsEngine.SCREEN_SCII_WIDTH - 1
-                currentDrawingEY = GraphicsEngine.SCREEN_SCII_HEIGHT * 2 - 1
-            }
-
-            is CanvasType.VBlock -> {
-                currentCellWidth = UiSpec.BLOCK_CELL_SIZE
-                currentCellHeight = UiSpec.SCII_CELL_SIZE
-                currentDrawingEX = GraphicsEngine.SCREEN_SCII_WIDTH * 2 - 1
-                currentDrawingEY = GraphicsEngine.SCREEN_SCII_HEIGHT - 1
-            }
-
-            is CanvasType.QBlock -> {
-                currentCellWidth = UiSpec.BLOCK_CELL_SIZE
-                currentCellHeight = UiSpec.BLOCK_CELL_SIZE
-                currentDrawingEX = GraphicsEngine.SCREEN_SCII_WIDTH * 2 - 1
-                currentDrawingEY = GraphicsEngine.SCREEN_SCII_HEIGHT * 2 - 1
-            }
-        }
+        currentAreaSpec = computeAreaSpec(bpeState.drawingType)
 
         val isPaintAvailable = bpeState.toolboxAvailTools.contains(BpeTool.Paint)
         val isEraseAvailable = bpeState.toolboxAvailTools.contains(BpeTool.Erase)
@@ -444,6 +443,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
             selectionArea = bpeState.selection?.let {
                 drawingToArea(
+                    computeAreaSpec(it.canvasType),
                     it.drawingBox.x,
                     it.drawingBox.y,
                     it.drawingBox.width,
@@ -570,3 +570,10 @@ private enum class LayerTypePanel {
     Create,
     Convert,
 }
+
+private data class AreaSpec(
+    val cellWidth: Int,
+    val cellHeight: Int,
+    val drawingEX: Int,
+    val drawingEY: Int,
+)

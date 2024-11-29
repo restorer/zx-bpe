@@ -1,16 +1,16 @@
 package com.eightsines.bpe.middlware
 
 import com.eightsines.bpe.core.Cell
-import com.eightsines.bpe.foundation.CanvasType
-import com.eightsines.bpe.foundation.Crate
-import com.eightsines.bpe.foundation.SciiCanvas
-import com.eightsines.bpe.foundation.Selection
-import com.eightsines.bpe.foundation.BackgroundLayer
-import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
-import com.eightsines.bpe.graphics.GraphicsAction
+import com.eightsines.bpe.foundation.BackgroundLayer
+import com.eightsines.bpe.foundation.CanvasType
+import com.eightsines.bpe.foundation.Crate
+import com.eightsines.bpe.foundation.LayerUid
+import com.eightsines.bpe.foundation.SciiCanvas
+import com.eightsines.bpe.foundation.Selection
+import com.eightsines.bpe.graphics.GraphicsActionPair
 
 data class BpeState(
     val background: LayerView<BackgroundLayer>,
@@ -68,7 +68,7 @@ sealed interface BpeSelectionState {
         val selection: Selection,
         val layerUid: LayerUid,
         val crate: Crate<Cell>,
-        val overlayActions: Pair<GraphicsAction, GraphicsAction>,
+        val overlayActions: GraphicsActionPair,
     ) : BpeSelectionState
 }
 

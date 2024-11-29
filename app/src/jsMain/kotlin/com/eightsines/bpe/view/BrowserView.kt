@@ -523,6 +523,8 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
     }
 
     private inline fun <reified T : Node> T.appendTo(node: Node?) = apply { node?.appendChild(this) }
+
+    @Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
     private inline fun Node.addClickListener(noinline listener: (Event) -> Unit) = addEventListener(EVENT_CLICK, listener)
 
     private fun Element.replaceClassModifier(prefix: String, suffix: String) {

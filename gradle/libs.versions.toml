@@ -1,14 +1,14 @@
 [versions]
 
-junit = "4.13.2"
-kotlin = "1.9.23"
+# junit = "4.13.2"
+kotlin = "2.0.20"
 npm-uuid = "9.0.1"
 
 [libraries]
 
-junit = { group = "junit", name = "junit", version.ref = "junit" }
+# junit = { group = "junit", name = "junit", version.ref = "junit" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+# kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 
 [plugins]
 

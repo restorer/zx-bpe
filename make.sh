@@ -3,5 +3,5 @@
 set -e
 cd "$(dirname "$0")"
 
-./gradlew :app:jsBrowserDevelopmentWebpack
+./gradlew :app:jsBrowserDevelopmentExecutableDistribution
 [ "$1" = "--open" ] && open "file://$(pwd)/app/build/dist/js/developmentExecutable/index.html"

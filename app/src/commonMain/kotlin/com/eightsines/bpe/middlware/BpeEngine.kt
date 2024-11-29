@@ -1,22 +1,13 @@
 package com.eightsines.bpe.middlware
 
-import com.eightsines.bpe.core.BlockCell
-import com.eightsines.bpe.core.Box
-import com.eightsines.bpe.core.Cell
-import com.eightsines.bpe.core.SciiCell
-import com.eightsines.bpe.core.SciiChar
-import com.eightsines.bpe.core.SciiColor
-import com.eightsines.bpe.core.SciiLight
 import com.eightsines.bpe.foundation.BackgroundLayer
 import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasType
-import com.eightsines.bpe.foundation.Crate
 import com.eightsines.bpe.foundation.Layer
 import com.eightsines.bpe.foundation.LayerUid
-import com.eightsines.bpe.foundation.Selection
 import com.eightsines.bpe.graphics.GraphicsAction
 import com.eightsines.bpe.graphics.GraphicsEngine
-import com.eightsines.bpe.graphics.Shape
+import com.eightsines.bpe.graphics.executePair
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.UidFactory
 
@@ -24,34 +15,28 @@ class BpeEngine(
     private val logger: Logger,
     private val uidFactory: UidFactory,
     private val graphicsEngine: GraphicsEngine,
+    private val selectionController: SelectionController,
+    private val paintingController: PaintingController,
     private val historyMaxSteps: Int = 10000,
 ) {
-    private var paletteInk: SciiColor = SciiColor.Transparent
-    private var palettePaper: SciiColor = SciiColor.Transparent
-    private var paletteBright: SciiLight = SciiLight.Transparent
-    private var paletteFlash: SciiLight = SciiLight.Transparent
-    private var paletteChar: SciiChar = SciiChar.Transparent
+    private val palette = MutablePalette()
 
     private var toolboxTool: BpeTool = BpeTool.Paint
     private var toolboxPaintShape: BpeShape = BpeShape.Point
     private var toolboxEraseShape: BpeShape = BpeShape.Point
 
-    private var selectionState: BpeSelectionState = BpeSelectionState.None
     private var clipboard: BpeClipboard? = null
 
     private var history: MutableList<HistoryStep> = mutableListOf()
     private var historyPosition: Int = 0
 
     private var currentLayer: Layer = graphicsEngine.state.backgroundLayer
-    private var currentPaintingSpec: BpePaintingSpec? = null
 
     private var cachedMoveUpOnTopOfLayer: Layer? = null
     private var cachedMoveDownOnTopOfLayer: Layer? = null
     private var cachedLayerBelow: Layer? = null
 
     private var shouldRefresh: Boolean = false
-    private val historyPendingActions = mutableListOf<HistoryAction>()
-    private val historyPendingUndoActions = mutableListOf<HistoryAction>()
 
     var state: BpeState = refresh()
         private set
@@ -94,7 +79,7 @@ class BpeEngine(
             is BpeAction.CanvasCancel -> executeCanvasCancel()
         }
 
-        historyPendingApply()
+        // historyPendingApply()
 
         if (shouldRefresh) {
             shouldRefresh = false
@@ -110,40 +95,46 @@ class BpeEngine(
     // Palette
     //
 
-    private fun executePaletteSetInk(action: BpeAction.PaletteSetInk) =
+    private fun executePaletteSetInk(action: BpeAction.PaletteSetInk) {
         if (currentLayer is BackgroundLayer) {
-            executeHistoricalGraphicsAction(GraphicsAction.SetBackgroundColor(action.color))
+            appendHistoryStep(graphicsEngine.executePair(GraphicsAction.SetBackgroundColor(action.color)).toHistoryStep())
         } else {
-            paletteInk = action.color
-            shouldRefresh = true
+            palette.ink = action.color
         }
 
-    private fun executePaletteSetPaper(action: BpeAction.PaletteSetPaper) =
+        shouldRefresh = true
+    }
+
+    private fun executePaletteSetPaper(action: BpeAction.PaletteSetPaper) {
         if (currentLayer is BackgroundLayer) {
-            executeHistoricalGraphicsAction(GraphicsAction.SetBackgroundBorder(action.color))
+            appendHistoryStep(graphicsEngine.executePair(GraphicsAction.SetBackgroundBorder(action.color)).toHistoryStep())
         } else {
-            palettePaper = action.color
-            shouldRefresh = true
+            palette.paper = action.color
         }
 
-    private fun executePaletteSetBright(action: BpeAction.PaletteSetBright) =
+        shouldRefresh = true
+    }
+
+    private fun executePaletteSetBright(action: BpeAction.PaletteSetBright) {
         if (currentLayer is BackgroundLayer) {
-            executeHistoricalGraphicsAction(GraphicsAction.SetBackgroundBright(action.light))
+            appendHistoryStep(graphicsEngine.executePair(GraphicsAction.SetBackgroundBright(action.light)).toHistoryStep())
         } else {
-            paletteBright = action.light
-            shouldRefresh = true
+            palette.bright = action.light
         }
+
+        shouldRefresh = true
+    }
 
     private fun executePaletteSetFlash(action: BpeAction.PaletteSetFlash) {
         if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
-            paletteFlash = action.light
+            palette.flash = action.light
             shouldRefresh = true
         }
     }
 
     private fun executePaletteSetChar(action: BpeAction.PaletteSetChar) {
         if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
-            paletteChar = action.character
+            palette.character = action.character
             shouldRefresh = true
         }
     }
@@ -154,67 +145,104 @@ class BpeEngine(
 
     private fun executeLayersSetCurrent(action: BpeAction.LayersSetCurrent) {
         if (action.layerUid != currentLayer.uid) {
-            cancelPaintingAndAnchorSelection()
-            currentLayer = graphicsEngine.state.canvasLayersMap[action.layerUid.value] ?: graphicsEngine.state.backgroundLayer
+            val initialLayerUid = currentLayer.uid
+            val newLayer = graphicsEngine.state.canvasLayersMap[action.layerUid.value] ?: graphicsEngine.state.backgroundLayer
+            val cancelStep = cancelPaintingAndFloating((newLayer as? CanvasLayer<*>)?.canvasType)
+
+            currentLayer = newLayer
             shouldRefresh = true
+
+            val actionStep = HistoryStep(
+                listOf(HistoryAction.CurrentLayer(newLayer.uid)),
+                listOf(HistoryAction.CurrentLayer(initialLayerUid)),
+            )
+
+            appendHistoryStep(cancelStep.merge(actionStep))
         }
     }
 
     private fun executeLayersSetVisible(action: BpeAction.LayersSetVisible) {
-        if (action.layerUid != currentLayer.uid || action.isVisible != currentLayer.isVisible) {
-            cancelPaintingAndAnchorSelection()
-
-            executeHistoricalGraphicsAction(
-                if (action.layerUid == LayerUid.Background) {
-                    GraphicsAction.SetBackgroundVisible(action.isVisible)
-                } else {
-                    GraphicsAction.SetLayerVisible(layerUid = action.layerUid, isVisible = action.isVisible)
-                }
-            )
+        if (action.layerUid == currentLayer.uid && action.isVisible == currentLayer.isVisible) {
+            return
         }
+
+        val cancelStep = cancelPaintingAndFloating(selectionController.selection?.canvasType)
+
+        val actionStep = graphicsEngine.executePair(
+            if (action.layerUid == LayerUid.Background) {
+                GraphicsAction.SetBackgroundVisible(action.isVisible)
+            } else {
+                GraphicsAction.SetLayerVisible(layerUid = action.layerUid, isVisible = action.isVisible)
+            }
+        ).toHistoryStep()
+
+        appendHistoryStep(cancelStep.merge(actionStep))
+        shouldRefresh = true
     }
 
     private fun executeLayersSetLocked(action: BpeAction.LayersSetLocked) {
-        if (action.layerUid != currentLayer.uid || action.isLocked != currentLayer.isLocked) {
-            cancelPaintingAndAnchorSelection()
-
-            executeHistoricalGraphicsAction(
-                if (action.layerUid == LayerUid.Background) {
-                    GraphicsAction.SetBackgroundLocked(action.isLocked)
-                } else {
-                    GraphicsAction.SetLayerLocked(layerUid = action.layerUid, isLocked = action.isLocked)
-                }
-            )
+        if (action.layerUid == currentLayer.uid && action.isLocked == currentLayer.isLocked) {
+            return
         }
+
+        val cancelStep = cancelPaintingAndFloating(selectionController.selection?.canvasType)
+
+        val actionStep = graphicsEngine.executePair(
+            if (action.layerUid == LayerUid.Background) {
+                GraphicsAction.SetBackgroundLocked(action.isLocked)
+            } else {
+                GraphicsAction.SetLayerLocked(layerUid = action.layerUid, isLocked = action.isLocked)
+            }
+        ).toHistoryStep()
+
+        appendHistoryStep(cancelStep.merge(actionStep))
+        shouldRefresh = true
     }
 
     private fun executeLayersMoveUp() {
         cachedMoveUpOnTopOfLayer?.let {
-            cancelPaintingAndAnchorSelection()
-            executeHistoricalGraphicsAction(GraphicsAction.MoveLayer(layerUid = currentLayer.uid, onTopOfLayerUid = it.uid))
+            val cancelStep = cancelPaintingAndFloating(selectionController.selection?.canvasType)
+
+            val actionStep = graphicsEngine.executePair(
+                GraphicsAction.MoveLayer(layerUid = currentLayer.uid, onTopOfLayerUid = it.uid)
+            ).toHistoryStep()
+
+            appendHistoryStep(cancelStep.merge(actionStep))
+            shouldRefresh = true
         }
     }
 
     private fun executeLayersMoveDown() {
         cachedMoveDownOnTopOfLayer?.let {
-            cancelPaintingAndAnchorSelection()
-            executeHistoricalGraphicsAction(GraphicsAction.MoveLayer(layerUid = currentLayer.uid, onTopOfLayerUid = it.uid))
+            val cancelStep = cancelPaintingAndFloating(selectionController.selection?.canvasType)
+
+            val actionStep = graphicsEngine.executePair(
+                GraphicsAction.MoveLayer(layerUid = currentLayer.uid, onTopOfLayerUid = it.uid)
+            ).toHistoryStep()
+
+            appendHistoryStep(cancelStep.merge(actionStep))
+            shouldRefresh = true
         }
     }
 
     private fun executeLayersCreate(action: BpeAction.LayersCreate) {
-        cancelPaintingAndAnchorSelection()
+        val cancelStep = cancelPaintingAndFloating(action.canvasType)
         val newLayerUid = LayerUid(uidFactory.createUid())
 
-        executeHistoricalGraphicsAction(
+        val actionStep = graphicsEngine.executePair(
             GraphicsAction.CreateLayer(canvasType = action.canvasType, layerUid = newLayerUid, onTopOfLayerUid = currentLayer.uid),
-        ) { graphicsAction, undoGraphicsAction ->
+        )?.let {
             val prevCurrentLayer = currentLayer
             currentLayer = graphicsEngine.state.canvasLayersMap[newLayerUid.value] ?: graphicsEngine.state.backgroundLayer
 
-            HistoryAction.Composite(listOf(graphicsAction, HistoryAction.CurrentLayer(newLayerUid))) to
-                    HistoryAction.Composite(listOf(undoGraphicsAction, HistoryAction.CurrentLayer(prevCurrentLayer.uid)))
-        }
+            HistoryStep(
+                listOf(HistoryAction.Graphics(it.action), HistoryAction.CurrentLayer(newLayerUid)),
+                listOf(HistoryAction.Graphics(it.undoAction), HistoryAction.CurrentLayer(prevCurrentLayer.uid)),
+            )
+        } ?: HistoryStep.Empty
+
+        appendHistoryStep(cancelStep.merge(actionStep))
+        shouldRefresh = true
     }
 
     private fun executeLayersDelete() {
@@ -222,43 +250,61 @@ class BpeEngine(
             return
         }
 
-        cancelPaintingAndAnchorSelection()
         val layerBelow = cachedLayerBelow
+        val cancelStep = cancelPaintingAndFloating((layerBelow as? CanvasLayer<*>)?.canvasType)
 
-        executeHistoricalGraphicsAction(GraphicsAction.DeleteLayer(currentLayer.uid)) { graphicsAction, undoGraphicsAction ->
+        val actionStep = graphicsEngine.executePair(GraphicsAction.DeleteLayer(currentLayer.uid))?.let {
             if (layerBelow != null) {
                 val prevCurrentLayer = currentLayer
                 currentLayer = layerBelow
 
-                HistoryAction.Composite(listOf(graphicsAction, HistoryAction.CurrentLayer(layerBelow.uid))) to
-                        HistoryAction.Composite(listOf(undoGraphicsAction, HistoryAction.CurrentLayer(prevCurrentLayer.uid)))
+                HistoryStep(
+                    listOf(HistoryAction.Graphics(it.action), HistoryAction.CurrentLayer(layerBelow.uid)),
+                    listOf(HistoryAction.Graphics(it.undoAction), HistoryAction.CurrentLayer(prevCurrentLayer.uid)),
+                )
             } else {
-                graphicsAction to undoGraphicsAction
+                it.toHistoryStep()
             }
-        }
+        } ?: HistoryStep.Empty
+
+        appendHistoryStep(cancelStep.merge(actionStep))
+        shouldRefresh = true
     }
 
     private fun executeLayersMerge() {
         val layerBelow = cachedLayerBelow as? CanvasLayer<*> ?: return
-        cancelPaintingAndAnchorSelection()
+        val cancelStep = cancelPaintingAndFloating(layerBelow.canvasType)
 
-        executeHistoricalGraphicsAction(
+        val actionStep = graphicsEngine.executePair(
             GraphicsAction.MergeLayers(layerUid = currentLayer.uid, ontoLayerUid = layerBelow.uid),
-        ) { graphicsAction, undoGraphicsAction ->
+        )?.let {
             val prevCurrentLayer = currentLayer
             currentLayer = graphicsEngine.state.canvasLayersMap[layerBelow.uid.value] ?: graphicsEngine.state.backgroundLayer
 
-            HistoryAction.Composite(listOf(graphicsAction, HistoryAction.CurrentLayer(layerBelow.uid))) to
-                    HistoryAction.Composite(listOf(undoGraphicsAction, HistoryAction.CurrentLayer(prevCurrentLayer.uid)))
-        }
+            HistoryStep(
+                listOf(HistoryAction.Graphics(it.action), HistoryAction.CurrentLayer(layerBelow.uid)),
+                listOf(HistoryAction.Graphics(it.undoAction), HistoryAction.CurrentLayer(prevCurrentLayer.uid)),
+            )
+        } ?: HistoryStep.Empty
+
+        appendHistoryStep(cancelStep.merge(actionStep))
+        shouldRefresh = true
     }
 
     private fun executeLayersConvert(action: BpeAction.LayersConvert) {
-        if (currentLayer is CanvasLayer<*>) {
-            cancelPaintingAndAnchorSelection()
-            executeHistoricalGraphicsAction(GraphicsAction.ConvertLayer(layerUid = currentLayer.uid, canvasType = action.canvasType))
-            currentLayer = graphicsEngine.state.canvasLayersMap[currentLayer.uid.value] ?: graphicsEngine.state.backgroundLayer
+        if (currentLayer !is CanvasLayer<*>) {
+            return
         }
+
+        val cancelStep = cancelPaintingAndFloating(action.canvasType)
+
+        val actionStep = graphicsEngine.executePair(
+            GraphicsAction.ConvertLayer(layerUid = currentLayer.uid, canvasType = action.canvasType)
+        ).toHistoryStep()
+
+        currentLayer = graphicsEngine.state.canvasLayersMap[currentLayer.uid.value] ?: graphicsEngine.state.backgroundLayer
+        appendHistoryStep(cancelStep.merge(actionStep))
+        shouldRefresh = true
     }
 
     //
@@ -290,52 +336,24 @@ class BpeEngine(
 
     private fun executeToolboxPaste() {
         val currentCanvasLayer = currentLayer as? CanvasLayer<*> ?: return
-        val clipboard = this.clipboard
+        val clipboard = this.clipboard ?: return
 
-        if (clipboard == null || clipboard.crate.canvasType != currentCanvasLayer.canvasType) {
-            return
-        }
-
-        cancelPaintingAndAnchorSelection()
-
-        val overlayActions = executeGraphicsAction(
-            @Suppress("UNCHECKED_CAST")
-            GraphicsAction.MergeShape(
-                currentCanvasLayer.uid,
-                Shape.Cells(clipboard.drawingX, clipboard.drawingY, clipboard.crate as Crate<Cell>),
-            ),
-        ) ?: return
-
-        selectionState = BpeSelectionState.Floating(
-            selection = Selection(
-                clipboard.crate.canvasType,
-                Box(clipboard.drawingX, clipboard.drawingY, clipboard.crate.width, clipboard.crate.height),
-            ),
-            layerUid = currentCanvasLayer.uid,
-            crate = clipboard.crate,
-            overlayActions = overlayActions,
-        )
+        processSelectionResult(selectionController.paste(currentCanvasLayer, clipboard))
     }
 
     private fun executeToolboxUndo() {
-        if (currentPaintingSpec != null) {
-            cancelPainting()
-        }
-
-        if (selectionState !is BpeSelectionState.None) {
-            (selectionState as? BpeSelectionState.Floating)?.overlayActions?.let { graphicsEngine.execute(it.second) }
-            selectionState = BpeSelectionState.None
-            shouldRefresh = true
-        }
+        cancelPainting()
+        // no need to reset selection, because selection will be undo-ed to its previous state via historical action
 
         if (historyPosition > 0) {
-            executeHistoryAction(history[--historyPosition].undoAction)
+            performHistoryActions(history[--historyPosition].undoActions)
         }
     }
 
     private fun executeToolboxRedo() {
-        if (selectionState !is BpeSelectionState.Floating && historyPosition < history.size) {
-            executeHistoryAction(history[historyPosition++].action)
+        if (!selectionController.isFloating && historyPosition < history.size) {
+            cancelPainting()
+            performHistoryActions(history[historyPosition++].actions)
         }
     }
 
@@ -344,63 +362,18 @@ class BpeEngine(
     //
 
     private fun executeSelectionDeselect() {
-        cancelPaintingAndAnchorSelection()
-
-        if (selectionState !is BpeSelectionState.None) {
-            selectionState = BpeSelectionState.None
-            shouldRefresh = true
-        }
+        cancelPainting()
+        processSelectionResult(selectionController.deselect())
     }
 
-    private fun executeSelectionCut() {
-        val currentCanvasLayer = currentLayer as? CanvasLayer<*> ?: return
-
-        val selection = when (val selectionState = this.selectionState) {
-            is BpeSelectionState.Selected -> selectionState.selection
-            is BpeSelectionState.Floating -> selectionState.selection
-            else -> null
-        } ?: return
-
-        cancelPaintingAndAnchorSelection()
-        val selectionBox = selection.drawingBox
-
-        clipboard = BpeClipboard(
-            drawingX = selectionBox.x,
-            drawingY = selectionBox.y,
-            crate = Crate.fromCanvasDrawing(currentCanvasLayer.canvas, selectionBox),
-        )
-
-        executeHistoricalGraphicsAction(
-            GraphicsAction.ReplaceShape(
-                currentCanvasLayer.uid,
-                Shape.FillBox(selectionBox, currentCanvasLayer.canvasType.transparentCell),
-            )
-        )
-
-        selectionState = BpeSelectionState.Selected(selection)
-        shouldRefresh = true
+    private fun executeSelectionCut() = (currentLayer as? CanvasLayer<*>)?.let {
+        cancelPainting()
+        processSelectionResult(selectionController.cut(it))
     }
 
-    private fun executeSelectionCopy() {
-        val currentCanvasLayer = currentLayer as? CanvasLayer<*> ?: return
-
-        val selection = when (val selectionState = this.selectionState) {
-            is BpeSelectionState.Selected -> selectionState.selection
-            is BpeSelectionState.Floating -> selectionState.selection
-            else -> null
-        } ?: return
-
-        cancelPaintingAndAnchorSelection()
-        val selectionBox = selection.drawingBox
-
-        clipboard = BpeClipboard(
-            drawingX = selectionBox.x,
-            drawingY = selectionBox.y,
-            crate = Crate.fromCanvasDrawing(currentCanvasLayer.canvas, selectionBox),
-        )
-
-        selectionState = BpeSelectionState.Selected(selection)
-        shouldRefresh = true
+    private fun executeSelectionCopy() = (currentLayer as? CanvasLayer<*>)?.let {
+        cancelPainting()
+        processSelectionResult(selectionController.copy(it))
     }
 
     //
@@ -408,73 +381,35 @@ class BpeEngine(
     //
 
     private fun executeCanvasDown(action: BpeAction.CanvasDown) {
-        cancelPainting()
-
-        when (toolboxTool) {
-            BpeTool.None -> Unit
-            BpeTool.Paint -> startPainting(toolboxTool, toolboxPaintShape, action.drawingX, action.drawingY)
-            BpeTool.Erase -> startPainting(toolboxTool, toolboxEraseShape, action.drawingX, action.drawingY)
-            BpeTool.Select -> startPainting(toolboxTool, null, action.drawingX, action.drawingY)
-            BpeTool.PickColor -> executePickColor(action.drawingX, action.drawingY)
+        if (
+            paintingController.start(
+                tool = toolboxTool,
+                paintShape = toolboxPaintShape,
+                eraseShape = toolboxEraseShape,
+                currentLayer = currentLayer,
+                palette = palette,
+                drawingX = action.drawingX,
+                drawingY = action.drawingY,
+                historyActionsPerformer = ::performHistoryActions,
+            )
+        ) {
+            shouldRefresh = true
         }
     }
 
     private fun executeCanvasMove(action: BpeAction.CanvasMove) {
-        if (currentPaintingSpec != null && currentLayer is CanvasLayer<*>) {
-            updatePainting(action.drawingX, action.drawingY)
+        if (paintingController.update(action.drawingX, action.drawingY)) {
+            shouldRefresh = true
         }
     }
 
     private fun executeCanvasUp(action: BpeAction.CanvasUp) {
-        val currentCanvasLayer = this.currentLayer
+        val result = paintingController.finish(action.drawingX, action.drawingY)
+        appendHistoryStep(result.historyStep)
 
-        if (currentCanvasLayer is CanvasLayer<*>) {
-            when (val spec = currentPaintingSpec) {
-                is BpePaintingSpec.Single -> {
-                    updatePainting(action.drawingX, action.drawingY)
-                    spec.paintActions?.let { historyPendingAppendGraphics(it) }
-                }
-
-                is BpePaintingSpec.Multiple -> {
-                    updatePainting(action.drawingX, action.drawingY)
-                    spec.paintActions?.let { historyPendingAppendGraphics(it) }
-                }
-
-                is BpePaintingSpec.Select -> {
-                    updatePainting(action.drawingX, action.drawingY)
-
-                    historyPendingAppend(
-                        HistoryAction.SelectionState(selectionState),
-                        HistoryAction.SelectionState(spec.initialState ?: BpeSelectionState.None),
-                    )
-                }
-
-                is BpePaintingSpec.MoveSelection -> {
-                    updatePainting(action.drawingX, action.drawingY)
-
-                    if (spec.cutActions != null) {
-                        historyPendingAppend(
-                            HistoryAction.Composite(
-                                listOf(
-                                    HistoryAction.Graphics(spec.cutActions.first),
-                                    HistoryAction.SelectionState(selectionState),
-                                ),
-                            ),
-                            HistoryAction.Composite(
-                                listOf(
-                                    HistoryAction.Graphics(spec.cutActions.second),
-                                    HistoryAction.SelectionState(BpeSelectionState.Selected(spec.initialState.selection)),
-                                ),
-                            ),
-                        )
-                    }
-                }
-
-                null -> Unit
-            }
+        if (result.shouldRefresh) {
+            shouldRefresh = true
         }
-
-        currentPaintingSpec = null
     }
 
     @Suppress("NOTHING_TO_INLINE")
@@ -484,372 +419,80 @@ class BpeEngine(
     // Utils
     //
 
-    private fun executeHistoryAction(action: HistoryAction): Unit = when (action) {
-        is HistoryAction.CurrentLayer -> {
-            currentLayer = graphicsEngine.state.canvasLayersMap[action.layerUid.value] ?: graphicsEngine.state.backgroundLayer
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun cancelPainting() {
+        if (paintingController.cancel(::performHistoryActions)) {
             shouldRefresh = true
         }
-
-        is HistoryAction.SelectionState -> {
-            (selectionState as? BpeSelectionState.Floating)?.overlayActions?.let { graphicsEngine.execute(it.second) }
-            selectionState = action.selectionState
-            (selectionState as? BpeSelectionState.Floating)?.overlayActions?.let { graphicsEngine.execute(it.first) }
-            shouldRefresh = true
-        }
-
-        is HistoryAction.Graphics -> shouldRefresh = graphicsEngine.execute(action.graphicsAction) != null || shouldRefresh
-        is HistoryAction.Composite -> action.actions.forEach(::executeHistoryAction)
     }
 
-    private fun executePickColor(drawingX: Int, drawingY: Int) {
-        when (val currentLayer = this.currentLayer) {
-            is BackgroundLayer -> paletteInk = currentLayer.color
-
-            is CanvasLayer<*> -> when (val cell = currentLayer.canvas.getDrawingCell(drawingX, drawingY)) {
-                is SciiCell -> {
-                    paletteInk = cell.ink
-                    palettePaper = cell.paper
-                    paletteBright = cell.bright
-                    paletteFlash = cell.flash
-                    paletteChar = cell.character
-                }
-
-                is BlockCell -> {
-                    paletteInk = cell.color
-                    paletteBright = cell.bright
-                }
-            }
-        }
-
-        shouldRefresh = true
-    }
-
-    private fun startPainting(bpeTool: BpeTool, bpeShape: BpeShape?, drawingX: Int, drawingY: Int) {
-        val currentCanvasLayer = this.currentLayer as? CanvasLayer<*> ?: return
-        val selectionState = this.selectionState
-
-        currentPaintingSpec = when {
-            bpeTool == BpeTool.Select -> when {
-                selectionState is BpeSelectionState.Floating &&
-                        selectionState.selection.drawingBox.contains(drawingX, drawingY) -> {
-
-                    BpePaintingSpec.MoveSelection(
-                        initialState = selectionState,
-                        startX = drawingX,
-                        startY = drawingY,
-                    )
-                }
-
-                selectionState is BpeSelectionState.Selected &&
-                        selectionState.selection.canvasType == currentCanvasLayer.canvasType &&
-                        selectionState.selection.drawingBox.contains(drawingX, drawingY) -> run {
-
-                    val selectionBox = selectionState.selection.drawingBox
-                    val crate = Crate.fromCanvasDrawing(currentCanvasLayer.canvas, selectionBox)
-
-                    val cutActions = executeGraphicsAction(
-                        GraphicsAction.ReplaceShape(
-                            currentCanvasLayer.uid,
-                            Shape.FillBox(selectionBox, currentCanvasLayer.canvasType.transparentCell),
-                        ),
-                    ) ?: return
-
-                    val overlayActions = executeGraphicsAction(
-                        @Suppress("UNCHECKED_CAST")
-                        GraphicsAction.MergeShape(
-                            currentCanvasLayer.uid,
-                            Shape.Cells(selectionBox.x, selectionBox.y, crate as Crate<Cell>),
-                        ),
-                    ) ?: return
-
-                    val floatingState = BpeSelectionState.Floating(
-                        selection = selectionState.selection,
-                        layerUid = currentCanvasLayer.uid,
-                        crate = crate,
-                        overlayActions = overlayActions,
-                    )
-
-                    this.selectionState = floatingState
-                    shouldRefresh = true
-
-                    BpePaintingSpec.MoveSelection(
-                        initialState = floatingState,
-                        cutActions = cutActions,
-                        startX = drawingX,
-                        startY = drawingY,
-                    )
-                }
-
-                else -> {
-                    if (selectionState !is BpeSelectionState.Selected) {
-                        anchorSelection()
-                    }
-
-                    BpePaintingSpec.Select(
-                        initialState = selectionState as? BpeSelectionState.Selected,
-                        canvasType = currentCanvasLayer.canvasType,
-                        startY = drawingY,
-                        startX = drawingX,
-                    )
-                }
-            }
-
-            bpeShape == BpeShape.Point -> {
-                anchorSelection()
-                BpePaintingSpec.Multiple(bpeTool, LinkedHashSet())
-            }
-
-            bpeShape != null -> {
-                anchorSelection()
-                BpePaintingSpec.Single(bpeTool, bpeShape, drawingX, drawingY)
-            }
-
-            else -> null
-        }
-
-        updatePainting(drawingX, drawingY)
-    }
-
-    private fun updatePainting(drawingX: Int, drawingY: Int) {
-        val descriptor = getPaintingDescriptor()
-
-        when (val spec = currentPaintingSpec) {
-            is BpePaintingSpec.Single -> if (descriptor != null && (spec.lastX != drawingX || spec.lastY != drawingY)) {
-                spec.paintActions?.let { graphicsEngine.execute(it.second) }
-                spec.lastX = drawingX
-                spec.lastY = drawingY
-
-                val shape = when (spec.shape) {
-                    BpeShape.Point -> null
-                    BpeShape.Line -> Shape.Line(spec.startX, spec.startY, drawingX, drawingY, descriptor.first)
-                    BpeShape.FillBox -> Shape.FillBox(spec.startX, spec.startY, drawingX, drawingY, descriptor.first)
-                    BpeShape.StrokeBox -> Shape.StrokeBox(spec.startX, spec.startY, drawingX, drawingY, descriptor.first)
-                }
-
-                if (shape != null) {
-                    spec.paintActions = executeGraphicsAction(descriptor.second(shape))
-                }
-            }
-
-            is BpePaintingSpec.Multiple -> if (descriptor != null) {
-                val point = drawingX to drawingY
-
-                if (!spec.points.contains(point)) {
-                    spec.paintActions?.let { graphicsEngine.execute(it.second) }
-                    spec.points.add(point)
-                    spec.paintActions = executeGraphicsAction(descriptor.second(Shape.Points(spec.points.toList(), descriptor.first)))
-                }
-            }
-
-            is BpePaintingSpec.Select -> {
-                val newSelectionState = BpeSelectionState.Selected(
-                    Selection(spec.canvasType, Box.of(spec.startX, spec.startY, drawingX, drawingY))
-                )
-
-                if (selectionState != newSelectionState) {
-                    selectionState = newSelectionState
-                    shouldRefresh = true
-                }
-            }
-
-            is BpePaintingSpec.MoveSelection -> run {
-                val offsetX = drawingX - spec.startX
-                val offsetY = drawingY - spec.startY
-
-                if (offsetX == spec.lastOffsetX && offsetY == spec.lastOffsetY) {
-                    return@run
-                }
-
-                (selectionState as? BpeSelectionState.Floating)?.overlayActions?.let { graphicsEngine.execute(it.second) }
-                val newSelectionBox = spec.initialState.selection.drawingBox.copyWithOffset(offsetX, offsetY)
-
-                val overlayActions = executeGraphicsAction(
-                    GraphicsAction.MergeShape(
-                        spec.initialState.layerUid,
-                        Shape.Cells(newSelectionBox.x, newSelectionBox.y, spec.initialState.crate),
-                    ),
-                ) ?: return@run
-
-                selectionState = spec.initialState.copy(
-                    selection = spec.initialState.selection.copy(drawingBox = newSelectionBox),
-                    overlayActions = overlayActions,
-                )
-
-                spec.lastOffsetX = offsetX
-                spec.lastOffsetY = offsetY
-            }
-
-            null -> Unit
-        }
-    }
-
-    private fun getPaintingDescriptor(): Pair<Cell, (Shape<Cell>) -> GraphicsAction>? {
-        val currentCanvasLayer = currentLayer as? CanvasLayer<*> ?: return null
-
-        return when (toolboxTool) {
-            BpeTool.Paint -> when (currentCanvasLayer.canvasType) {
-                is CanvasType.Scii -> SciiCell(
-                    character = paletteChar,
-                    ink = paletteInk,
-                    paper = palettePaper,
-                    bright = paletteBright,
-                    flash = paletteFlash,
-                )
-
-                is CanvasType.HBlock, is CanvasType.VBlock, is CanvasType.QBlock -> BlockCell(paletteInk, paletteBright)
-            } to { GraphicsAction.MergeShape(currentCanvasLayer.uid, it) }
-
-            BpeTool.Erase -> currentCanvasLayer.canvasType.transparentCell to
-                    { GraphicsAction.ReplaceShape(currentCanvasLayer.uid, it) }
-
-            else -> null
-        }
-    }
-
-    private fun cancelPainting() {
-        when (val spec = currentPaintingSpec) {
-            null -> Unit
-
-            is BpePaintingSpec.Single -> {
-                spec.paintActions?.let { graphicsEngine.execute(it.second) }
-                shouldRefresh = true
-            }
-
-            is BpePaintingSpec.Multiple -> {
-                spec.paintActions?.let { graphicsEngine.execute(it.second) }
-                shouldRefresh = true
-            }
-
-            is BpePaintingSpec.Select -> {
-                selectionState = BpeSelectionState.None
-                shouldRefresh = true
-            }
-
-            is BpePaintingSpec.MoveSelection -> {
-                (selectionState as? BpeSelectionState.Floating)?.overlayActions?.let { graphicsEngine.execute(it.second) }
-
-                if (spec.cutActions != null) {
-                    graphicsEngine.execute(spec.cutActions.second)
-                    selectionState = BpeSelectionState.Selected(spec.initialState.selection)
-                } else {
-                    graphicsEngine.execute(spec.initialState.overlayActions.first)
-                    selectionState = spec.initialState
-                }
-
-                shouldRefresh = true
-            }
-        }
-
-        currentPaintingSpec = null
-    }
-
-    private fun anchorSelection() {
-        val floatingState = selectionState as? BpeSelectionState.Floating
-
-        if (floatingState != null) {
-            historyPendingAppend(
-                HistoryAction.Composite(
-                    listOf(
-                        HistoryAction.Graphics(floatingState.overlayActions.first),
-                        HistoryAction.SelectionState(BpeSelectionState.None),
-                    ),
-                ),
-                HistoryAction.Composite(
-                    listOf(
-                        HistoryAction.Graphics(floatingState.overlayActions.second),
-                        HistoryAction.SelectionState(floatingState),
-                    ),
-                ),
-            )
-        }
-
-        shouldRefresh = selectionState !is BpeSelectionState.None
-        selectionState = BpeSelectionState.None
-    }
-
-    private fun cancelPaintingAndAnchorSelection() {
+    private fun cancelPaintingAndFloating(layerCanvasType: CanvasType?): HistoryStep {
         cancelPainting()
-        anchorSelection()
+        val result = selectionController.anchor(layerCanvasType)
+
+        if (result.shouldRefresh) {
+            shouldRefresh = true
+        }
+
+        return result.historyStep
     }
 
-    private fun executeGraphicsAction(graphicsAction: GraphicsAction): Pair<GraphicsAction, GraphicsAction>? {
-        val undoAction = graphicsEngine.execute(graphicsAction)
+    private fun processSelectionResult(result: SelectionResult) {
+        appendHistoryStep(result.historyStep)
 
-        return if (undoAction != null) {
+        if (result.clipboard != null) {
+            clipboard = result.clipboard
+        }
+
+        if (result.shouldRefresh) {
             shouldRefresh = true
-            graphicsAction to undoAction
-        } else {
-            null
         }
     }
 
-    private fun executeHistoricalGraphicsAction(
-        graphicsAction: GraphicsAction,
-        historyTransformer: ((HistoryAction, HistoryAction) -> Pair<HistoryAction, HistoryAction>)? = null,
-    ) {
-        val undoAction = graphicsEngine.execute(graphicsAction)
+    private fun performHistoryActions(actions: List<HistoryAction>) {
+        logger.note("BpeEngine.performHistoryActions:begin") {
+            put("actions", actions.toString())
+        }
 
-        if (undoAction != null) {
-            if (historyTransformer != null) {
-                val (transformedAction, transformedUndoAction) = historyTransformer(
-                    HistoryAction.Graphics(graphicsAction),
-                    HistoryAction.Graphics(undoAction),
-                )
+        for (action in actions) {
+            when (action) {
+                is HistoryAction.CurrentLayer -> {
+                    currentLayer = graphicsEngine.state.canvasLayersMap[action.layerUid.value] ?: graphicsEngine.state.backgroundLayer
+                    shouldRefresh = true
+                }
 
-                historyPendingAppend(transformedAction, transformedUndoAction)
-            } else {
-                historyPendingAppend(HistoryAction.Graphics(graphicsAction), HistoryAction.Graphics(undoAction))
+                is HistoryAction.SelectionState -> {
+                    selectionController.restore(action.selectionState)
+                    shouldRefresh = true
+                }
+
+                is HistoryAction.Graphics -> if (graphicsEngine.execute(action.graphicsAction) != null) {
+                    shouldRefresh = true
+                }
             }
+        }
 
-            shouldRefresh = true
+        logger.note("BpeEngine.performHistoryActions:end") {
+            put("actions", actions.toString())
         }
     }
 
-    private fun historyPendingAppendGraphics(actions: Pair<GraphicsAction, GraphicsAction>) {
-        historyPendingActions.add(HistoryAction.Graphics(actions.first))
-        historyPendingUndoActions.add(HistoryAction.Graphics(actions.second))
-    }
-
-    private fun historyPendingAppend(action: HistoryAction?, undoAction: HistoryAction?) {
-        action?.let(historyPendingActions::add)
-        undoAction?.let(historyPendingUndoActions::add)
-    }
-
-    private fun historyPendingApply() {
-        if (historyPendingActions.isEmpty() && historyPendingUndoActions.isEmpty()) {
+    private fun appendHistoryStep(step: HistoryStep) {
+        if (step.actions.isEmpty() && step.undoActions.isEmpty()) {
             return
         }
 
-        val action = when (historyPendingActions.size) {
-            0 -> HistoryAction.Composite(emptyList())
-            1 -> historyPendingActions.first()
-            else -> HistoryAction.Composite(historyPendingActions)
-        }
-
-        val undoAction = when (historyPendingUndoActions.size) {
-            0 -> HistoryAction.Composite(emptyList())
-            1 -> historyPendingUndoActions.first()
-            else -> HistoryAction.Composite(historyPendingUndoActions.reversed())
-        }
-
-        val step = HistoryStep(action, undoAction)
-
-        logger.note("BpeEngine.historyPendingApply") {
+        logger.note("BpeEngine.appendHistoryStep") {
             put("step", step.toString())
         }
 
-        if (historyPosition == historyMaxSteps) {
-            history = history.subList(1, historyPosition).also { it.add(step) }
-        } else if (historyPosition == history.size) {
-            history.add(step)
-        } else {
-            history = history.subList(0, historyPosition).also { it.add(step) }
+        when (historyPosition) {
+            historyMaxSteps -> history = history.subList(1, historyPosition).also { it.add(step) }
+            history.size -> history.add(step)
+            else -> history = history.subList(0, historyPosition).also { it.add(step) }
         }
 
         historyPosition = history.size
-
-        historyPendingActions.clear()
-        historyPendingUndoActions.clear()
     }
 
     private fun refresh(): BpeState {
@@ -891,17 +534,17 @@ class BpeEngine(
             canvas = CanvasView(graphicsState.preview),
             drawingType = (currentLayer as? CanvasLayer<*>)?.canvasType,
 
-            paletteInk = if (currentLayer is BackgroundLayer) currentLayer.color else paletteInk,
+            paletteInk = if (currentLayer is BackgroundLayer) currentLayer.color else palette.ink,
 
             palettePaper = when {
                 currentLayer is BackgroundLayer -> currentLayer.border
-                (currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii -> palettePaper
+                (currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii -> palette.paper
                 else -> null
             },
 
-            paletteBright = if (currentLayer is BackgroundLayer) currentLayer.bright else paletteBright,
-            paletteFlash = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) paletteFlash else null,
-            paletteChar = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) paletteChar else null,
+            paletteBright = if (currentLayer is BackgroundLayer) currentLayer.bright else palette.bright,
+            paletteFlash = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.flash else null,
+            paletteChar = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.character else null,
 
             layers = graphicsState.canvasLayers.reversed().map(::CanvasLayerView) + listOf(backgroundLayerView),
             layersCurrentUid = currentLayer.uid,
@@ -953,52 +596,13 @@ class BpeEngine(
 
             toolboxCanSelect = currentLayer is CanvasLayer<*>,
             toolboxCanPaste = clipboard?.let { it.crate.canvasType == (currentLayer as? CanvasLayer<*>)?.canvasType } ?: false,
-            toolboxCanUndo = selectionState is BpeSelectionState.Floating || historyPosition > 0,
-            toolboxCanRedo = selectionState !is BpeSelectionState.Floating && historyPosition < history.size,
+            toolboxCanUndo = selectionController.isFloating || historyPosition > 0,
+            toolboxCanRedo = !selectionController.isFloating && historyPosition < history.size,
 
-            selection = when (val selectionState = this.selectionState) {
-                is BpeSelectionState.Selected -> selectionState.selection
-                is BpeSelectionState.Floating -> selectionState.selection
-                else -> null
-            },
-
-            selectionCanCut = selectionState !is BpeSelectionState.None && currentLayer is CanvasLayer<*>,
-            selectionCanCopy = selectionState !is BpeSelectionState.None && currentLayer is CanvasLayer<*>,
-            selectionIsFloating = selectionState is BpeSelectionState.Floating,
+            selection = selectionController.selection,
+            selectionCanCut = selectionController.isSelected && currentLayer is CanvasLayer<*>,
+            selectionCanCopy = selectionController.isSelected && currentLayer is CanvasLayer<*>,
+            selectionIsFloating = selectionController.isFloating,
         )
     }
-}
-
-private sealed interface BpePaintingSpec {
-    data class Single(
-        val tool: BpeTool,
-        val shape: BpeShape,
-        val startX: Int,
-        val startY: Int,
-        var paintActions: Pair<GraphicsAction, GraphicsAction>? = null,
-        var lastX: Int? = null,
-        var lastY: Int? = null,
-    ) : BpePaintingSpec
-
-    data class Multiple(
-        val tool: BpeTool,
-        var points: LinkedHashSet<Pair<Int, Int>>,
-        var paintActions: Pair<GraphicsAction, GraphicsAction>? = null,
-    ) : BpePaintingSpec
-
-    data class Select(
-        val initialState: BpeSelectionState.Selected?,
-        val canvasType: CanvasType,
-        val startX: Int,
-        val startY: Int,
-    ) : BpePaintingSpec
-
-    data class MoveSelection(
-        val initialState: BpeSelectionState.Floating,
-        val cutActions: Pair<GraphicsAction, GraphicsAction>? = null,
-        val startX: Int,
-        val startY: Int,
-        var lastOffsetX: Int = 0,
-        var lastOffsetY: Int = 0,
-    ) : BpePaintingSpec
 }

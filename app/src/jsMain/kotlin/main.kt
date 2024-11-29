@@ -2,6 +2,8 @@ import com.eightsines.bpe.graphics.GraphicsEngine
 import com.eightsines.bpe.graphics.Painter
 import com.eightsines.bpe.graphics.Renderer
 import com.eightsines.bpe.middlware.BpeEngine
+import com.eightsines.bpe.middlware.PaintingController
+import com.eightsines.bpe.middlware.SelectionController
 import com.eightsines.bpe.presentation.UiEngine
 import com.eightsines.bpe.util.ElapsedTimeProviderImpl
 import com.eightsines.bpe.util.LoggerImpl
@@ -18,7 +20,22 @@ class BpeComponent(private val document: Document) {
     private val uidFactory by lazy { UidFactoryImpl() }
     private val elapsedTimeProvider by lazy { ElapsedTimeProviderImpl() }
     private val graphicsEngine by lazy { GraphicsEngine(logger = logger, painter = painter, renderer = renderer) }
-    private val bpeEngine by lazy { BpeEngine(logger = logger, uidFactory = uidFactory, graphicsEngine = graphicsEngine) }
+    private val selectionController by lazy { SelectionController(graphicsEngine) }
+
+    private val paintingController by lazy {
+        PaintingController(graphicsEngine = graphicsEngine, selectionController = selectionController)
+    }
+
+    private val bpeEngine by lazy {
+        BpeEngine(
+            logger = logger,
+            uidFactory = uidFactory,
+            graphicsEngine = graphicsEngine,
+            selectionController = selectionController,
+            paintingController = paintingController,
+        )
+    }
+
     private val browserRenderer by lazy { BrowserRenderer(elapsedTimeProvider) }
 
     val uiEngine by lazy { UiEngine(logger = logger, bpeEngine = bpeEngine) }

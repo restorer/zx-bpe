@@ -42,3 +42,5 @@ sealed interface GraphicsAction {
 
     data class ConvertLayer(val layerUid: LayerUid, val canvasType: CanvasType) : GraphicsAction
 }
+
+data class GraphicsActionPair(val action: GraphicsAction, val undoAction: GraphicsAction)

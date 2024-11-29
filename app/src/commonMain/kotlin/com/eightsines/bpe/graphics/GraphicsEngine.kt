@@ -607,3 +607,5 @@ class GraphicsEngine(
         }
     }
 }
+
+fun GraphicsEngine.executePair(action: GraphicsAction) = execute(action)?.let { GraphicsActionPair(action, it) }

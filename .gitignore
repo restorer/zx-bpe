@@ -6,3 +6,4 @@ kotlin-js-store/
 .idea/
 .vscode/
 .DS_Store
+.kotlin
