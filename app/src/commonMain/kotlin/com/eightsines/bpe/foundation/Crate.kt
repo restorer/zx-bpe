@@ -3,11 +3,11 @@ package com.eightsines.bpe.foundation
 import com.eightsines.bpe.core.Box
 import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.SciiCell
-import com.eightsines.bpe.util.PackableBag
-import com.eightsines.bpe.util.UnpackableBag
 import com.eightsines.bpe.util.BagStuffPacker
 import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.BagUnpackException
+import com.eightsines.bpe.util.PackableBag
+import com.eightsines.bpe.util.UnpackableBag
 
 data class Crate<T : Cell>(
     val canvasType: CanvasType,
@@ -17,6 +17,44 @@ data class Crate<T : Cell>(
 ) {
     override fun toString() = "Crate(canvasType=$canvasType, width=$width, height=$height)"
 
+    fun copyTransformed(transformType: TransformType) = when (transformType) {
+        TransformType.FlipHorizontal -> Crate(
+            canvasType = canvasType,
+            width = width,
+            height = height,
+            cells = cells.map { it.reversed() },
+        )
+
+        TransformType.FlipVertical -> Crate(
+            canvasType = canvasType,
+            width = width,
+            height = height,
+            cells = cells.reversed(),
+        )
+
+        TransformType.RotateCW -> {
+            val last = height - 1
+
+            Crate(
+                canvasType = canvasType,
+                width = height,
+                height = width,
+                cells = List(width) { y -> List(height) { x -> cells[last - x][y] } },
+            )
+        }
+
+        TransformType.RotateCCW -> {
+            val last = width - 1
+
+            Crate(
+                canvasType = canvasType,
+                width = height,
+                height = width,
+                cells = List(width) { y -> List(height) { x -> cells[x][last - y] } },
+            )
+        }
+    }
+
     companion object : BagStuffPacker<Crate<*>>, BagStuffUnpacker<Crate<*>> {
         fun fromCanvasScii(
             canvas: Canvas<*>,
@@ -24,17 +62,12 @@ data class Crate<T : Cell>(
             sciiY: Int,
             sciiWidth: Int,
             sciiHeight: Int,
-        ): Crate<SciiCell> {
-            val cells = MutableList(sciiHeight) { MutableList(sciiWidth) { SciiCell.Transparent } }
-
-            for (y in 0..<sciiHeight) {
-                for (x in 0..<sciiWidth) {
-                    cells[y][x] = canvas.getSciiCell(x + sciiX, y + sciiY)
-                }
-            }
-
-            return Crate(CanvasType.Scii, sciiWidth, sciiHeight, cells)
-        }
+        ): Crate<SciiCell> = Crate(
+            CanvasType.Scii,
+            sciiWidth,
+            sciiHeight,
+            List(sciiHeight) { y -> List(sciiWidth) { x -> canvas.getSciiCell(x + sciiX, y + sciiY) } },
+        )
 
         fun <T : Cell> fromCanvasDrawing(
             canvas: Canvas<T>,
@@ -42,19 +75,12 @@ data class Crate<T : Cell>(
             drawingY: Int,
             drawingWidth: Int,
             drawingHeight: Int,
-        ): Crate<T> {
-            val transparentCell = Cell.makeTransparent(canvas.type.cellType)
-            val cells = MutableList(drawingHeight) { MutableList(drawingWidth) { transparentCell } }
-
-            for (y in 0..<drawingHeight) {
-                for (x in 0..<drawingWidth) {
-                    cells[y][x] = canvas.getDrawingCell(x + drawingX, y + drawingY)
-                }
-            }
-
-            @Suppress("UNCHECKED_CAST")
-            return Crate(canvas.type, drawingWidth, drawingHeight, cells) as Crate<T>
-        }
+        ): Crate<T> = Crate(
+            canvas.type,
+            drawingWidth,
+            drawingHeight,
+            List(drawingHeight) { y -> List(drawingWidth) { x -> canvas.getDrawingCell(x + drawingX, y + drawingY) } },
+        )
 
         @Suppress("NOTHING_TO_INLINE")
         inline fun <T : Cell> fromCanvasDrawing(canvas: Canvas<T>, box: Box): Crate<T> = fromCanvasDrawing(
