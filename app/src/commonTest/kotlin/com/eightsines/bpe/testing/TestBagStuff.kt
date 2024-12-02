@@ -4,7 +4,7 @@ import com.eightsines.bpe.util.BagStuffPacker
 import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.PackableBag
 import com.eightsines.bpe.util.UnpackableBag
-import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
+import com.eightsines.bpe.util.requireSupportedStuffVersion
 
 data class TestBagStuff(
     val booleanValue: Boolean,
@@ -21,9 +21,7 @@ data class TestBagStuff(
         }
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): TestBagStuff {
-            if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("BagStuffStub", version)
-            }
+            requireSupportedStuffVersion("BagStuffStub", 1, version)
 
             return TestBagStuff(
                 booleanValue = bag.getBoolean(),

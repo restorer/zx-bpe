@@ -10,7 +10,9 @@ import com.eightsines.bpe.middlware.BpeEngine
 import com.eightsines.bpe.middlware.BpeShape
 import com.eightsines.bpe.middlware.BpeTool
 import com.eightsines.bpe.util.Logger
+import com.eightsines.bpe.util.PackableBag
 import com.eightsines.bpe.util.Severity
+import com.eightsines.bpe.util.UnpackableBag
 
 class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     private var activePanel: Panel? = null
@@ -86,6 +88,15 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         logger.log(severity, "UiEngine.execute:end") {
             put("state", state.toString())
         }
+    }
+
+    fun putInTheBagSelf(bag: PackableBag) {
+        bpeEngine.putInTheBagSelf(bag)
+    }
+
+    fun getOutOfTheBagSelf(bag: UnpackableBag) {
+        bpeEngine.getOutOfTheBagSelf(bag)
+        state = refresh()
     }
 
     private fun executeSheetEnter(action: UiAction.SheetEnter) {

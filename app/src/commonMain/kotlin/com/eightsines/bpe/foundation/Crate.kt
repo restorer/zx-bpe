@@ -5,9 +5,9 @@ import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.util.BagStuffPacker
 import com.eightsines.bpe.util.BagStuffUnpacker
-import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.PackableBag
 import com.eightsines.bpe.util.UnpackableBag
+import com.eightsines.bpe.util.requireNoIllegalArgumentException
 
 data class Crate<T : Cell>(
     val canvasType: CanvasType,
@@ -97,33 +97,16 @@ data class Crate<T : Cell>(
             bag.put(value.canvasType.value)
             bag.put(value.width)
             bag.put(value.height)
-
-            for (line in value.cells) {
-                for (cell in line) {
-                    bag.put(Cell, cell)
-                }
-            }
+            value.cells.forEach { line -> line.forEach { bag.put(Cell, it) } }
         }
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Crate<*> {
-            val cellType = try {
-                CanvasType.of(bag.getInt())
-            } catch (e: IllegalArgumentException) {
-                throw BagUnpackException(e.toString())
-            }
-
+            val canvasType = requireNoIllegalArgumentException { CanvasType.of(bag.getInt()) }
             val width = bag.getInt()
             val height = bag.getInt()
-            val cells: MutableList<MutableList<Cell?>> = MutableList(height) { MutableList(width) { null } }
+            val cells = (0..<height).map { (0..<width).map { bag.getStuff(Cell) } }
 
-            for (y in 0..<height) {
-                for (x in 0..<width) {
-                    cells[y][x] = bag.getStuff(Cell)
-                }
-            }
-
-            @Suppress("UNCHECKED_CAST")
-            return Crate(cellType, width, height, cells as List<List<Cell>>)
+            return Crate(canvasType, width, height, cells)
         }
     }
 }

@@ -9,7 +9,9 @@ import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.PackableBag
 import com.eightsines.bpe.util.UnknownPolymorphicTypeBagUnpackException
 import com.eightsines.bpe.util.UnpackableBag
-import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
+import com.eightsines.bpe.util.getList
+import com.eightsines.bpe.util.putList
+import com.eightsines.bpe.util.requireSupportedStuffVersion
 
 enum class ShapeType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Shape<*>>) {
     Points(1, Shape.Points.Polymorphic),
@@ -28,15 +30,11 @@ sealed interface Shape<T : Cell> {
 
         override fun putInTheBag(bag: PackableBag, value: Shape<*>) {
             bag.put(value.type.value)
-
-            @Suppress("UNCHECKED_CAST")
-            bag.put(value.type.polymorphicPacker as BagStuffPacker<Shape<*>>, value)
+            bag.put(value.type.polymorphicPacker, value)
         }
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Shape<*> {
-            if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("Shape", version)
-            }
+            requireSupportedStuffVersion("Shape", 1, version)
 
             return when (val type = bag.getInt()) {
                 ShapeType.Points.value -> bag.getStuff(Points.Polymorphic)
@@ -57,31 +55,23 @@ sealed interface Shape<T : Cell> {
             override val putInTheBagVersion = 1
 
             override fun putInTheBag(bag: PackableBag, value: Points<*>) {
-                bag.put(value.points.size)
-
-                for (point in value.points) {
-                    bag.put(point.first)
-                    bag.put(point.second)
+                bag.putList(value.points) {
+                    bag.put(it.first)
+                    bag.put(it.second)
                 }
 
                 bag.put(Cell, value.cell)
             }
 
             override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Points<*> {
-                if (version != 1) {
-                    throw UnsupportedVersionBagUnpackException("Shape.Points", version)
-                }
+                requireSupportedStuffVersion("Shape.Points", 1, version)
 
-                val points = mutableListOf<Pair<Int, Int>>()
-                val numPoints = bag.getInt()
-
-                for (i in 0..<numPoints) {
-                    points.add(bag.getInt() to bag.getInt())
-                }
+                val points = bag.getList { bag.getInt() to bag.getInt() }
+                val cell = bag.getStuff(Cell)
 
                 return Points(
                     points = points,
-                    cell = bag.getStuff(Cell)
+                    cell = cell,
                 )
             }
         }
@@ -103,9 +93,7 @@ sealed interface Shape<T : Cell> {
             }
 
             override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Line<*> {
-                if (version != 1) {
-                    throw UnsupportedVersionBagUnpackException("Shape.Line", version)
-                }
+                requireSupportedStuffVersion("Shape.Line", 1, version)
 
                 return Line(
                     sx = bag.getInt(),
@@ -136,9 +124,7 @@ sealed interface Shape<T : Cell> {
             }
 
             override fun getOutOfTheBag(version: Int, bag: UnpackableBag): FillBox<*> {
-                if (version != 1) {
-                    throw UnsupportedVersionBagUnpackException("Shape.FillBox", version)
-                }
+                requireSupportedStuffVersion("Shape.FillBox", 1, version)
 
                 return FillBox(
                     sx = bag.getInt(),
@@ -167,9 +153,7 @@ sealed interface Shape<T : Cell> {
             }
 
             override fun getOutOfTheBag(version: Int, bag: UnpackableBag): StrokeBox<*> {
-                if (version != 1) {
-                    throw UnsupportedVersionBagUnpackException("Shape.StrokeBox", version)
-                }
+                requireSupportedStuffVersion("Shape.StrokeBox", 1, version)
 
                 return StrokeBox(
                     sx = bag.getInt(),
@@ -196,9 +180,7 @@ sealed interface Shape<T : Cell> {
             }
 
             override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Cells<*> {
-                if (version != 1) {
-                    throw UnsupportedVersionBagUnpackException("Shape.Cells", version)
-                }
+                requireSupportedStuffVersion("Shape.Cells", 1, version)
 
                 return Cells(
                     x = bag.getInt(),

@@ -6,7 +6,7 @@ import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.PackableBag
 import com.eightsines.bpe.util.UnknownPolymorphicTypeBagUnpackException
 import com.eightsines.bpe.util.UnpackableBag
-import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
+import com.eightsines.bpe.util.requireSupportedStuffVersion
 
 enum class CellType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Cell>) {
     Scii(1, SciiCell.Polymorphic),
@@ -34,15 +34,11 @@ sealed interface Cell {
 
         override fun putInTheBag(bag: PackableBag, value: Cell) {
             bag.put(value.type.value)
-
-            @Suppress("UNCHECKED_CAST")
-            bag.put(value.type.polymorphicPacker as BagStuffPacker<Cell>, value)
+            bag.put(value.type.polymorphicPacker, value)
         }
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Cell {
-            if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("Cell", version)
-            }
+            requireSupportedStuffVersion("Cell", 1, version)
 
             return when (val type = bag.getInt()) {
                 CellType.Scii.value -> bag.getStuff(SciiCell.Polymorphic)
@@ -106,9 +102,7 @@ data class SciiCell(
         }
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): SciiCell {
-            if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("SciiCell", version)
-            }
+            requireSupportedStuffVersion("SciiCell", 1, version)
 
             return SciiCell(
                 character = SciiChar(bag.getInt()),
@@ -152,9 +146,7 @@ data class BlockCell(val color: SciiColor, val bright: SciiLight) : Cell {
         }
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): BlockCell {
-            if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("BlockCell", version)
-            }
+            requireSupportedStuffVersion("BlockCell", 1, version)
 
             return BlockCell(
                 color = SciiColor(bag.getInt()),

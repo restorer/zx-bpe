@@ -53,9 +53,11 @@ class PackableStringBag : PackableBag {
         buffer.append(it)
     }
 
-    override fun <T> put(packer: BagStuffPacker<T>, value: T?) = writeNonNull(value) {
+    override fun <T> put(packer: BagStuffPacker<out T>, value: T?) = writeNonNull(value) {
         writeNumber(TYPE_STUFF_1, TYPE_STUFF_2, TYPE_STUFF_3, TYPE_STUFF_4, packer.putInTheBagVersion)
-        packer.putInTheBag(this, it)
+
+        @Suppress("UNCHECKED_CAST")
+        (packer as BagStuffPacker<T>).putInTheBag(this, it)
     }
 
     override fun toString() = buffer.toString()

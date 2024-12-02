@@ -10,7 +10,7 @@ import com.eightsines.bpe.core.VBlockMergeCell
 import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.UnknownPolymorphicTypeBagUnpackException
 import com.eightsines.bpe.util.UnpackableBag
-import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
+import com.eightsines.bpe.util.requireSupportedStuffVersion
 
 interface MutableCanvas<T : Cell> : Canvas<T> {
     fun mutate(block: (mutator: CanvasMutator<T>) -> Unit)
@@ -24,9 +24,7 @@ interface MutableCanvas<T : Cell> : Canvas<T> {
         }
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): MutableCanvas<*> {
-            if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("MutableCanvas", version)
-            }
+            requireSupportedStuffVersion("MutableCanvas", 1, version)
 
             val type = bag.getInt()
             val sciiWidth = bag.getInt()
@@ -119,10 +117,7 @@ class MutableSciiCanvas(
         private val sciiHeight: Int,
     ) : BagStuffUnpacker<MutableSciiCanvas> {
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): MutableSciiCanvas {
-            if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("MutableSciiCanvas", version)
-            }
-
+            requireSupportedStuffVersion("MutableSciiCanvas", 1, version)
             val canvas = MutableSciiCanvas(sciiWidth, sciiHeight)
 
             for (y in 0..<canvas.drawingHeight) {
@@ -260,10 +255,7 @@ class MutableHBlockCanvas(
         private val sciiHeight: Int,
     ) : BagStuffUnpacker<MutableHBlockCanvas> {
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): MutableHBlockCanvas {
-            if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("MutableHBlockCanvas", version)
-            }
-
+            requireSupportedStuffVersion("MutableHBlockCanvas", 1, version)
             val canvas = MutableHBlockCanvas(sciiWidth, sciiHeight)
 
             for (y in 0..<canvas.drawingHeight) {
@@ -401,10 +393,7 @@ class MutableVBlockCanvas(
         private val sciiHeight: Int,
     ) : BagStuffUnpacker<MutableVBlockCanvas> {
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): MutableVBlockCanvas {
-            if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("MutableVBlockCanvas", version)
-            }
-
+            requireSupportedStuffVersion("MutableVBlockCanvas", 1, version)
             val canvas = MutableVBlockCanvas(sciiWidth, sciiHeight)
 
             for (y in 0..<canvas.drawingHeight) {
@@ -543,10 +532,7 @@ class MutableQBlockCanvas(
         private val sciiHeight: Int,
     ) : BagStuffUnpacker<MutableQBlockCanvas> {
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): MutableQBlockCanvas {
-            if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("MutableVBlockCanvas", version)
-            }
-
+            requireSupportedStuffVersion("MutableQBlockCanvas", 1, version)
             val canvas = MutableQBlockCanvas(sciiWidth, sciiHeight)
 
             for (y in 0..<canvas.drawingHeight) {

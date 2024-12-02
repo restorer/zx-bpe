@@ -22,7 +22,9 @@ import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.PackableBag
 import com.eightsines.bpe.util.UnpackableBag
-import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
+import com.eightsines.bpe.util.getList
+import com.eightsines.bpe.util.putList
+import com.eightsines.bpe.util.requireSupportedStuffVersion
 
 class GraphicsEngine(
     private val logger: Logger,
@@ -113,15 +115,15 @@ class GraphicsEngine(
         return undoAction
     }
 
-    fun putInTheBag(bag: PackableBag) {
+    fun putInTheBagSelf(bag: PackableBag) {
         bag.put(
-            StateStuff,
-            StateStuff(backgroundLayer = backgroundLayer, canvasLayers = canvasLayers),
+            GraphicsStateStuff,
+            GraphicsStateStuff(backgroundLayer = backgroundLayer, canvasLayers = canvasLayers),
         )
     }
 
-    fun getOutOfTheBag(bag: UnpackableBag) {
-        val stateStuff = bag.getStuff(StateStuff)
+    fun getOutOfTheBagSelf(bag: UnpackableBag) {
+        val stateStuff = bag.getStuff(GraphicsStateStuff)
 
         backgroundLayer = stateStuff.backgroundLayer
         canvasLayers = stateStuff.canvasLayers
@@ -571,41 +573,32 @@ class GraphicsEngine(
 
         private val ScreenBox = Box(0, 0, SCREEN_SCII_WIDTH, SCREEN_SCII_HEIGHT)
     }
-
-    private class StateStuff(
-        val backgroundLayer: MutableBackgroundLayer,
-        val canvasLayers: MutableList<MutableCanvasLayer<*>>,
-    ) {
-        companion object : BagStuffPacker<StateStuff>, BagStuffUnpacker<StateStuff> {
-            override val putInTheBagVersion = 1
-
-            override fun putInTheBag(bag: PackableBag, value: StateStuff) {
-                bag.put(BackgroundLayer, value.backgroundLayer)
-                bag.put(value.canvasLayers.size)
-
-                for (layer in value.canvasLayers) {
-                    bag.put(CanvasLayer, layer)
-                }
-            }
-
-            override fun getOutOfTheBag(version: Int, bag: UnpackableBag): StateStuff {
-                if (version != 1) {
-                    throw UnsupportedVersionBagUnpackException("GraphicsEngine", version)
-                }
-
-                val backgroundLayer = bag.getStuff(MutableBackgroundLayer)
-                val canvasLayersSize = bag.getInt()
-
-                val canvasLayers =
-                    (0..<canvasLayersSize).mapTo(mutableListOf()) { bag.getStuff(MutableCanvasLayer) }
-
-                return StateStuff(
-                    backgroundLayer = backgroundLayer,
-                    canvasLayers = canvasLayers,
-                )
-            }
-        }
-    }
 }
 
 fun GraphicsEngine.executePair(action: GraphicsAction) = execute(action)?.let { GraphicsActionPair(action, it) }
+
+private class GraphicsStateStuff(
+    val backgroundLayer: MutableBackgroundLayer,
+    val canvasLayers: MutableList<MutableCanvasLayer<*>>,
+) {
+    companion object : BagStuffPacker<GraphicsStateStuff>, BagStuffUnpacker<GraphicsStateStuff> {
+        override val putInTheBagVersion = 1
+
+        override fun putInTheBag(bag: PackableBag, value: GraphicsStateStuff) {
+            bag.put(BackgroundLayer, value.backgroundLayer)
+            bag.putList(value.canvasLayers) { bag.put(CanvasLayer, it) }
+        }
+
+        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): GraphicsStateStuff {
+            requireSupportedStuffVersion("GraphicsEngine", 1, version)
+
+            val backgroundLayer = bag.getStuff(MutableBackgroundLayer)
+            val canvasLayers = bag.getList { bag.getStuff(MutableCanvasLayer) }
+
+            return GraphicsStateStuff(
+                backgroundLayer = backgroundLayer,
+                canvasLayers = canvasLayers,
+            )
+        }
+    }
+}

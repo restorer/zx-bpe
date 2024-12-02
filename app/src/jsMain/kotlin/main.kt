@@ -7,11 +7,17 @@ import com.eightsines.bpe.middlware.SelectionController
 import com.eightsines.bpe.presentation.UiEngine
 import com.eightsines.bpe.util.ElapsedTimeProviderImpl
 import com.eightsines.bpe.util.LoggerImpl
+import com.eightsines.bpe.util.PackableStringBag
 import com.eightsines.bpe.util.UidFactoryImpl
+import com.eightsines.bpe.view.BrowserAction
 import com.eightsines.bpe.view.BrowserRenderer
 import com.eightsines.bpe.view.BrowserView
 import kotlinx.browser.window
 import org.w3c.dom.Document
+import org.w3c.dom.HTMLAnchorElement
+import org.w3c.dom.url.URL
+import org.w3c.files.Blob
+import org.w3c.files.BlobPropertyBag
 
 class BpeComponent(private val document: Document) {
     private val logger by lazy { LoggerImpl() }
@@ -49,8 +55,27 @@ fun ready(bpeComponent: BpeComponent) {
     browserView.render(uiEngine.state)
 
     browserView.onAction = {
-        uiEngine.execute(it)
-        browserView.render(uiEngine.state)
+        when (it) {
+            is BrowserAction.Ui -> {
+                uiEngine.execute(it.action)
+                browserView.render(uiEngine.state)
+            }
+
+            is BrowserAction.Load -> {
+            }
+
+            is BrowserAction.Save -> {
+                val bagData = PackableStringBag()
+                    .also { uiEngine.putInTheBagSelf(it) }
+                    .toString()
+
+                (window.document.createElement("a") as HTMLAnchorElement).apply {
+                    download = "painting.bpe"
+                    href = URL.createObjectURL(Blob(arrayOf(bagData), BlobPropertyBag("text/plain")))
+                    click()
+                }
+            }
+        }
     }
 }
 

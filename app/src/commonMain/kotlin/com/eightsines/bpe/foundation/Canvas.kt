@@ -10,7 +10,9 @@ import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
 import com.eightsines.bpe.core.VBlockMergeCell
 import com.eightsines.bpe.util.BagStuffPacker
+import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.PackableBag
+import com.eightsines.bpe.util.UnpackableBag
 
 sealed class CanvasType {
     abstract val value: Int
@@ -106,9 +108,7 @@ interface Canvas<T : Cell> {
             bag.put(value.type.value)
             bag.put(value.sciiWidth)
             bag.put(value.sciiHeight)
-
-            @Suppress("UNCHECKED_CAST")
-            bag.put(value.type.polymorphicPacker as BagStuffPacker<Canvas<*>>, value)
+            bag.put(value.type.polymorphicPacker, value)
         }
     }
 }

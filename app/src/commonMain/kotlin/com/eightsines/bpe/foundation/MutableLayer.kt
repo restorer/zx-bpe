@@ -5,7 +5,7 @@ import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
 import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.UnpackableBag
-import com.eightsines.bpe.util.UnsupportedVersionBagUnpackException
+import com.eightsines.bpe.util.requireSupportedStuffVersion
 
 interface MutableLayer : Layer
 
@@ -28,9 +28,7 @@ data class MutableBackgroundLayer(
 
     companion object : BagStuffUnpacker<MutableBackgroundLayer> {
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): MutableBackgroundLayer {
-            if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("MutableBackgroundLayer", version)
-            }
+            requireSupportedStuffVersion("MutableBackgroundLayer", 1, version)
 
             return MutableBackgroundLayer(
                 isVisible = bag.getBoolean(),
@@ -62,9 +60,7 @@ data class MutableCanvasLayer<T : Cell>(
 
     companion object : BagStuffUnpacker<MutableCanvasLayer<*>> {
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): MutableCanvasLayer<*> {
-            if (version != 1) {
-                throw UnsupportedVersionBagUnpackException("MutableBackgroundLayer", version)
-            }
+            requireSupportedStuffVersion("MutableBackgroundLayer", 1, version)
 
             return MutableCanvasLayer(
                 uid = LayerUid(bag.getString()),
