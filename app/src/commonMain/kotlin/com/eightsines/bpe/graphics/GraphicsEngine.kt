@@ -581,6 +581,8 @@ private class GraphicsStateStuff(
     val backgroundLayer: MutableBackgroundLayer,
     val canvasLayers: MutableList<MutableCanvasLayer<*>>,
 ) {
+    override fun toString() = "GraphicsStateStuff(backgroundLayer=$backgroundLayer, canvasLayers=$canvasLayers)"
+
     companion object : BagStuffPacker<GraphicsStateStuff>, BagStuffUnpacker<GraphicsStateStuff> {
         override val putInTheBagVersion = 1
 

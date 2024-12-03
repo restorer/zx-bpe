@@ -9,10 +9,13 @@ import com.eightsines.bpe.middlware.BpeAction
 import com.eightsines.bpe.middlware.BpeEngine
 import com.eightsines.bpe.middlware.BpeShape
 import com.eightsines.bpe.middlware.BpeTool
+import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.PackableBag
+import com.eightsines.bpe.util.PackableStringBag
 import com.eightsines.bpe.util.Severity
 import com.eightsines.bpe.util.UnpackableBag
+import com.eightsines.bpe.util.UnpackableStringBag
 
 class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     private var activePanel: Panel? = null
@@ -95,8 +98,17 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     }
 
     fun getOutOfTheBagSelf(bag: UnpackableBag) {
-        bpeEngine.getOutOfTheBagSelf(bag)
-        state = refresh()
+        val safeBagData = PackableStringBag()
+            .also { bpeEngine.putInTheBagSelf(it) }
+            .toString()
+
+        try {
+            bpeEngine.getOutOfTheBagSelf(bag)
+            state = refresh()
+        } catch (e: BagUnpackException) {
+            bpeEngine.getOutOfTheBagSelf(UnpackableStringBag(safeBagData))
+            throw e
+        }
     }
 
     private fun executeSheetEnter(action: UiAction.SheetEnter) {

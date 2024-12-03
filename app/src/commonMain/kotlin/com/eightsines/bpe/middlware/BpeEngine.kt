@@ -126,7 +126,7 @@ class BpeEngine(
         historyPosition = stateStuff.historyPosition
         clipboard = stateStuff.clipboard
 
-        refresh()
+        state = refresh()
     }
 
     //
@@ -663,6 +663,11 @@ private class BpeStateStuff(
     val historyPosition: Int,
     val clipboard: BpeClipboard?,
 ) {
+    override fun toString() =
+        "BpeStateStuff(palette=$palette, toolboxTool=$toolboxTool, toolboxPaintShape=$toolboxPaintShape" +
+                ", toolboxEraseShape=$toolboxEraseShape, currentLayerUid=$currentLayerUid, history=$history" +
+                ", historyPosition=$historyPosition, clipboard=$clipboard)"
+
     companion object : BagStuffPacker<BpeStateStuff>, BagStuffUnpacker<BpeStateStuff> {
         override val putInTheBagVersion = 1
 

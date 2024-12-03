@@ -189,18 +189,34 @@ body {
 }
 
 .menu__item {
+    position: relative;
+    min-height: var(--tool-sm-size);
+    padding: 0 var(--panel-divider-size);
+    margin: calc((var(--tool-size) - var(--tool-sm-size)) / 2) var(--menu-offset);
+    cursor: pointer;
+}
+
+.menu__item > .menu__item-content {
     color: #ffffff;
     font-family: sans-serif;
     font-size: var(--menu-font-size);
     line-height: var(--tool-sm-size);
-    padding: 0 var(--panel-divider-size);
-    margin: calc((var(--tool-size) - var(--tool-sm-size)) / 2) var(--menu-offset);
     text-decoration: underline;
-    cursor: pointer;
 }
 
-.menu__item:active {
+.menu__item:active > .menu__item-content {
     text-decoration: none;
+}
+
+.menu__item-load {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .layers {

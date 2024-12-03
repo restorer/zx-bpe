@@ -23,6 +23,7 @@ import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLImageElement
+import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.Node
 import org.w3c.dom.ParentNode
 import org.w3c.dom.events.Event
@@ -63,7 +64,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
     private val toolboxUndo = document.find<HTMLElement>(".js-toolbox-undo")
     private val toolboxRedo = document.find<HTMLElement>(".js-toolbox-redo")
     private val menu = document.find<HTMLElement>(".js-menu")
-    private val menuLoad = document.find<HTMLElement>(".js-menu-load")
+    private val menuLoad = document.find<HTMLInputElement>(".js-menu-load")
     private val menuSave = document.find<HTMLElement>(".js-menu-save")
 
     private val colorsPanel = document.find<HTMLElement>(".js-colors-panel")
@@ -166,7 +167,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
         shapesFillBox?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.FillBox))) }
 
         menu?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.MenuClick)) }
-        menuLoad?.addClickListener { onAction?.invoke(BrowserAction.Load) }
+        menuLoad?.also { menuLoad -> menuLoad.addEventListener(EVENT_CHANGE, { onAction?.invoke(BrowserAction.Load(menuLoad)) }) }
         menuSave?.addClickListener { onAction?.invoke(BrowserAction.Save) }
 
         layersCreate?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.LayerCreateClick)) }
@@ -613,6 +614,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
         private const val SUFFIX_TRANSPARENT = "transparent"
 
         private const val EVENT_CLICK = "click"
+        private const val EVENT_CHANGE = "change"
         private const val EVENT_MOUSE_ENTER = "mouseenter"
         private const val EVENT_MOUSE_DOWN = "mousedown"
         private const val EVENT_MOUSE_MOVE = "mousemove"

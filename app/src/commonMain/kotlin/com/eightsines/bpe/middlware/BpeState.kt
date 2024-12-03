@@ -155,7 +155,7 @@ sealed interface BpeSelectionState {
 
         override fun putInTheBag(bag: PackableBag, value: BpeSelectionState) {
             bag.put(value.type.value)
-            value.type.polymorphicPacker?.let { bag.put(it, value.type) }
+            value.type.polymorphicPacker?.let { bag.put(it, value) }
         }
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): BpeSelectionState {

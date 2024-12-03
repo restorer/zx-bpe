@@ -24,6 +24,8 @@ class MutablePalette(
         character = other.character
     }
 
+    override fun toString() = "MutablePalette(ink=$ink, paper=$paper, bright=$bright, flash=$flash, character=$character)"
+
     companion object : BagStuffPacker<MutablePalette>, BagStuffUnpacker<MutablePalette> {
         override val putInTheBagVersion = 1
 
