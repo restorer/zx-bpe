@@ -6,6 +6,7 @@ import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
 import com.eightsines.bpe.middlware.BpeShape
 import com.eightsines.bpe.middlware.LayerView
+import com.eightsines.bpe.resources.TextResId
 
 data class UiState(
     val sheet: UiSheetView,
@@ -56,17 +57,17 @@ sealed interface UiToolState<out T> {
         override val isInteractable = false
     }
 
-    data class Disabled<T>(val value: T) : UiToolState<T> {
+    data class Disabled<T>(val value: T, val title: TextResId? = null) : UiToolState<T> {
         override val isInteractable = false
         override fun toString() = "Disabled(${if (value == Unit) "" else value.toString() })"
     }
 
-    data class Visible<T>(val value: T) : UiToolState<T> {
+    data class Visible<T>(val value: T, val title: TextResId? = null) : UiToolState<T> {
         override val isInteractable = true
         override fun toString() = "Visible(${if (value == Unit) "" else value.toString() })"
     }
 
-    data class Active<T>(val value: T) : UiToolState<T> {
+    data class Active<T>(val value: T, val title: TextResId? = null) : UiToolState<T> {
         override val isInteractable = true
         override fun toString() = "Active(${if (value == Unit) "" else value.toString() })"
     }

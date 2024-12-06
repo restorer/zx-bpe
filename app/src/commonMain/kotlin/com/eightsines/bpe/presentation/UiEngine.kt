@@ -9,6 +9,7 @@ import com.eightsines.bpe.middlware.BpeAction
 import com.eightsines.bpe.middlware.BpeEngine
 import com.eightsines.bpe.middlware.BpeShape
 import com.eightsines.bpe.middlware.BpeTool
+import com.eightsines.bpe.resources.TextRes
 import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.PackableBag
@@ -310,6 +311,8 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             Panel.Paper -> bpeEngine.execute(BpeAction.PaletteSetPaper(action.color))
             else -> Unit
         }
+
+        activePanel = null
     }
 
     private fun executeLightsItemClick(action: UiAction.LightsItemClick) {
@@ -318,10 +321,13 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             Panel.Flash -> bpeEngine.execute(BpeAction.PaletteSetFlash(action.light))
             else -> Unit
         }
+
+        activePanel = null
     }
 
     private fun executeCharsItemClick(action: UiAction.CharsItemClick) {
         bpeEngine.execute(BpeAction.PaletteSetChar(action.character))
+        activePanel = null
     }
 
     private fun executeShapesItemClick(action: UiAction.ShapesItemClick) {
@@ -516,8 +522,16 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             },
             toolboxShape = when {
                 !(isPaintActive || isEraseActive) || bpeState.toolboxShape == null -> UiToolState.Hidden
-                activePanel != Panel.Shapes && activePanel?.placement == PanelPlacement.Toolbox -> UiToolState.Visible(bpeState.toolboxShape)
-                else -> UiToolState.Active(bpeState.toolboxShape)
+
+                activePanel != Panel.Shapes && activePanel?.placement == PanelPlacement.Toolbox -> UiToolState.Visible(
+                    bpeState.toolboxShape,
+                    if (isPaintActive) TextRes.TOOL_PAINT else TextRes.TOOL_ERASE,
+                )
+
+                else -> UiToolState.Active(
+                    bpeState.toolboxShape,
+                    if (isPaintActive) TextRes.TOOL_PAINT else TextRes.TOOL_ERASE,
+                )
             },
             toolboxErase = when {
                 isEraseActive -> UiToolState.Hidden

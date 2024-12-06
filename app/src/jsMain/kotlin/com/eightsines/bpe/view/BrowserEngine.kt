@@ -2,14 +2,15 @@ package com.eightsines.bpe.view
 
 import com.eightsines.bpe.presentation.UiAction
 import com.eightsines.bpe.presentation.UiEngine
-import com.eightsines.bpe.presentation.UiState
+import com.eightsines.bpe.resources.TextRes
 import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.PackableStringBag
 import com.eightsines.bpe.util.UnpackableStringBag
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import org.w3c.dom.Document
 import org.w3c.dom.HTMLAnchorElement
-import org.w3c.dom.Window
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
@@ -17,23 +18,25 @@ import org.w3c.files.FileReader
 
 class BrowserEngine(
     private val logger: Logger,
-    private val window: Window,
     private val document: Document,
     private val uiEngine: UiEngine,
 ) {
-    var onUpdate: ((UiState) -> Unit)? = null
+    private val _browserStateFlow by lazy { MutableStateFlow(BrowserState(uiState = uiEngine.state, alertText = null)) }
 
-    fun ready() = onUpdate?.invoke(uiEngine.state)
+    val browserStateFlow: StateFlow<BrowserState>
+        get() = _browserStateFlow
 
     fun execute(action: BrowserAction) = when (action) {
         is BrowserAction.Ui -> executeUi(action)
         is BrowserAction.Load -> executeLoad(action)
         is BrowserAction.Save -> executeSave()
+        is BrowserAction.Export -> executeExport()
+        is BrowserAction.HideAlert -> executeHideAlert()
     }
 
     private fun executeUi(action: BrowserAction.Ui) {
         uiEngine.execute(action.action)
-        onUpdate?.invoke(uiEngine.state)
+        _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
     }
 
     private fun executeLoad(action: BrowserAction.Load) {
@@ -65,20 +68,20 @@ class BrowserEngine(
                     put("error", reader.error.toString())
                 }
 
-                window.alert("Failed to read painting (reader error)")
+                _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.ALERT_READER_ERROR)
             } else {
                 val bagData = reader.result as? String
 
                 if (bagData == null) {
                     logger.general("BrowserEngine.executeLoad:error (result is null)")
-                    window.alert("Failed to read painting (result is null)")
+                    _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.ALERT_NULL_RESULT)
                 } else {
                     logger.trace("BrowserEngine.executeLoad:unpacking")
 
                     try {
                         uiEngine.getOutOfTheBagSelf(UnpackableStringBag(bagData))
                         uiEngine.execute(UiAction.MenuClick)
-                        onUpdate?.invoke(uiEngine.state)
+                        _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
 
                         logger.note("BrowserEngine.executeLoad:end")
                     } catch (e: BagUnpackException) {
@@ -86,7 +89,7 @@ class BrowserEngine(
                             put("exception", e.toString())
                         }
 
-                        window.alert("Failed to read painting (unpack)")
+                        _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.ALERT_UNPACK_ERROR)
                     }
                 }
             }
@@ -118,8 +121,16 @@ class BrowserEngine(
         }
 
         uiEngine.execute(UiAction.MenuClick)
-        onUpdate?.invoke(uiEngine.state)
+        _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
 
         logger.note("BrowserEngine.executeSave:end")
+    }
+
+    private fun executeExport() {
+        _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.ALERT_EXPORT_NOT_IMPLEMENTED)
+    }
+
+    private fun executeHideAlert() {
+        _browserStateFlow.value = _browserStateFlow.value.copy(alertText = null)
     }
 }

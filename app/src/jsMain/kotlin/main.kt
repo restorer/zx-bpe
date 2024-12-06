@@ -5,6 +5,7 @@ import com.eightsines.bpe.middlware.BpeEngine
 import com.eightsines.bpe.middlware.PaintingController
 import com.eightsines.bpe.middlware.SelectionController
 import com.eightsines.bpe.presentation.UiEngine
+import com.eightsines.bpe.resources.ResManager
 import com.eightsines.bpe.util.ElapsedTimeProviderImpl
 import com.eightsines.bpe.util.LoggerImpl
 import com.eightsines.bpe.util.UidFactoryImpl
@@ -12,6 +13,10 @@ import com.eightsines.bpe.view.BrowserEngine
 import com.eightsines.bpe.view.BrowserRenderer
 import com.eightsines.bpe.view.BrowserView
 import kotlinx.browser.window
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.w3c.dom.Window
 
 class BpeComponent(private val window: Window) {
@@ -40,19 +45,21 @@ class BpeComponent(private val window: Window) {
 
     private val browserRenderer by lazy { BrowserRenderer(elapsedTimeProvider) }
     private val uiEngine by lazy { UiEngine(logger = logger, bpeEngine = bpeEngine) }
+    private val resManager by lazy { ResManager() }
 
-    val browserEngine by lazy { BrowserEngine(logger = logger, window = window, document = document, uiEngine = uiEngine) }
-    val browserView by lazy { BrowserView(document = document, renderer = browserRenderer) }
+    val browserEngine by lazy { BrowserEngine(logger = logger, document = document, uiEngine = uiEngine) }
+    val browserView by lazy { BrowserView(document = document, renderer = browserRenderer, resManager = resManager) }
+    val mainDispatcher by lazy { Dispatchers.Main }
 }
 
 fun ready(bpeComponent: BpeComponent) {
     val browserEngine = bpeComponent.browserEngine
     val browserView = bpeComponent.browserView
 
-    browserEngine.onUpdate = browserView::render
-    browserView.onAction = browserEngine::execute
-
-    browserEngine.ready()
+    CoroutineScope(SupervisorJob() + bpeComponent.mainDispatcher).launch {
+        launch { browserView.actionFlow.collect(browserEngine::execute) }
+        launch { browserEngine.browserStateFlow.collect(browserView::render) }
+    }
 }
 
 fun main() {

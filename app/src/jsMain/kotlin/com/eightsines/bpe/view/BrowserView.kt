@@ -12,8 +12,12 @@ import com.eightsines.bpe.presentation.UiAction
 import com.eightsines.bpe.presentation.UiArea
 import com.eightsines.bpe.presentation.UiPanel
 import com.eightsines.bpe.presentation.UiSheetView
-import com.eightsines.bpe.presentation.UiState
 import com.eightsines.bpe.presentation.UiToolState
+import com.eightsines.bpe.resources.ResManager
+import com.eightsines.bpe.resources.TextRes
+import com.eightsines.bpe.resources.TextResId
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.dom.addClass
 import kotlinx.dom.createElement
 import kotlinx.dom.removeClass
@@ -29,8 +33,11 @@ import org.w3c.dom.ParentNode
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 
-class BrowserView(private val document: Document, private val renderer: BrowserRenderer) {
-    var onAction: ((BrowserAction) -> Unit)? = null
+class BrowserView(private val document: Document, private val renderer: BrowserRenderer, private val resManager: ResManager) {
+    private val _actionFlow = MutableSharedFlow<BrowserAction>(extraBufferCapacity = 1)
+
+    val actionFlow: Flow<BrowserAction>
+        get() = _actionFlow
 
     private val loading = document.find<HTMLElement>(".js-loading")
     private val container = document.find<HTMLElement>(".js-container")
@@ -38,17 +45,17 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
     private val areas = document.find<HTMLCanvasElement>(".js-areas")
 
     private val paletteColor = document.find<HTMLElement>(".js-palette-color")
-    private val paletteColorIndicator = paletteColor?.find<HTMLElement>(".tool__color")
+    private val paletteColorIndicator = document.find<HTMLElement>(".js-palette-color-indicator")
     private val paletteInk = document.find<HTMLElement>(".js-palette-ink")
-    private val paletteInkIndicator = paletteInk?.find<HTMLElement>(".tool__color_ink")
+    private val paletteInkIndicator = document.find<HTMLElement>(".js-palette-ink-indicator")
     private val palettePaper = document.find<HTMLElement>(".js-palette-paper")
-    private val palettePaperIndicator = palettePaper?.find<HTMLElement>(".tool__color_paper")
+    private val palettePaperIndicator = document.find<HTMLElement>(".js-palette-paper-indicator")
     private val paletteBright = document.find<HTMLElement>(".js-palette-bright")
-    private val paletteBrightIndicator = paletteBright?.find<HTMLElement>(".tool__light")
+    private val paletteBrightIndicator = document.find<HTMLElement>(".js-palette-bright-indicator")
     private val paletteFlash = document.find<HTMLElement>(".js-palette-flash")
-    private val paletteFlashIndicator = paletteFlash?.find<HTMLElement>(".tool__light")
+    private val paletteFlashIndicator = document.find<HTMLElement>(".js-palette-flash-indicator")
     private val paletteChar = document.find<HTMLElement>(".js-palette-char")
-    private val paletteCharIndicator = paletteChar?.find<HTMLElement>(".tool__char")
+    private val paletteCharIndicator = document.find<HTMLElement>(".js-palette-char-indicator")
 
     private val selectionCut = document.find<HTMLElement>(".js-selection-cut")
     private val selectionCopy = document.find<HTMLElement>(".js-selection-copy")
@@ -66,6 +73,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
     private val menu = document.find<HTMLElement>(".js-menu")
     private val menuLoad = document.find<HTMLInputElement>(".js-menu-load")
     private val menuSave = document.find<HTMLElement>(".js-menu-save")
+    private val menuExport = document.find<HTMLElement>(".js-menu-export")
 
     private val colorsPanel = document.find<HTMLElement>(".js-colors-panel")
     private val lightsPanel = document.find<HTMLElement>(".js-lights-panel")
@@ -76,9 +84,12 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
     private val charItems = mutableMapOf<SciiChar, Element>()
 
     private val layersPanel = document.find<HTMLElement>(".js-layers-panel")
-    private val layersItems = layersPanel?.find<HTMLElement>(".layers__items")
-    private val layersTypes = layersPanel?.find<HTMLElement>(".layers__toolbar--types")
-    private val layersCreate = document.find<HTMLElement>(".js-layers-create")
+    private val layersToolbarPrimary = document.find<HTMLElement>(".js-layers-toolbar-primary")
+    private val layersToolbarTypes = document.find<HTMLElement>(".js-layers-toolbar-types")
+    private val layersItems = document.find<HTMLElement>(".js-layers-items")
+    private val layersTypes = document.find<HTMLElement>(".js-layers-types")
+    private val layersCreatePrimary = document.find<HTMLElement>(".js-layers-create-primary")
+    private val layersCreateTypes = document.find<HTMLElement>(".js-layers-create-types")
     private val layersMerge = document.find<HTMLElement>(".js-layers-merge")
     private val layersConvert = document.find<HTMLElement>(".js-layers-convert")
     private val layersDelete = document.find<HTMLElement>(".js-layers-delete")
@@ -92,6 +103,9 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
     private val shapesFillBox = document.find<HTMLElement>(".js-shape-fill-box")
 
     private val menuPanel = document.find<HTMLElement>(".js-menu-panel")
+
+    private val alert = document.find<HTMLElement>(".js-alert")
+    private val alertContent = document.find<HTMLElement>(".js-alert-content")
 
     private var layersItemsCache = mutableMapOf<LayerView<*>, Element>()
     private var sheetViewCache: UiSheetView? = null
@@ -109,7 +123,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                 EVENT_MOUSE_ENTER,
                 {
                     val point = translateMouseToCanvas(areas, it as MouseEvent)
-                    onAction?.invoke(BrowserAction.Ui(UiAction.SheetEnter(point.first, point.second)))
+                    _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetEnter(point.first, point.second)))
                 }
             )
 
@@ -117,7 +131,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                 EVENT_MOUSE_DOWN,
                 {
                     val point = translateMouseToCanvas(areas, it as MouseEvent)
-                    onAction?.invoke(BrowserAction.Ui(UiAction.SheetDown(point.first, point.second)))
+                    _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetDown(point.first, point.second)))
                 }
             )
 
@@ -125,7 +139,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                 EVENT_MOUSE_MOVE,
                 {
                     val point = translateMouseToCanvas(areas, it as MouseEvent)
-                    onAction?.invoke(BrowserAction.Ui(UiAction.SheetMove(point.first, point.second)))
+                    _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetMove(point.first, point.second)))
                 }
             )
 
@@ -133,105 +147,123 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                 EVENT_MOUSE_UP,
                 {
                     val point = translateMouseToCanvas(areas, it as MouseEvent)
-                    onAction?.invoke(BrowserAction.Ui(UiAction.SheetUp(point.first, point.second)))
+                    _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetUp(point.first, point.second)))
                 }
             )
 
-            areas.addEventListener(EVENT_MOUSE_LEAVE, { onAction?.invoke(BrowserAction.Ui(UiAction.SheetLeave)) })
+            areas.addEventListener(EVENT_MOUSE_LEAVE, { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetLeave)) })
         }
 
-        paletteColor?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.PaletteColorClick)) }
-        paletteInk?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.PaletteInkClick)) }
-        palettePaper?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.PalettePaperClick)) }
-        paletteBright?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.PaletteBrightClick)) }
-        paletteFlash?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.PaletteFlashClick)) }
-        paletteChar?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.PaletteCharClick)) }
+        paletteColor?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteColorClick)) }
+        paletteInk?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteInkClick)) }
+        palettePaper?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PalettePaperClick)) }
+        paletteBright?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteBrightClick)) }
+        paletteFlash?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteFlashClick)) }
+        paletteChar?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteCharClick)) }
 
-        selectionCut?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.SelectionCutClick)) }
-        selectionCopy?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.SelectionCopyClick)) }
-        layers?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.LayersClick)) }
+        selectionCut?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SelectionCutClick)) }
+        selectionCopy?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SelectionCopyClick)) }
+        layers?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayersClick)) }
 
-        toolboxPaint?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ToolboxPaintClick)) }
-        toolboxShape?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ToolboxShapeClick)) }
-        toolboxErase?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ToolboxEraseClick)) }
-        toolboxSelect?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ToolboxSelectClick)) }
-        toolboxPickColor?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ToolboxPickColorClick)) }
+        toolboxPaint?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxPaintClick)) }
+        toolboxShape?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxShapeClick)) }
+        toolboxErase?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxEraseClick)) }
+        toolboxSelect?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxSelectClick)) }
+        toolboxPickColor?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxPickColorClick)) }
 
-        toolboxPaste?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ToolboxPasteClick)) }
-        toolboxUndo?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ToolboxUndoClick)) }
-        toolboxRedo?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ToolboxRedoClick)) }
+        toolboxPaste?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxPasteClick)) }
+        toolboxUndo?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxUndoClick)) }
+        toolboxRedo?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxRedoClick)) }
 
-        shapesPoint?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.Point))) }
-        shapesLine?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.Line))) }
-        shapesStrokeBox?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.StrokeBox))) }
-        shapesFillBox?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.FillBox))) }
+        shapesPoint?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.Point))) }
+        shapesLine?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.Line))) }
+        shapesStrokeBox?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.StrokeBox))) }
+        shapesFillBox?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.FillBox))) }
 
-        menu?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.MenuClick)) }
-        menuLoad?.also { menuLoad -> menuLoad.addEventListener(EVENT_CHANGE, { onAction?.invoke(BrowserAction.Load(menuLoad)) }) }
-        menuSave?.addClickListener { onAction?.invoke(BrowserAction.Save) }
+        menu?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.MenuClick)) }
+        menuLoad?.also { menuLoad -> menuLoad.addEventListener(EVENT_CHANGE, { _actionFlow.tryEmit(BrowserAction.Load(menuLoad)) }) }
+        menuSave?.addClickListener { _actionFlow.tryEmit(BrowserAction.Save) }
+        menuExport?.addClickListener { _actionFlow.tryEmit(BrowserAction.Export) }
 
-        layersCreate?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.LayerCreateClick)) }
-        layersMerge?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.LayerMergeClick)) }
-        layersConvert?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.LayerConvertClick)) }
-        layersDelete?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.LayerDeleteClick)) }
-        layersMoveUp?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.LayerMoveUpClick)) }
-        layersMoveDown?.addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.LayerMoveDownClick)) }
+        layersCreatePrimary?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerCreateClick)) }
+        layersCreateTypes?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerCreateClick)) }
+        layersMerge?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerMergeClick)) }
+        layersConvert?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerConvertClick)) }
+        layersDelete?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerDeleteClick)) }
+        layersMoveUp?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerMoveUpClick)) }
+        layersMoveDown?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerMoveDownClick)) }
+
+        alert?.addClickListener { _actionFlow.tryEmit(BrowserAction.HideAlert) }
+
+        for (element in document.findAll<HTMLElement>("[bpe-alt]")) {
+            element.setAttribute("alt", element.getAttribute("bpe-alt")?.let { resManager.resolveText(TextResId(it)) } ?: "")
+        }
+
+        for (element in document.findAll<HTMLElement>("[bpe-title]")) {
+            element.title = element.getAttribute("bpe-title")?.let { resManager.resolveText(TextResId(it)) } ?: ""
+        }
+
+        for (element in document.findAll<HTMLElement>("[bpe-text]")) {
+            element.textContent = element.getAttribute("bpe-text")?.let { resManager.resolveText(TextResId(it)) } ?: ""
+        }
     }
 
-    fun render(state: UiState) {
+    fun render(state: BrowserState) {
+        val uiState = state.uiState
+
         loading?.addClass(CLASS_HIDDEN)
         container?.removeClass(CLASS_HIDDEN)
 
-        paletteColor?.setToolState(state.paletteColor) {
+        paletteColor?.setToolState(uiState.paletteColor) {
             paletteColorIndicator?.replaceClassModifier("tool__color--", getColorClassSuffix(it))
         }
 
-        paletteInk?.setToolState(state.paletteInk) {
+        paletteInk?.setToolState(uiState.paletteInk) {
             paletteInkIndicator?.replaceClassModifier("tool__color_ink--", getColorClassSuffix(it))
         }
 
-        palettePaper?.setToolState(state.palettePaper) {
+        palettePaper?.setToolState(uiState.palettePaper) {
             palettePaperIndicator?.replaceClassModifier("tool__color_paper--", getColorClassSuffix(it))
         }
 
-        paletteBright?.setToolState(state.paletteBright) {
+        paletteBright?.setToolState(uiState.paletteBright) {
             paletteBrightIndicator?.replaceClassModifier("tool__light--", getLightClassSuffix(it))
         }
 
-        paletteFlash?.setToolState(state.paletteFlash) {
+        paletteFlash?.setToolState(uiState.paletteFlash) {
             paletteFlashIndicator?.replaceClassModifier("tool__light--", getLightClassSuffix(it))
         }
 
-        paletteChar?.setToolState(state.paletteChar) {
+        paletteChar?.setToolState(uiState.paletteChar) {
             paletteCharIndicator?.replaceClassModifier("tool__char--", getCharClassSuffix(it))
         }
 
-        selectionCut?.setToolState(state.selectionCut)
-        selectionCopy?.setToolState(state.selectionCopy)
-        layers?.setToolState(state.layers)
+        selectionCut?.setToolState(uiState.selectionCut)
+        selectionCopy?.setToolState(uiState.selectionCopy)
+        layers?.setToolState(uiState.layers)
 
-        toolboxPaint?.setToolState(state.toolboxPaint)
+        toolboxPaint?.setToolState(uiState.toolboxPaint)
 
-        toolboxShape?.setToolState(state.toolboxShape) {
+        toolboxShape?.setToolState(uiState.toolboxShape) {
             toolboxShape.replaceClassModifier("tool__shape--", getShapeClassSuffix(it))
         }
 
-        toolboxErase?.setToolState(state.toolboxErase)
-        toolboxSelect?.setToolState(state.toolboxSelect)
-        toolboxPickColor?.setToolState(state.toolboxPickColor)
-        toolboxPaste?.setToolState(state.toolboxPaste)
-        toolboxUndo?.setToolState(state.toolboxUndo)
-        toolboxRedo?.setToolState(state.toolboxRedo)
-        menu?.setToolState(state.menu)
+        toolboxErase?.setToolState(uiState.toolboxErase)
+        toolboxSelect?.setToolState(uiState.toolboxSelect)
+        toolboxPickColor?.setToolState(uiState.toolboxPickColor)
+        toolboxPaste?.setToolState(uiState.toolboxPaste)
+        toolboxUndo?.setToolState(uiState.toolboxUndo)
+        toolboxRedo?.setToolState(uiState.toolboxRedo)
+        menu?.setToolState(uiState.menu)
 
-        colorsPanel?.setVisible(state.activePanel is UiPanel.Colors)
-        lightsPanel?.setVisible(state.activePanel is UiPanel.Lights)
-        charsPanel?.setVisible(state.activePanel is UiPanel.Chars)
-        layersPanel?.setVisible(state.activePanel is UiPanel.Layers)
-        shapesPanel?.setVisible(state.activePanel is UiPanel.Shapes)
-        menuPanel?.setVisible(state.activePanel is UiPanel.Menu)
+        colorsPanel?.setVisible(uiState.activePanel is UiPanel.Colors)
+        lightsPanel?.setVisible(uiState.activePanel is UiPanel.Lights)
+        charsPanel?.setVisible(uiState.activePanel is UiPanel.Chars)
+        layersPanel?.setVisible(uiState.activePanel is UiPanel.Layers)
+        shapesPanel?.setVisible(uiState.activePanel is UiPanel.Shapes)
+        menuPanel?.setVisible(uiState.activePanel is UiPanel.Menu)
 
-        when (val panel = state.activePanel) {
+        when (val panel = uiState.activePanel) {
             is UiPanel.Colors ->
                 for ((color, element) in colorItems) {
                     element.setActive(color == panel.color)
@@ -257,18 +289,20 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
             null, is UiPanel.Layers, is UiPanel.Menu -> Unit
         }
 
-        renderLayersItems(state.layersItems, state.layersCurrentUid)
+        renderLayersItems(uiState.layersItems, uiState.layersCurrentUid)
 
-        layersCreate?.setToolState(state.layersCreate)
-        layersMerge?.setToolState(state.layersMerge)
-        layersConvert?.setToolState(state.layersConvert)
-        layersDelete?.setToolState(state.layersDelete)
-        layersMoveUp?.setToolState(state.layersMoveUp)
-        layersMoveDown?.setToolState(state.layersMoveDown)
-        layersTypes?.setVisible(state.layersTypesIsVisible)
+        layersCreatePrimary?.setToolState(uiState.layersCreate)
+        layersCreateTypes?.setToolState(uiState.layersCreate)
+        layersMerge?.setToolState(uiState.layersMerge)
+        layersConvert?.setToolState(uiState.layersConvert)
+        layersDelete?.setToolState(uiState.layersDelete)
+        layersMoveUp?.setToolState(uiState.layersMoveUp)
+        layersMoveDown?.setToolState(uiState.layersMoveDown)
+        layersToolbarPrimary?.setVisible(!uiState.layersTypesIsVisible)
+        layersToolbarTypes?.setVisible(uiState.layersTypesIsVisible)
 
         sheet?.let {
-            val sheetView = state.sheet
+            val sheetView = uiState.sheet
 
             if (sheetViewCache != sheetView) {
                 sheetViewCache = sheetView
@@ -277,8 +311,8 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
         }
 
         areas?.let {
-            val selectionArea = state.selectionArea
-            val cursorArea = state.cursorArea
+            val selectionArea = uiState.selectionArea
+            val cursorArea = uiState.cursorArea
 
             if (selectionAreaCache != selectionArea || cursorAreaCache != cursorArea) {
                 cursorAreaCache = cursorArea
@@ -287,6 +321,9 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                 renderer.renderAreas(it, selectionArea, cursorArea)
             }
         }
+
+        alert?.setVisible(state.alertText != null)
+        alertContent?.textContent = state.alertText?.let(resManager::resolveText) ?: ""
     }
 
     private fun renderLayersItems(layersViews: List<LayerView<*>>, layersCurrentUid: LayerUid) {
@@ -307,10 +344,15 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                     .appendChildren(
                         document
                             .createElement(NAME_DIV) {
+                                this as HTMLElement
                                 className = "tool tool--sm"
 
+                                title = resManager.resolveText(
+                                    if (layer.isVisible) TextRes.LAYER_VISIBLE else TextRes.LAYER_INVISIBLE
+                                )
+
                                 addClickListener {
-                                    onAction?.invoke(BrowserAction.Ui(UiAction.LayerItemVisibleClick(layer.uid, layer.isVisible)))
+                                    _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerItemVisibleClick(layer.uid, layer.isVisible)))
                                 }
                             }
                             .appendChildren(
@@ -319,15 +361,20 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
 
                                     className = "tool__icon"
                                     src = if (layer.isVisible) SRC_LAYER_VISIBLE else SRC_LAYER_INVISIBLE
-                                    alt = if (layer.isVisible) ALT_LAYER_VISIBLE else ALT_LAYER_INVISIBLE
+                                    alt = ""
                                 }
                             ),
                         document
                             .createElement(NAME_DIV) {
+                                this as HTMLElement
                                 className = "tool tool--sm"
 
+                                title = resManager.resolveText(
+                                    if (layer.isLocked) TextRes.LAYER_LOCKED else TextRes.LAYER_UNLOCKED
+                                )
+
                                 addClickListener {
-                                    onAction?.invoke(BrowserAction.Ui(UiAction.LayerItemLockedClick(layer.uid, layer.isLocked)))
+                                    _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerItemLockedClick(layer.uid, layer.isLocked)))
                                 }
                             }
                             .appendChildren(
@@ -336,7 +383,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
 
                                     className = "tool__icon"
                                     src = if (layer.isLocked) SRC_LAYER_LOCKED else SRC_LAYER_UNLOCKED
-                                    alt = if (layer.isLocked) ALT_LAYER_LOCKED else ALT_LAYER_UNLOCKED
+                                    alt = ""
                                 }
                             )
                     )
@@ -355,9 +402,11 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                     .createElement(NAME_DIV) { className = "panel__pane" }
                     .appendChildren(
                         document.createElement(NAME_DIV) {
+                            this as HTMLElement
                             className = "tool tool--sm tool--marker"
 
                             if (layer is CanvasLayer<*>) {
+                                title = getCanvasTypeTitle(layer.canvasType)
                                 appendChild(createCanvasTypeIcon(layer.canvasType))
                             }
                         }
@@ -366,7 +415,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                 document
                     .createElement(NAME_DIV) {
                         className = "layers__item"
-                        addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.LayerItemClick(layer.uid))) }
+                        addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerItemClick(layer.uid))) }
                     }
                     .appendChildren(startPane, previewCanvas, endPane)
             }
@@ -396,7 +445,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
             document
                 .createElement(NAME_DIV) {
                     className = "tool tool--md"
-                    addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ColorsItemClick(sciiColor))) }
+                    addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ColorsItemClick(sciiColor))) }
 
                 }
                 .appendChildren(document.createElement(NAME_DIV) { className = "tool__color tool__color--${color}" })
@@ -407,7 +456,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
         document
             .createElement(NAME_DIV) {
                 className = "tool tool--md"
-                addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.ColorsItemClick(SciiColor.Transparent))) }
+                addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ColorsItemClick(SciiColor.Transparent))) }
             }
             .appendChildren(document.createElement(NAME_DIV) { className = "tool__color tool__color--transparent" })
             .appendTo(paneElement)
@@ -422,8 +471,8 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
         for ((sciiLight, suffix) in listOf(SciiLight.Off to "off", SciiLight.On to "on", SciiLight.Transparent to SUFFIX_TRANSPARENT)) {
             document
                 .createElement(NAME_DIV) {
-                    className = "tool"
-                    addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.LightsItemClick(sciiLight))) }
+                    className = "tool tool--md"
+                    addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LightsItemClick(sciiLight))) }
                 }
                 .appendChildren(document.createElement(NAME_DIV) { className = "tool__light tool__light--${suffix}" })
                 .appendTo(paneElement)
@@ -444,7 +493,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                 document
                     .createElement(NAME_DIV) {
                         className = "tool tool--xs"
-                        addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.CharsItemClick(sciiChar))) }
+                        addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.CharsItemClick(sciiChar))) }
                     }
                     .appendChildren(document.createElement(NAME_DIV) { className = "tool__char tool__char--${characterValue}" })
                     .appendTo(paneElement)
@@ -455,8 +504,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
         document
             .createElement(NAME_DIV) {
                 className = "tool tool--xs"
-                addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.CharsItemClick(SciiChar.Transparent))) }
-
+                addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.CharsItemClick(SciiChar.Transparent))) }
             }
             .appendChildren(document.createElement(NAME_DIV) { className = "tool__char tool__char--transparent" })
             .appendTo(charsPanel)
@@ -468,11 +516,15 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
             .createElement(NAME_DIV) { className = "panel__pane" }
             .appendTo(layersTypes)
 
-        for (type in listOf(CanvasType.Scii, CanvasType.HBlock, CanvasType.VBlock, CanvasType.QBlock)) {
+        for (type in listOf(CanvasType.HBlock, CanvasType.VBlock, CanvasType.QBlock, CanvasType.Scii)) {
             document
                 .createElement(NAME_DIV) {
+                    this as HTMLElement
+
                     className = "tool tool--md"
-                    addClickListener { onAction?.invoke(BrowserAction.Ui(UiAction.LayerTypeClick(type))) }
+                    title = getCanvasTypeTitle(type)
+
+                    addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerTypeClick(type))) }
                 }
                 .appendChildren(createCanvasTypeIcon(type))
                 .appendTo(paneElement)
@@ -490,13 +542,17 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
             CanvasType.QBlock -> SRC_TYPE_QBLOCK
         }
 
-        alt = when (type) {
-            CanvasType.Scii -> ALT_TYPE_SCII
-            CanvasType.HBlock -> ALT_TYPE_HBLOCK
-            CanvasType.VBlock -> ALT_TYPE_VBLOCK
-            CanvasType.QBlock -> ALT_TYPE_QBLOCK
-        }
+        alt = ""
     }
+
+    private fun getCanvasTypeTitle(type: CanvasType) = resManager.resolveText(
+        when (type) {
+            CanvasType.Scii -> TextRes.CANVAS_SCII
+            CanvasType.HBlock -> TextRes.CANVAS_HBLOCK
+            CanvasType.VBlock -> TextRes.CANVAS_VBLOCK
+            CanvasType.QBlock -> TextRes.CANVAS_QBLOCK
+        }
+    )
 
     private fun translateMouseToCanvas(canvas: HTMLCanvasElement, event: MouseEvent): Pair<Int, Int> {
         val bbox: DOMRect = canvas.getBoundingClientRect()
@@ -527,6 +583,17 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
 
     private inline fun <reified T> ParentNode.find(selectors: String) = querySelector(selectors) as? T
 
+    private inline fun <reified T> ParentNode.findAll(selectors: String): List<T> = querySelectorAll(selectors).let { nodeList ->
+        object : AbstractList<T>() {
+            override val size: Int get() = nodeList.length
+
+            override fun get(index: Int): T = when (index) {
+                in 0..lastIndex -> nodeList.item(index).unsafeCast<T>()
+                else -> throw IndexOutOfBoundsException("index $index is not in range [0..$lastIndex]")
+            }
+        }
+    }
+
     private inline fun <reified T : Node> T.appendChildren(vararg nodes: Node) = apply {
         for (node in nodes) {
             appendChild(node)
@@ -547,24 +614,39 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
         }
     }
 
-    private fun <T> Element.setToolState(state: UiToolState<T>, block: (T) -> Unit = {}) {
+    private fun <T> HTMLElement.setToolState(state: UiToolState<T>, block: (T) -> Unit = {}) {
         when (state) {
             is UiToolState.Hidden -> addClass(CLASS_HIDDEN)
 
             is UiToolState.Disabled -> apply {
                 removeClass(CLASS_HIDDEN, CLASS_TOOL_ACTIVE)
                 addClass(CLASS_TOOL_DISABLED)
+
+                if (state.title != null) {
+                    title = resManager.resolveText(state.title)
+                }
+
                 block(state.value)
             }
 
             is UiToolState.Visible -> apply {
                 removeClass(CLASS_HIDDEN, CLASS_TOOL_ACTIVE, CLASS_TOOL_DISABLED)
+
+                if (state.title != null) {
+                    title = resManager.resolveText(state.title)
+                }
+
                 block(state.value)
             }
 
             is UiToolState.Active -> apply {
                 removeClass(CLASS_HIDDEN, CLASS_TOOL_DISABLED)
                 addClass(CLASS_TOOL_ACTIVE)
+
+                if (state.title != null) {
+                    title = resManager.resolveText(state.title)
+                }
+
                 block(state.value)
             }
         }
@@ -634,16 +716,6 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
         private const val SRC_TYPE_HBLOCK = "drawable/type__hblock.svg"
         private const val SRC_TYPE_VBLOCK = "drawable/type__vblock.svg"
         private const val SRC_TYPE_QBLOCK = "drawable/type__qblock.svg"
-
-        private const val ALT_LAYER_VISIBLE = "Visible"
-        private const val ALT_LAYER_INVISIBLE = "Invisible"
-        private const val ALT_LAYER_LOCKED = "Locked"
-        private const val ALT_LAYER_UNLOCKED = "Unlocked"
-
-        private const val ALT_TYPE_SCII = "SpecSCII"
-        private const val ALT_TYPE_HBLOCK = "HBlock"
-        private const val ALT_TYPE_VBLOCK = "VBlock"
-        private const val ALT_TYPE_QBLOCK = "QBlock"
 
         private const val PREVIEW_WIDTH = 256
         private const val PREVIEW_HEIGHT = 192

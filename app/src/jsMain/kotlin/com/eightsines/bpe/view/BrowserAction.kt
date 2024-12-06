@@ -7,4 +7,6 @@ sealed interface BrowserAction {
     data class Ui(val action: UiAction) : BrowserAction
     data class Load(val inputElement: HTMLInputElement) : BrowserAction
     data object Save : BrowserAction
+    data object Export : BrowserAction
+    data object HideAlert : BrowserAction
 }
