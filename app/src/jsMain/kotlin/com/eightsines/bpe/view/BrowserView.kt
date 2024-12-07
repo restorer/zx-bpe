@@ -31,7 +31,6 @@ import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.Node
 import org.w3c.dom.ParentNode
-import org.w3c.dom.Window
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 
@@ -64,8 +63,13 @@ class BrowserView(
     private val paletteChar = document.find<HTMLElement>(".js-palette-char")
     private val paletteCharIndicator = document.find<HTMLElement>(".js-palette-char-indicator")
 
+    private val selectionMenu = document.find<HTMLElement>(".js-selection-menu")
     private val selectionCut = document.find<HTMLElement>(".js-selection-cut")
     private val selectionCopy = document.find<HTMLElement>(".js-selection-copy")
+    private val selectionFlipHorizontal = document.find<HTMLElement>(".js-selection-flip-horizontal")
+    private val selectionFlipVertical = document.find<HTMLElement>(".js-selection-flip-vertical")
+    private val selectionRotateCw = document.find<HTMLElement>(".js-selection-rotate-cw")
+    private val selectionRotateCcw = document.find<HTMLElement>(".js-selection-rotate-ccw")
     private val layers = document.find<HTMLElement>(".js-layers")
 
     private val toolboxPaint = document.find<HTMLElement>(".js-toolbox-paint")
@@ -85,6 +89,7 @@ class BrowserView(
     private val colorsPanel = document.find<HTMLElement>(".js-colors-panel")
     private val lightsPanel = document.find<HTMLElement>(".js-lights-panel")
     private val charsPanel = document.find<HTMLElement>(".js-chars-panel")
+    private val selectionPanel = document.find<HTMLElement>(".js-selection-panel")
 
     private val colorItems = mutableMapOf<SciiColor, Element>()
     private val lightItems = mutableMapOf<SciiLight, Element>()
@@ -95,10 +100,11 @@ class BrowserView(
     private val layersToolbarTypes = document.find<HTMLElement>(".js-layers-toolbar-types")
     private val layersItems = document.find<HTMLElement>(".js-layers-items")
     private val layersTypes = document.find<HTMLElement>(".js-layers-types")
-    private val layersCreatePrimary = document.find<HTMLElement>(".js-layers-create-primary")
-    private val layersCreateTypes = document.find<HTMLElement>(".js-layers-create-types")
+    private val layersCreate = document.find<HTMLElement>(".js-layers-create")
+    private val layersCreateCancel = document.find<HTMLElement>(".js-layers-create-cancel")
     private val layersMerge = document.find<HTMLElement>(".js-layers-merge")
     private val layersConvert = document.find<HTMLElement>(".js-layers-convert")
+    private val layersConvertCancel = document.find<HTMLElement>(".js-layers-convert-cancel")
     private val layersDelete = document.find<HTMLElement>(".js-layers-delete")
     private val layersMoveUp = document.find<HTMLElement>(".js-layers-move-up")
     private val layersMoveDown = document.find<HTMLElement>(".js-layers-move-down")
@@ -108,6 +114,8 @@ class BrowserView(
     private val shapesLine = document.find<HTMLElement>(".js-shape-line")
     private val shapesStrokeBox = document.find<HTMLElement>(".js-shape-stroke-box")
     private val shapesFillBox = document.find<HTMLElement>(".js-shape-fill-box")
+    private val shapesStrokeOval = document.find<HTMLElement>(".js-shape-stroke-oval")
+    private val shapesFillOval = document.find<HTMLElement>(".js-shape-fill-oval")
 
     private val menuPanel = document.find<HTMLElement>(".js-menu-panel")
 
@@ -171,8 +179,13 @@ class BrowserView(
         paletteFlash?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteFlashClick)) }
         paletteChar?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteCharClick)) }
 
+        selectionMenu?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SelectionMenuClick)) }
         selectionCut?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SelectionCutClick)) }
         selectionCopy?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SelectionCopyClick)) }
+        selectionFlipHorizontal?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SelectionFlipHorizontalClick)) }
+        selectionFlipVertical?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SelectionFlipVerticalClick)) }
+        selectionRotateCw?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SelectionRotateCwClick)) }
+        selectionRotateCcw?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SelectionRotateCcwClick)) }
         layers?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayersClick)) }
 
         toolboxPaint?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxPaintClick)) }
@@ -189,16 +202,19 @@ class BrowserView(
         shapesLine?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.Line))) }
         shapesStrokeBox?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.StrokeBox))) }
         shapesFillBox?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.FillBox))) }
+        shapesStrokeOval?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.StrokeOval))) }
+        shapesFillOval?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.FillOval))) }
 
         menu?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.MenuClick)) }
         menuLoad?.also { menuLoad -> menuLoad.addEventListener(EVENT_CHANGE, { _actionFlow.tryEmit(BrowserAction.Load(menuLoad)) }) }
         menuSave?.addClickListener { _actionFlow.tryEmit(BrowserAction.Save) }
         menuExport?.addClickListener { _actionFlow.tryEmit(BrowserAction.Export) }
 
-        layersCreatePrimary?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerCreateClick)) }
-        layersCreateTypes?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerCreateClick)) }
+        layersCreate?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerCreateClick)) }
+        layersCreateCancel?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerCreateClick)) }
         layersMerge?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerMergeClick)) }
         layersConvert?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerConvertClick)) }
+        layersConvertCancel?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerConvertClick)) }
         layersDelete?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerDeleteClick)) }
         layersMoveUp?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerMoveUpClick)) }
         layersMoveDown?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerMoveDownClick)) }
@@ -244,8 +260,7 @@ class BrowserView(
             paletteCharIndicator?.replaceClassModifier("tool__char--", getCharClassSuffix(it))
         }
 
-        selectionCut?.setToolState(uiState.selectionCut)
-        selectionCopy?.setToolState(uiState.selectionCopy)
+        selectionMenu?.setToolState(uiState.selectionMenu)
         layers?.setToolState(uiState.layers)
 
         toolboxPaint?.setToolState(uiState.toolboxPaint)
@@ -265,6 +280,7 @@ class BrowserView(
         colorsPanel?.setVisible(uiState.activePanel is UiPanel.Colors)
         lightsPanel?.setVisible(uiState.activePanel is UiPanel.Lights)
         charsPanel?.setVisible(uiState.activePanel is UiPanel.Chars)
+        selectionPanel?.setVisible(uiState.activePanel is UiPanel.SelectionMenu)
         layersPanel?.setVisible(uiState.activePanel is UiPanel.Layers)
         shapesPanel?.setVisible(uiState.activePanel is UiPanel.Shapes)
         menuPanel?.setVisible(uiState.activePanel is UiPanel.Menu)
@@ -290,17 +306,20 @@ class BrowserView(
                 shapesLine?.setActive(panel.shape == BpeShape.Line)
                 shapesStrokeBox?.setActive(panel.shape == BpeShape.StrokeBox)
                 shapesFillBox?.setActive(panel.shape == BpeShape.FillBox)
+                shapesStrokeOval?.setActive(panel.shape == BpeShape.StrokeOval)
+                shapesFillOval?.setActive(panel.shape == BpeShape.FillOval)
             }
 
-            null, is UiPanel.Layers, is UiPanel.Menu -> Unit
+            null, is UiPanel.SelectionMenu, is UiPanel.Layers, is UiPanel.Menu -> Unit
         }
 
         renderLayersItems(uiState.layersItems, uiState.layersCurrentUid)
 
-        layersCreatePrimary?.setToolState(uiState.layersCreate)
-        layersCreateTypes?.setToolState(uiState.layersCreate)
+        layersCreate?.setToolState(uiState.layersCreate)
+        layersCreateCancel?.setToolState(uiState.layersCreateCancel)
         layersMerge?.setToolState(uiState.layersMerge)
         layersConvert?.setToolState(uiState.layersConvert)
+        layersConvertCancel?.setToolState(uiState.layersConvertCancel)
         layersDelete?.setToolState(uiState.layersDelete)
         layersMoveUp?.setToolState(uiState.layersMoveUp)
         layersMoveDown?.setToolState(uiState.layersMoveDown)
@@ -417,7 +436,35 @@ class BrowserView(
                                     src = if (layer.isLocked) SRC_LAYER_LOCKED else SRC_LAYER_UNLOCKED
                                     alt = ""
                                 }
-                            )
+                            ),
+                        document
+                            .createElement(NAME_DIV) {
+                                this as HTMLElement
+                                className = "tool tool--sm"
+
+                                if (layer is CanvasLayer<*>) {
+                                    title = resourceManager.resolveText(
+                                        if (layer.isPixelsLocked) TextRes.LayerPixelsLocked else TextRes.LayerPixelsUnlocked
+                                    )
+
+                                    addClickListener {
+                                        _actionFlow.tryEmit(
+                                            BrowserAction.Ui(UiAction.LayerItemPixelsLockedClick(layer.uid, layer.isPixelsLocked)),
+                                        )
+                                    }
+                                }
+                            }
+                            .appendChildren(
+                                (layer as? CanvasLayer<*>?)?.let { canvasLayer ->
+                                    document.createElement(NAME_IMG) {
+                                        this as HTMLImageElement
+
+                                        className = "tool__icon"
+                                        src = if (canvasLayer.isPixelsLocked) SRC_LAYER_PIXELS_LOCKED else SRC_LAYER_PIXELS_UNLOCKED
+                                        alt = ""
+                                    }
+                                }
+                            ),
                     )
 
                 val previewCanvas = document.createElement(NAME_CANVAS) {
@@ -628,9 +675,11 @@ class BrowserView(
         }
     }
 
-    private inline fun <reified T : Node> T.appendChildren(vararg nodes: Node) = apply {
+    private inline fun <reified T : Node> T.appendChildren(vararg nodes: Node?) = apply {
         for (node in nodes) {
-            appendChild(node)
+            if (node != null) {
+                appendChild(node)
+            }
         }
     }
 
@@ -721,6 +770,8 @@ class BrowserView(
         BpeShape.Line -> "line"
         BpeShape.StrokeBox -> "stroke_box"
         BpeShape.FillBox -> "fill_box"
+        BpeShape.StrokeOval -> "stroke_oval"
+        BpeShape.FillOval -> "fill_oval"
     }
 
     private companion object {
@@ -745,6 +796,8 @@ class BrowserView(
         private const val SRC_LAYER_INVISIBLE = "drawable/layer__invisible.svg"
         private const val SRC_LAYER_LOCKED = "drawable/layer__locked.svg"
         private const val SRC_LAYER_UNLOCKED = "drawable/layer__unlocked.svg"
+        private const val SRC_LAYER_PIXELS_LOCKED = "drawable/layer__pixels_locked.svg"
+        private const val SRC_LAYER_PIXELS_UNLOCKED = "drawable/layer__pixels_unlocked.svg"
 
         private const val SRC_TYPE_SCII = "drawable/type__scii.svg"
         private const val SRC_TYPE_HBLOCK = "drawable/type__hblock.svg"

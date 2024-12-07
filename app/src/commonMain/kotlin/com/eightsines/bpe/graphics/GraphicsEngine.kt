@@ -72,6 +72,7 @@ class GraphicsEngine(
         is GraphicsAction.DeleteLayer -> canDeleteLayer(action) != null
         is GraphicsAction.SetLayerVisible -> canSetLayerVisible(action) != null
         is GraphicsAction.SetLayerLocked -> canSetLayerLocked(action) != null
+        is GraphicsAction.SetLayerPixelsLocked -> canSetLayerPixelsLocked(action) != null
         is GraphicsAction.MoveLayer -> canMoveLayer(action) != null
         is GraphicsAction.MergeShape -> canMergeShape(action) != null
         is GraphicsAction.ReplaceShape -> canReplaceShape(action) != null
@@ -98,6 +99,7 @@ class GraphicsEngine(
             is GraphicsAction.DeleteLayer -> executeDeleteLayer(action)
             is GraphicsAction.SetLayerVisible -> executeSetLayerVisible(action)
             is GraphicsAction.SetLayerLocked -> executeSetLayerLocked(action)
+            is GraphicsAction.SetLayerPixelsLocked -> executeSetLayerPixelsLocked(action)
             is GraphicsAction.MoveLayer -> executeMoveLayer(action)
             is GraphicsAction.MergeShape -> executeMergeShape(action)
             is GraphicsAction.ReplaceShape -> executeReplaceShape(action)
@@ -291,6 +293,19 @@ class GraphicsEngine(
         return undoAction
     }
 
+    private fun canSetLayerPixelsLocked(action: GraphicsAction.SetLayerPixelsLocked): MutableCanvasLayer<*>? {
+        val layer = canvasLayersMap[action.layerUid.value] ?: return null
+        return if (layer.isPixelsLocked == action.isPixelsLocked) null else layer
+    }
+
+    private fun executeSetLayerPixelsLocked(action: GraphicsAction.SetLayerPixelsLocked): GraphicsAction? {
+        val layer = canSetLayerPixelsLocked(action) ?: return null
+
+        val undoAction = GraphicsAction.SetLayerPixelsLocked(layer.uid, layer.isPixelsLocked)
+        layer.isPixelsLocked = action.isPixelsLocked
+        return undoAction
+    }
+
     private fun canMoveLayer(action: GraphicsAction.MoveLayer): MoveLayerData? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
 
@@ -344,7 +359,9 @@ class GraphicsEngine(
 
         canvas.mutate { mutator ->
             painter.paint(action.shape) { x, y, cell ->
-                mutator.mergeDrawingCell(x, y, cell)
+                if (!layer.isPixelsLocked || !canvas.getDrawingCell(x, y).isTransparent) {
+                    mutator.mergeDrawingCell(x, y, cell)
+                }
             }
         }
 

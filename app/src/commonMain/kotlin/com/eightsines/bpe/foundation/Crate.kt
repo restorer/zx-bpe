@@ -32,7 +32,7 @@ data class Crate<T : Cell>(
             cells = cells.reversed(),
         )
 
-        TransformType.RotateCW -> {
+        TransformType.RotateCw -> {
             val last = height - 1
 
             Crate(
@@ -43,7 +43,7 @@ data class Crate<T : Cell>(
             )
         }
 
-        TransformType.RotateCCW -> {
+        TransformType.RotateCcw -> {
             val last = width - 1
 
             Crate(

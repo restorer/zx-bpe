@@ -62,6 +62,7 @@ class BpeEngine(
             is BpeAction.LayersSetCurrent -> executeLayersSetCurrent(action)
             is BpeAction.LayersSetVisible -> executeLayersSetVisible(action)
             is BpeAction.LayersSetLocked -> executeLayersSetLocked(action)
+            is BpeAction.LayersSetPixelsLocked -> executeLayersSetPixelsLocked(action)
             is BpeAction.LayersMoveUp -> executeLayersMoveUp()
             is BpeAction.LayersMoveDown -> executeLayersMoveDown()
             is BpeAction.LayersCreate -> executeLayersCreate(action)
@@ -231,6 +232,23 @@ class BpeEngine(
             } else {
                 GraphicsAction.SetLayerLocked(layerUid = action.layerUid, isLocked = action.isLocked)
             }
+        ).toHistoryStep()
+
+        appendHistoryStep(cancelStep.merge(actionStep))
+        shouldRefresh = true
+    }
+
+    private fun executeLayersSetPixelsLocked(action: BpeAction.LayersSetPixelsLocked) {
+        val currentCanvasLayer = currentLayer as? CanvasLayer<*> ?: return
+
+        if (action.layerUid == currentLayer.uid && action.isPixelsLocked == currentCanvasLayer.isPixelsLocked) {
+            return
+        }
+
+        val cancelStep = cancelPaintingAndFloating(selectionController.selection?.canvasType)
+
+        val actionStep = graphicsEngine.executePair(
+            GraphicsAction.SetLayerPixelsLocked(layerUid = action.layerUid, isPixelsLocked = action.isPixelsLocked)
         ).toHistoryStep()
 
         appendHistoryStep(cancelStep.merge(actionStep))
@@ -646,8 +664,7 @@ class BpeEngine(
             toolboxCanRedo = historyPosition < history.size,
 
             selection = selectionController.selection,
-            selectionCanCut = selectionController.isSelected && currentLayer is CanvasLayer<*>,
-            selectionCanCopy = selectionController.isSelected && currentLayer is CanvasLayer<*>,
+            selectionIsActionable = selectionController.isSelected && currentLayer is CanvasLayer<*>,
             selectionIsFloating = selectionController.isFloating,
         )
     }

@@ -161,7 +161,7 @@ class CrateTest {
                 ),
             )
         },
-        act = { it.copyTransformed(TransformType.RotateCW) },
+        act = { it.copyTransformed(TransformType.RotateCw) },
         assert = {
             assertEqualsExt(
                 Crate(
@@ -192,7 +192,7 @@ class CrateTest {
                 ),
             )
         },
-        act = { it.copyTransformed(TransformType.RotateCCW) },
+        act = { it.copyTransformed(TransformType.RotateCcw) },
         assert = {
             assertEqualsExt(
                 Crate(

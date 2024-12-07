@@ -55,8 +55,13 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             is UiAction.PaletteFlashClick -> executePaletteFlashClick()
             is UiAction.PaletteCharClick -> executePaletteCharClick()
 
+            is UiAction.SelectionMenuClick -> executeSelectionMenuClick()
             is UiAction.SelectionCutClick -> executeSelectionCutClick()
             is UiAction.SelectionCopyClick -> executeSelectionCopyClick()
+            is UiAction.SelectionFlipHorizontalClick -> executeSelectionFlipHorizontalClick()
+            is UiAction.SelectionFlipVerticalClick -> executeSelectionFlipVerticalClick()
+            is UiAction.SelectionRotateCwClick -> executeSelectionRotateCwClick()
+            is UiAction.SelectionRotateCcwClick -> executeSelectionRotateCcwClick()
             is UiAction.LayersClick -> executeLayersClick()
 
             is UiAction.ToolboxPaintClick -> executeToolboxPaintClick()
@@ -78,6 +83,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             is UiAction.LayerItemClick -> executeLayerItemClick(action)
             is UiAction.LayerItemVisibleClick -> executeLayerItemVisibleClick(action)
             is UiAction.LayerItemLockedClick -> executeLayerItemLockedClick(action)
+            is UiAction.LayerItemPixelsLockedClick -> executeLayerItemPixelsLockedClick(action)
             is UiAction.LayerCreateClick -> executeLayerCreateClick()
             is UiAction.LayerMergeClick -> executeLayerMergeClick()
             is UiAction.LayerConvertClick -> executeLayerConvertClick()
@@ -216,16 +222,50 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         }
     }
 
+    private fun executeSelectionMenuClick() {
+        if (state.selectionMenu.isInteractable) {
+            activePanel = if (activePanel == Panel.SelectionMenu) null else Panel.SelectionMenu
+        }
+    }
+
     private fun executeSelectionCutClick() {
-        if (state.selectionCut.isInteractable) {
+        if (state.selectionMenu.isInteractable) {
             bpeEngine.execute(BpeAction.SelectionCut)
             activePanel = null
         }
     }
 
     private fun executeSelectionCopyClick() {
-        if (state.selectionCopy.isInteractable) {
+        if (state.selectionMenu.isInteractable) {
             bpeEngine.execute(BpeAction.SelectionCopy)
+            activePanel = null
+        }
+    }
+
+    private fun executeSelectionFlipHorizontalClick() {
+        if (state.selectionMenu.isInteractable) {
+            // TODO
+            activePanel = null
+        }
+    }
+
+    private fun executeSelectionFlipVerticalClick() {
+        if (state.selectionMenu.isInteractable) {
+            // TODO
+            activePanel = null
+        }
+    }
+
+    private fun executeSelectionRotateCwClick() {
+        if (state.selectionMenu.isInteractable) {
+            // TODO
+            activePanel = null
+        }
+    }
+
+    private fun executeSelectionRotateCcwClick() {
+        if (state.selectionMenu.isInteractable) {
+            // TODO
             activePanel = null
         }
     }
@@ -345,6 +385,10 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
     private fun executeLayerItemLockedClick(action: UiAction.LayerItemLockedClick) {
         bpeEngine.execute(BpeAction.LayersSetLocked(action.layerUid, !action.isLocked))
+    }
+
+    private fun executeLayerItemPixelsLockedClick(action: UiAction.LayerItemPixelsLockedClick) {
+        bpeEngine.execute(BpeAction.LayersSetPixelsLocked(action.layerUid, !action.isLocked))
     }
 
     private fun executeLayerCreateClick() {
@@ -511,8 +555,11 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
                 else -> UiToolState.Visible(bpeState.paletteChar)
             },
 
-            selectionCut = if (bpeState.selectionCanCut) UiToolState.Visible(Unit) else UiToolState.Hidden,
-            selectionCopy = if (bpeState.selectionCanCopy) UiToolState.Visible(Unit) else UiToolState.Hidden,
+            selectionMenu = when {
+                activePanel == Panel.SelectionMenu -> UiToolState.Active(Unit)
+                bpeState.selectionIsActionable -> UiToolState.Visible(Unit)
+                else -> UiToolState.Hidden
+            },
             layers = if (activePanel == Panel.Layers) UiToolState.Active(Unit) else UiToolState.Visible(Unit),
 
             toolboxPaint = when {
@@ -561,6 +608,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
                 Panel.Bright -> UiPanel.Lights(bpeState.paletteBright ?: SciiLight.Transparent)
                 Panel.Flash -> UiPanel.Lights(bpeState.paletteBright ?: SciiLight.Transparent)
                 Panel.Chars -> UiPanel.Chars(bpeState.paletteChar ?: SciiChar.Transparent)
+                Panel.SelectionMenu -> UiPanel.SelectionMenu
                 Panel.Layers -> UiPanel.Layers
                 Panel.Shapes -> UiPanel.Shapes(bpeState.toolboxShape ?: BpeShape.Point)
                 Panel.Menu -> UiPanel.Menu
@@ -573,11 +621,21 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             } else {
                 UiToolState.Visible(Unit)
             },
+            layersCreateCancel = if (layerTypePanel == LayerTypePanel.Create) {
+                UiToolState.Active(Unit)
+            } else {
+                UiToolState.Hidden
+            },
             layersMerge = if (bpeState.layersCanMerge) UiToolState.Visible(Unit) else UiToolState.Disabled(Unit),
             layersConvert = when {
                 !bpeState.layersCanConvert -> UiToolState.Disabled(Unit)
                 layerTypePanel == LayerTypePanel.Convert -> UiToolState.Active(Unit)
                 else -> UiToolState.Visible(Unit)
+            },
+            layersConvertCancel = if (layerTypePanel == LayerTypePanel.Convert) {
+                UiToolState.Active(Unit)
+            } else {
+                UiToolState.Hidden
             },
             layersDelete = if (bpeState.layersCanDelete) UiToolState.Visible(Unit) else UiToolState.Disabled(Unit),
             layersMoveUp = if (bpeState.layersCanMoveUp) UiToolState.Visible(Unit) else UiToolState.Disabled(Unit),
@@ -598,6 +656,7 @@ private enum class Panel(val placement: PanelPlacement) {
     Bright(PanelPlacement.Palette),
     Flash(PanelPlacement.Palette),
     Chars(PanelPlacement.Palette),
+    SelectionMenu(PanelPlacement.Palette),
     Layers(PanelPlacement.Palette),
     Shapes(PanelPlacement.Toolbox),
     Menu(PanelPlacement.Toolbox),

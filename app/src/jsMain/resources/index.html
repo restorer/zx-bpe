@@ -44,11 +44,8 @@
             </div>
         </div>
         <div class="panel__pane">
-            <div class="tool js-selection-cut" bpe-title="selection_cut">
-                <img src="drawable/selection__cut.svg" alt="" class="tool__icon"/>
-            </div>
-            <div class="tool js-selection-copy" bpe-title="selection_copy">
-                <img src="drawable/selection__copy.svg" alt="" class="tool__icon"/>
+            <div class="tool js-selection-menu" bpe-title="selection_menu">
+                <img src="drawable/menu__secondary.svg" alt="" class="tool__icon"/>
             </div>
             <div class="tool js-layers" bpe-title="layers">
                 <img src="drawable/layers.svg" alt="" class="tool__icon"/>
@@ -65,6 +62,8 @@
                 <img src="drawable/shape__line.svg" alt="" class="tool__icon tool__icon--shape__line"/>
                 <img src="drawable/shape__stroke_box.svg" alt="" class="tool__icon tool__icon--shape__stroke_box"/>
                 <img src="drawable/shape__fill_box.svg" alt="" class="tool__icon tool__icon--shape__fill_box"/>
+                <img src="drawable/shape__stroke_oval.svg" alt="" class="tool__icon tool__icon--shape__stroke_oval"/>
+                <img src="drawable/shape__fill_oval.svg" alt="" class="tool__icon tool__icon--shape__fill_oval"/>
             </div>
             <div class="tool js-toolbox-erase" bpe-title="tool_erase">
                 <img src="drawable/tool__erase.svg" alt="" class="tool__icon"/>
@@ -87,18 +86,40 @@
                 <img src="drawable/toolbox__redo.svg" alt="" class="tool__icon"/>
             </div>
             <div class="tool js-menu" bpe-title="menu">
-                <img src="drawable/menu.svg" alt="" class="tool__icon"/>
+                <img src="drawable/menu__primary.svg" alt="" class="tool__icon"/>
             </div>
         </div>
     </div>
     <div class="subpanel subpanel--palette js-colors-panel"></div>
     <div class="subpanel subpanel--palette js-lights-panel"></div>
     <div class="subpanel subpanel--palette subpanel--palette_chars js-chars-panel"></div>
+    <div class="subpanel subpanel--palette subpanel--palette_selection js-selection-panel">
+        <div class="panel__pane">
+            <div class="tool js-selection-cut" bpe-title="selection_cut">
+                <img src="drawable/selection__cut.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-copy" bpe-title="selection_copy">
+                <img src="drawable/selection__copy.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-flip-horizontal" bpe-title="selection_flip_horizontal">
+                <img src="drawable/selection__flip_horizontal.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-flip-vertical" bpe-title="selection_flip_vertical">
+                <img src="drawable/selection__flip_vertical.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-rotate-cw" bpe-title="selection_rotate_cw">
+                <img src="drawable/selection__rotate_cw.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-rotate-ccw" bpe-title="selection_rotate_ccw">
+                <img src="drawable/selection__rotate_ccw.svg" alt="" class="tool__icon"/>
+            </div>
+        </div>
+    </div>
     <div class="layers js-layers-panel">
         <div class="layers__items js-layers-items"></div>
         <div class="layers__toolbar js-layers-toolbar-primary">
             <div class="panel__pane">
-                <div class="tool tool--md js-layers-create-primary" bpe-title="layers_create">
+                <div class="tool tool--md js-layers-create" bpe-title="layers_create">
                     <img src="drawable/layer__create.svg" alt="" class="tool__icon"/>
                 </div>
                 <div class="tool tool--md js-layers-merge" bpe-title="layers_merge">
@@ -122,8 +143,11 @@
         </div>
         <div class="layers__toolbar layers__toolbar--types js-layers-toolbar-types">
             <div class="panel__pane">
-                <div class="tool tool--md js-layers-create-types" bpe-title="layers_undo_create">
+                <div class="tool tool--md js-layers-create-cancel" bpe-title="layers_create_cancel">
                     <img src="drawable/layer__create.svg" alt="" class="tool__icon"/>
+                </div>
+                <div class="tool tool--md js-layers-convert-cancel" bpe-title="layers_convert_cancel">
+                    <img src="drawable/layer__convert.svg" alt="" class="tool__icon"/>
                 </div>
             </div>
             <div class="panel__pane js-layers-types"></div>
@@ -142,6 +166,12 @@
             </div>
             <div class="tool js-shape-fill-box" bpe-title="shape_fill_box">
                 <img src="drawable/shape__fill_box.svg" alt="" class="tool__icon tool__icon--shape__fill_box"/>
+            </div>
+            <div class="tool js-shape-stroke-oval" bpe-title="shape_stroke_oval">
+                <img src="drawable/shape__stroke_oval.svg" alt="" class="tool__icon tool__icon--shape__stroke_oval"/>
+            </div>
+            <div class="tool js-shape-fill-oval" bpe-title="shape_fill_oval">
+                <img src="drawable/shape__fill_oval.svg" alt="" class="tool__icon tool__icon--shape__fill_oval"/>
             </div>
         </div>
     </div>

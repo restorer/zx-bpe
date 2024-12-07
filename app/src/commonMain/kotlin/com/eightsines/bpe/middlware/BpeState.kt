@@ -47,8 +47,7 @@ data class BpeState(
     val toolboxCanRedo: Boolean,
 
     val selection: Selection?,
-    val selectionCanCut: Boolean,
-    val selectionCanCopy: Boolean,
+    val selectionIsActionable: Boolean,
     val selectionIsFloating: Boolean,
 )
 
@@ -56,7 +55,9 @@ enum class BpeShape(val value: Int) {
     Point(1),
     Line(2),
     FillBox(3),
-    StrokeBox(4);
+    StrokeBox(4),
+    FillOval(5),
+    StrokeOval(6);
 
     companion object {
         fun of(value: Int) = when (value) {
@@ -64,6 +65,8 @@ enum class BpeShape(val value: Int) {
             Line.value -> Line
             FillBox.value -> FillBox
             StrokeBox.value -> StrokeBox
+            FillOval.value -> FillOval
+            StrokeOval.value -> StrokeOval
             else -> throw IllegalArgumentException("Unknown enum value=$value for BpeShape")
         }
     }

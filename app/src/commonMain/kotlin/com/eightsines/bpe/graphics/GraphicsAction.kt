@@ -19,6 +19,7 @@ import com.eightsines.bpe.util.requireNoIllegalArgumentException
 import com.eightsines.bpe.util.requireSupportedStuffVersion
 
 enum class GraphicsActionType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out GraphicsAction>) {
+    // v1
     SetBackgroundBorder(1, GraphicsAction.SetBackgroundBorder.Polymorphic),
     SetBackgroundColor(2, GraphicsAction.SetBackgroundColor.Polymorphic),
     SetBackgroundBright(3, GraphicsAction.SetBackgroundBright.Polymorphic),
@@ -37,6 +38,9 @@ enum class GraphicsActionType(val value: Int, internal val polymorphicPacker: Ba
     MergeLayers(16, GraphicsAction.MergeLayers.Polymorphic),
     UndoMergeLayers(17, GraphicsAction.UndoMergeLayers.Polymorphic),
     ConvertLayer(18, GraphicsAction.ConvertLayer.Polymorphic),
+
+    // v2
+    SetLayerPixelsLocked(19, GraphicsAction.SetLayerPixelsLocked.Polymorphic),
 }
 
 sealed interface GraphicsAction {
@@ -258,6 +262,28 @@ sealed interface GraphicsAction {
         }
     }
 
+    data class SetLayerPixelsLocked(val layerUid: LayerUid, val isPixelsLocked: Boolean) : GraphicsAction {
+        override val type = GraphicsActionType.SetLayerPixelsLocked
+
+        internal object Polymorphic : BagStuffPacker<SetLayerPixelsLocked>, BagStuffUnpacker<SetLayerPixelsLocked> {
+            override val putInTheBagVersion = 1
+
+            override fun putInTheBag(bag: PackableBag, value: SetLayerPixelsLocked) {
+                bag.put(value.layerUid.value)
+                bag.put(value.isPixelsLocked)
+            }
+
+            override fun getOutOfTheBag(version: Int, bag: UnpackableBag): SetLayerPixelsLocked {
+                requireSupportedStuffVersion("GraphicsAction.SetLayerPixelsLocked", 1, version)
+
+                val layerUid = LayerUid(bag.getString())
+                val isPixelsLocked = bag.getBoolean()
+
+                return SetLayerPixelsLocked(layerUid, isPixelsLocked)
+            }
+        }
+    }
+
     data class MoveLayer(val layerUid: LayerUid, val onTopOfLayerUid: LayerUid) : GraphicsAction {
         override val type = GraphicsActionType.MoveLayer
 
@@ -450,6 +476,7 @@ sealed interface GraphicsAction {
                 GraphicsActionType.DeleteLayer.value -> bag.getStuff(DeleteLayer.Polymorphic)
                 GraphicsActionType.SetLayerVisible.value -> bag.getStuff(SetLayerVisible.Polymorphic)
                 GraphicsActionType.SetLayerLocked.value -> bag.getStuff(SetLayerLocked.Polymorphic)
+                GraphicsActionType.SetLayerPixelsLocked.value -> bag.getStuff(SetLayerPixelsLocked.Polymorphic)
                 GraphicsActionType.MoveLayer.value -> bag.getStuff(MoveLayer.Polymorphic)
                 GraphicsActionType.MergeShape.value -> bag.getStuff(MergeShape.Polymorphic)
                 GraphicsActionType.ReplaceShape.value -> bag.getStuff(ReplaceShape.Polymorphic)

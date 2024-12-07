@@ -20,8 +20,7 @@ data class UiState(
     val paletteFlash: UiToolState<SciiLight>,
     val paletteChar: UiToolState<SciiChar>,
 
-    val selectionCut: UiToolState<Unit>,
-    val selectionCopy: UiToolState<Unit>,
+    val selectionMenu: UiToolState<Unit>,
     val layers: UiToolState<Unit>,
 
     val toolboxPaint: UiToolState<Unit>,
@@ -40,8 +39,10 @@ data class UiState(
     val layersItems: List<LayerView<*>>,
     val layersCurrentUid: LayerUid,
     val layersCreate: UiToolState<Unit>,
+    val layersCreateCancel: UiToolState<Unit>,
     val layersMerge: UiToolState<Unit>,
     val layersConvert: UiToolState<Unit>,
+    val layersConvertCancel: UiToolState<Unit>,
     val layersDelete: UiToolState<Unit>,
     val layersMoveUp: UiToolState<Unit>,
     val layersMoveDown: UiToolState<Unit>,
@@ -77,6 +78,7 @@ sealed interface UiPanel {
     data class Colors(val color: SciiColor) : UiPanel
     data class Lights(val light: SciiLight) : UiPanel
     data class Chars(val character: SciiChar) : UiPanel
+    data object SelectionMenu : UiPanel
     data object Layers : UiPanel
     data class Shapes(val shape: BpeShape) : UiPanel
     data object Menu : UiPanel

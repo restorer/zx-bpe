@@ -23,6 +23,7 @@ enum class CellType(val value: Int, internal val polymorphicPacker: BagStuffPack
 
 sealed interface Cell {
     val type: CellType
+    val isTransparent: Boolean
 
     companion object : BagStuffPacker<Cell>, BagStuffUnpacker<Cell> {
         fun makeTransparent(type: CellType) = when (type) {
@@ -57,6 +58,9 @@ data class SciiCell(
     val flash: SciiLight,
 ) : Cell {
     override val type = CellType.Scii
+
+    override val isTransparent: Boolean
+        get() = this == Transparent
 
     fun merge(onto: SciiCell) = if (character == SciiChar.Transparent && onto.character == SciiChar.Transparent) {
         Transparent
@@ -117,6 +121,9 @@ data class SciiCell(
 
 data class BlockCell(val color: SciiColor, val bright: SciiLight) : Cell {
     override val type = CellType.Block
+
+    override val isTransparent: Boolean
+        get() = this == Transparent
 
     fun merge(onto: BlockCell) = BlockCell(
         color = color.merge(onto.color),

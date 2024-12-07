@@ -9,8 +9,8 @@ sealed interface LayerView<T : Layer> {
 }
 
 class BackgroundLayerView(override val layer: BackgroundLayer) : LayerView<BackgroundLayer> {
-    private val isLocked = layer.isLocked
     private val isVisible = layer.isVisible
+    private val isLocked = layer.isLocked
     private val border = layer.border
     private val color = layer.color
     private val bright = layer.bright
@@ -26,29 +26,31 @@ class BackgroundLayerView(override val layer: BackgroundLayer) : LayerView<Backg
 
         other as BackgroundLayerView
 
-        return isLocked == other.isLocked &&
-                isVisible == other.isVisible &&
+        return isVisible == other.isVisible &&
+                isLocked == other.isLocked &&
                 border == other.border &&
                 color == other.color &&
                 bright == other.bright
     }
 
     override fun hashCode(): Int {
-        var result = isLocked.hashCode()
-        result = 31 * result + isVisible.hashCode()
+        var result = isVisible.hashCode()
+        result = 31 * result + isLocked.hashCode()
         result = 31 * result + border.hashCode()
         result = 31 * result + color.hashCode()
         result = 31 * result + bright.hashCode()
         return result
     }
 
-    override fun toString() = "BackgroundLayerView(isLocked=$isLocked, isVisible=$isVisible, border=$border, color=$color, bright=$bright)"
+    override fun toString() =
+        "BackgroundLayerView(isVisible=$isVisible, isLocked=$isLocked, border=$border, color=$color, bright=$bright)"
 }
 
 class CanvasLayerView(override val layer: CanvasLayer<*>) : LayerView<CanvasLayer<*>> {
     private val uid = layer.uid
-    private val isLocked = layer.isLocked
     private val isVisible = layer.isVisible
+    private val isLocked = layer.isLocked
+    private val isPixelsLocked = layer.isPixelsLocked
     private val canvasMutations = layer.canvas.mutations
 
     override fun equals(other: Any?): Boolean {
@@ -63,18 +65,21 @@ class CanvasLayerView(override val layer: CanvasLayer<*>) : LayerView<CanvasLaye
         other as CanvasLayerView
 
         return uid == other.uid &&
-                isLocked == other.isLocked &&
                 isVisible == other.isVisible &&
+                isLocked == other.isLocked &&
+                isPixelsLocked == other.isPixelsLocked &&
                 canvasMutations == other.canvasMutations
     }
 
     override fun hashCode(): Int {
         var result = uid.hashCode()
-        result = 31 * result + isLocked.hashCode()
         result = 31 * result + isVisible.hashCode()
+        result = 31 * result + isLocked.hashCode()
+        result = 31 * result + isPixelsLocked.hashCode()
         result = 31 * result + canvasMutations
         return result
     }
 
-    override fun toString() = "CanvasLayerView(uid=$uid, isLocked=$isLocked, isVisible=$isVisible, canvasMutations=$canvasMutations)"
+    override fun toString() =
+        "CanvasLayerView(uid=$uid, isVisible=$isVisible, isLocked=$isLocked, isPixelsLocked=$isPixelsLocked, canvasMutations=$canvasMutations)"
 }

@@ -175,6 +175,11 @@ body {
     border-top: 0 none;
 }
 
+.subpanel--palette_selection {
+    justify-content: end;
+    padding-left: 0;
+}
+
 .subpanel--tools,
 .subpanel--menu {
     position: absolute;
@@ -505,6 +510,14 @@ body {
     display: block;
 }
 
+.tool__shape--stroke_oval > .tool__icon--shape__stroke_oval {
+    display: block;
+}
+
+.tool__shape--fill_oval > .tool__icon--shape__fill_oval {
+    display: block;
+}
+
 .tool__color_ink--transparent {
     --half-size: calc(var(--tool-inner-size) / 2);
 
@@ -740,14 +753,15 @@ body {
     }
 
     .subpanel--palette {
+        justify-content: center;
         top: 0;
         right: auto;
         bottom: 0;
         left: calc(var(--tool-size) * 2);
         border-right: var(--panel-divider-size) solid var(--subpanel-divider);
         border-bottom: 0 none;
-        padding-left: 0;
         padding-top: 4px;
+        padding-left: 0;
     }
 
     .subpanel--palette,
@@ -759,6 +773,11 @@ body {
         align-items: center;
         justify-content: start;
         padding-top: 4px;
+    }
+
+    .subpanel--palette_selection {
+        align-items: end;
+        padding-top: 0;
     }
 
     .subpanel--tools,
