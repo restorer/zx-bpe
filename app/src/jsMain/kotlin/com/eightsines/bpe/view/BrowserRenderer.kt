@@ -1,22 +1,22 @@
 package com.eightsines.bpe.view
 
-import com.eightsines.bpe.util.SpecScii
-import com.eightsines.bpe.foundation.BlockCanvas
-import com.eightsines.bpe.foundation.HBlockCanvas
-import com.eightsines.bpe.foundation.QBlockCanvas
-import com.eightsines.bpe.foundation.SciiCanvas
-import com.eightsines.bpe.foundation.VBlockCanvas
-import com.eightsines.bpe.foundation.BackgroundLayer
-import com.eightsines.bpe.foundation.CanvasLayer
-import com.eightsines.bpe.foundation.Layer
 import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
+import com.eightsines.bpe.foundation.BackgroundLayer
+import com.eightsines.bpe.foundation.BlockCanvas
+import com.eightsines.bpe.foundation.CanvasLayer
+import com.eightsines.bpe.foundation.HBlockCanvas
+import com.eightsines.bpe.foundation.Layer
+import com.eightsines.bpe.foundation.QBlockCanvas
+import com.eightsines.bpe.foundation.SciiCanvas
+import com.eightsines.bpe.foundation.VBlockCanvas
 import com.eightsines.bpe.presentation.UiArea
 import com.eightsines.bpe.presentation.UiSpec
 import com.eightsines.bpe.util.ElapsedTimeProvider
 import com.eightsines.bpe.util.Material
+import com.eightsines.bpe.util.SpecScii
 import org.khronos.webgl.Uint8ClampedArray
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
@@ -209,7 +209,7 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         }
     }
 
-    private fun renderSciiCell(pixelsData: Uint8ClampedArray, elapsedTimeMs: Int, x: Int, y: Int, cell: SciiCell) {
+    private fun renderSciiCell(pixelsData: Uint8ClampedArray, elapsedTimeMs: Long, x: Int, y: Int, cell: SciiCell) {
         var inkColor = getColor(cell.ink, cell.bright)
         var paperColor = getColor(cell.paper, cell.bright)
 
@@ -229,7 +229,7 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
             return
         }
 
-        if (elapsedTimeMs % FLASH_FULL_MS > FLASH_MS) {
+        if (elapsedTimeMs % FLASH_CYCLE_MS > FLASH_MS) {
             val tmpColor = inkColor
             inkColor = paperColor
             paperColor = tmpColor
@@ -303,7 +303,7 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         val value = "#${r.toByte().toHexString()}${g.toByte().toHexString()}${b.toByte().toHexString()}"
     }
 
-    private companion object {
+    companion object {
         private const val PICTURE_WIDTH = UiSpec.PICTURE_WIDTH.toDouble()
         private const val PICTURE_HEIGHT = UiSpec.PICTURE_HEIGHT.toDouble()
         private const val BORDER_SIZE = UiSpec.BORDER_SIZE.toDouble()
@@ -341,8 +341,8 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         private const val AREA_DASH_XS = 2
         private const val AREA_DASH_MD = 4
 
-        private const val FLASH_MS = 16000 / 50
-        private const val FLASH_FULL_MS = 16000 / 50
+        const val FLASH_MS = 16000 / 50
+        private const val FLASH_CYCLE_MS = FLASH_MS * 2
 
         private val GET_CONTEXT_OPTIONS: dynamic = object {}
             .apply { asDynamic()["willReadFrequently"] = true }

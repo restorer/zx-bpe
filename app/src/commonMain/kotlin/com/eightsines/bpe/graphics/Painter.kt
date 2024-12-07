@@ -133,7 +133,7 @@ class Painter {
                 ++sy
                 --ey
 
-                if (sy < ey) {
+                if (sy <= ey) {
                     for (y in sy..ey) {
                         pencil.put(sx, y, shape.cell)
                     }

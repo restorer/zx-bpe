@@ -525,12 +525,12 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
                 activePanel != Panel.Shapes && activePanel?.placement == PanelPlacement.Toolbox -> UiToolState.Visible(
                     bpeState.toolboxShape,
-                    if (isPaintActive) TextRes.TOOL_PAINT else TextRes.TOOL_ERASE,
+                    if (isPaintActive) TextRes.ToolPaint else TextRes.ToolErase,
                 )
 
                 else -> UiToolState.Active(
                     bpeState.toolboxShape,
-                    if (isPaintActive) TextRes.TOOL_PAINT else TextRes.TOOL_ERASE,
+                    if (isPaintActive) TextRes.ToolPaint else TextRes.ToolErase,
                 )
             },
             toolboxErase = when {

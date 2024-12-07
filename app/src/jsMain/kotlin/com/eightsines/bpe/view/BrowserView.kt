@@ -13,9 +13,10 @@ import com.eightsines.bpe.presentation.UiArea
 import com.eightsines.bpe.presentation.UiPanel
 import com.eightsines.bpe.presentation.UiSheetView
 import com.eightsines.bpe.presentation.UiToolState
-import com.eightsines.bpe.resources.ResManager
+import com.eightsines.bpe.resources.ResourceManager
 import com.eightsines.bpe.resources.TextRes
 import com.eightsines.bpe.resources.TextResId
+import com.eightsines.bpe.util.ElapsedTimeProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.dom.addClass
@@ -30,10 +31,16 @@ import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.Node
 import org.w3c.dom.ParentNode
+import org.w3c.dom.Window
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 
-class BrowserView(private val document: Document, private val renderer: BrowserRenderer, private val resManager: ResManager) {
+class BrowserView(
+    private val document: Document,
+    private val elapsedTimeProvider: ElapsedTimeProvider,
+    private val renderer: BrowserRenderer,
+    private val resourceManager: ResourceManager,
+) {
     private val _actionFlow = MutableSharedFlow<BrowserAction>(extraBufferCapacity = 1)
 
     val actionFlow: Flow<BrowserAction>
@@ -107,10 +114,13 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
     private val alert = document.find<HTMLElement>(".js-alert")
     private val alertContent = document.find<HTMLElement>(".js-alert-content")
 
-    private var layersItemsCache = mutableMapOf<LayerView<*>, Element>()
+    private var layersItemsCache = mutableMapOf<LayerView<*>, CachedLayerItem>()
     private var sheetViewCache: UiSheetView? = null
     private var selectionAreaCache: UiArea? = null
     private var cursorAreaCache: UiArea? = null
+
+    private var wasRendered = false
+    private var lastRefreshTimeMs = 0L
 
     init {
         createColorItems()
@@ -195,16 +205,12 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
 
         alert?.addClickListener { _actionFlow.tryEmit(BrowserAction.HideAlert) }
 
-        for (element in document.findAll<HTMLElement>("[bpe-alt]")) {
-            element.setAttribute("alt", element.getAttribute("bpe-alt")?.let { resManager.resolveText(TextResId(it)) } ?: "")
-        }
-
         for (element in document.findAll<HTMLElement>("[bpe-title]")) {
-            element.title = element.getAttribute("bpe-title")?.let { resManager.resolveText(TextResId(it)) } ?: ""
+            element.title = element.getAttribute("bpe-title")?.let { resourceManager.resolveText(TextResId(it)) } ?: ""
         }
 
         for (element in document.findAll<HTMLElement>("[bpe-text]")) {
-            element.textContent = element.getAttribute("bpe-text")?.let { resManager.resolveText(TextResId(it)) } ?: ""
+            element.textContent = element.getAttribute("bpe-text")?.let { resourceManager.resolveText(TextResId(it)) } ?: ""
         }
     }
 
@@ -306,6 +312,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
 
             if (sheetViewCache != sheetView) {
                 sheetViewCache = sheetView
+
                 renderer.renderSheet(it, sheetView.backgroundView.layer, sheetView.canvasView.canvas)
             }
         }
@@ -315,25 +322,50 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
             val cursorArea = uiState.cursorArea
 
             if (selectionAreaCache != selectionArea || cursorAreaCache != cursorArea) {
-                cursorAreaCache = cursorArea
                 selectionAreaCache = selectionArea
+                cursorAreaCache = cursorArea
 
                 renderer.renderAreas(it, selectionArea, cursorArea)
             }
         }
 
         alert?.setVisible(state.alertText != null)
-        alertContent?.textContent = state.alertText?.let(resManager::resolveText) ?: ""
+        alertContent?.textContent = state.alertText?.let(resourceManager::resolveText) ?: ""
+
+        wasRendered = true
+    }
+
+    fun refresh() {
+        if (!wasRendered) {
+            return
+        }
+
+        val elapsedTimeMs = elapsedTimeProvider.getElapsedTimeMs()
+
+        if (elapsedTimeMs - lastRefreshTimeMs < BrowserRenderer.FLASH_MS) {
+            return
+        }
+
+        for ((layerView, cachedLayerItem) in layersItemsCache) {
+            renderer.renderPreview(cachedLayerItem.previewCanvas, layerView.layer)
+        }
+
+        sheet?.let { sheet ->
+            sheetViewCache?.let { renderer.renderSheet(sheet, it.backgroundView.layer, it.canvasView.canvas) }
+        }
+
+        areas?.let { renderer.renderAreas(it, selectionAreaCache, cursorAreaCache) }
+        lastRefreshTimeMs = elapsedTimeMs
     }
 
     private fun renderLayersItems(layersViews: List<LayerView<*>>, layersCurrentUid: LayerUid) {
         val layersItems = this.layersItems ?: return
 
-        for (element in layersItemsCache.values) {
-            layersItems.removeChild(element)
+        for (item in layersItemsCache.values) {
+            layersItems.removeChild(item.element)
         }
 
-        val newLayersItemsCache = mutableMapOf<LayerView<*>, Element>()
+        val newLayersItemsCache = mutableMapOf<LayerView<*>, CachedLayerItem>()
 
         for (layerView in layersViews) {
             val layer = layerView.layer
@@ -347,8 +379,8 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                                 this as HTMLElement
                                 className = "tool tool--sm"
 
-                                title = resManager.resolveText(
-                                    if (layer.isVisible) TextRes.LAYER_VISIBLE else TextRes.LAYER_INVISIBLE
+                                title = resourceManager.resolveText(
+                                    if (layer.isVisible) TextRes.LayerVisible else TextRes.LayerInvisible
                                 )
 
                                 addClickListener {
@@ -369,8 +401,8 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                                 this as HTMLElement
                                 className = "tool tool--sm"
 
-                                title = resManager.resolveText(
-                                    if (layer.isLocked) TextRes.LAYER_LOCKED else TextRes.LAYER_UNLOCKED
+                                title = resourceManager.resolveText(
+                                    if (layer.isLocked) TextRes.LayerLocked else TextRes.LayerUnlocked
                                 )
 
                                 addClickListener {
@@ -396,7 +428,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                     height = PREVIEW_HEIGHT
 
                     renderer.renderPreview(this, layer)
-                }
+                } as HTMLCanvasElement
 
                 val endPane = document
                     .createElement(NAME_DIV) { className = "panel__pane" }
@@ -412,23 +444,25 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                         }
                     )
 
-                document
+                val element = document
                     .createElement(NAME_DIV) {
                         className = "layers__item"
                         addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerItemClick(layer.uid))) }
                     }
                     .appendChildren(startPane, previewCanvas, endPane)
+
+                CachedLayerItem(element, previewCanvas)
             }
         }
 
-        for (entry in newLayersItemsCache) {
-            if (entry.key.layer.uid == layersCurrentUid) {
-                entry.value.addClass("layers__item--active")
+        for ((layerView, cachedLayerItem) in newLayersItemsCache) {
+            if (layerView.layer.uid == layersCurrentUid) {
+                cachedLayerItem.element.addClass("layers__item--active")
             } else {
-                entry.value.removeClass("layers__item--active")
+                cachedLayerItem.element.removeClass("layers__item--active")
             }
 
-            layersItems.appendChild(entry.value)
+            layersItems.appendChild(cachedLayerItem.element)
         }
 
         layersItemsCache = newLayersItemsCache
@@ -545,12 +579,12 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
         alt = ""
     }
 
-    private fun getCanvasTypeTitle(type: CanvasType) = resManager.resolveText(
+    private fun getCanvasTypeTitle(type: CanvasType) = resourceManager.resolveText(
         when (type) {
-            CanvasType.Scii -> TextRes.CANVAS_SCII
-            CanvasType.HBlock -> TextRes.CANVAS_HBLOCK
-            CanvasType.VBlock -> TextRes.CANVAS_VBLOCK
-            CanvasType.QBlock -> TextRes.CANVAS_QBLOCK
+            CanvasType.Scii -> TextRes.CanvasScii
+            CanvasType.HBlock -> TextRes.CanvasHBlock
+            CanvasType.VBlock -> TextRes.CanvasVBlock
+            CanvasType.QBlock -> TextRes.CanvasQBlock
         }
     )
 
@@ -623,7 +657,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                 addClass(CLASS_TOOL_DISABLED)
 
                 if (state.title != null) {
-                    title = resManager.resolveText(state.title)
+                    title = resourceManager.resolveText(state.title)
                 }
 
                 block(state.value)
@@ -633,7 +667,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                 removeClass(CLASS_HIDDEN, CLASS_TOOL_ACTIVE, CLASS_TOOL_DISABLED)
 
                 if (state.title != null) {
-                    title = resManager.resolveText(state.title)
+                    title = resourceManager.resolveText(state.title)
                 }
 
                 block(state.value)
@@ -644,7 +678,7 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
                 addClass(CLASS_TOOL_ACTIVE)
 
                 if (state.title != null) {
-                    title = resManager.resolveText(state.title)
+                    title = resourceManager.resolveText(state.title)
                 }
 
                 block(state.value)
@@ -721,3 +755,5 @@ class BrowserView(private val document: Document, private val renderer: BrowserR
         private const val PREVIEW_HEIGHT = 192
     }
 }
+
+private class CachedLayerItem(val element: Element, val previewCanvas: HTMLCanvasElement)

@@ -7,8 +7,8 @@ import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.PackableStringBag
 import com.eightsines.bpe.util.UnpackableStringBag
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import org.w3c.dom.Document
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.url.URL
@@ -21,9 +21,9 @@ class BrowserEngine(
     private val document: Document,
     private val uiEngine: UiEngine,
 ) {
-    private val _browserStateFlow by lazy { MutableStateFlow(BrowserState(uiState = uiEngine.state, alertText = null)) }
+    private val _browserStateFlow by lazy { MutableStateFlow(BrowserState(uiState = uiEngine.state)) }
 
-    val browserStateFlow: StateFlow<BrowserState>
+    val browserStateFlow: Flow<BrowserState>
         get() = _browserStateFlow
 
     fun execute(action: BrowserAction) = when (action) {
@@ -68,13 +68,13 @@ class BrowserEngine(
                     put("error", reader.error.toString())
                 }
 
-                _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.ALERT_READER_ERROR)
+                _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.AlertLoadReaderError)
             } else {
                 val bagData = reader.result as? String
 
                 if (bagData == null) {
                     logger.general("BrowserEngine.executeLoad:error (result is null)")
-                    _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.ALERT_NULL_RESULT)
+                    _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.AlertLoadNullResult)
                 } else {
                     logger.trace("BrowserEngine.executeLoad:unpacking")
 
@@ -89,7 +89,7 @@ class BrowserEngine(
                             put("exception", e.toString())
                         }
 
-                        _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.ALERT_UNPACK_ERROR)
+                        _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.AlertLoadUnpackError)
                     }
                 }
             }
@@ -127,7 +127,7 @@ class BrowserEngine(
     }
 
     private fun executeExport() {
-        _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.ALERT_EXPORT_NOT_IMPLEMENTED)
+        _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.AlertExportNotImplemented)
     }
 
     private fun executeHideAlert() {
