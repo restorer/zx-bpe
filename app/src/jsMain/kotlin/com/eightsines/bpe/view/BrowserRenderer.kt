@@ -229,7 +229,7 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
             return
         }
 
-        if (elapsedTimeMs % FLASH_CYCLE_MS > FLASH_MS) {
+        if (cell.flash == SciiLight.On && elapsedTimeMs % FLASH_CYCLE_MS > FLASH_MS) {
             val tmpColor = inkColor
             inkColor = paperColor
             paperColor = tmpColor
