@@ -16,7 +16,7 @@ sealed interface BpeAction {
     data class LayersSetCurrent(val layerUid: LayerUid) : BpeAction
     data class LayersSetVisible(val layerUid: LayerUid, val isVisible: Boolean) : BpeAction
     data class LayersSetLocked(val layerUid: LayerUid, val isLocked: Boolean) : BpeAction
-    data class LayersSetPixelsLocked(val layerUid: LayerUid, val isPixelsLocked: Boolean) : BpeAction
+    data class LayersSetMasked(val layerUid: LayerUid, val isMasked: Boolean) : BpeAction
     data object LayersMoveUp : BpeAction
     data object LayersMoveDown : BpeAction
     data class LayersCreate(val canvasType: CanvasType) : BpeAction

@@ -49,12 +49,14 @@ interface BackgroundLayer : Layer {
 }
 
 interface CanvasLayer<T : Cell> : Layer {
-    val isPixelsLocked: Boolean
+    val isMasked: Boolean
 
     val canvas: Canvas<T>
     val canvasType: CanvasType
 
     override fun copyMutable(): MutableCanvasLayer<T>
+
+    fun isOpaque(drawingX: Int, drawingY: Int): Boolean
 
     companion object : BagStuffPacker<CanvasLayer<*>> {
         override val putInTheBagVersion = 2
@@ -67,7 +69,7 @@ interface CanvasLayer<T : Cell> : Layer {
             bag.put(Canvas, value.canvas)
 
             // v2
-            bag.put(value.isPixelsLocked)
+            bag.put(value.isMasked)
         }
     }
 }

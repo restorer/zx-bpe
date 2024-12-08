@@ -49,7 +49,7 @@ sealed interface UiAction {
     data class LayerItemClick(val layerUid: LayerUid) : UiAction
     data class LayerItemVisibleClick(val layerUid: LayerUid, val isVisible: Boolean) : UiAction
     data class LayerItemLockedClick(val layerUid: LayerUid, val isLocked: Boolean) : UiAction
-    data class LayerItemPixelsLockedClick(val layerUid: LayerUid, val isLocked: Boolean) : UiAction
+    data class LayerItemMaskedClick(val layerUid: LayerUid, val isLocked: Boolean) : UiAction
     data object LayerCreateClick : UiAction
     data object LayerMergeClick : UiAction
     data object LayerConvertClick : UiAction

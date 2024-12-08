@@ -83,7 +83,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             is UiAction.LayerItemClick -> executeLayerItemClick(action)
             is UiAction.LayerItemVisibleClick -> executeLayerItemVisibleClick(action)
             is UiAction.LayerItemLockedClick -> executeLayerItemLockedClick(action)
-            is UiAction.LayerItemPixelsLockedClick -> executeLayerItemPixelsLockedClick(action)
+            is UiAction.LayerItemMaskedClick -> executeLayerItemMaskedClick(action)
             is UiAction.LayerCreateClick -> executeLayerCreateClick()
             is UiAction.LayerMergeClick -> executeLayerMergeClick()
             is UiAction.LayerConvertClick -> executeLayerConvertClick()
@@ -387,8 +387,8 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         bpeEngine.execute(BpeAction.LayersSetLocked(action.layerUid, !action.isLocked))
     }
 
-    private fun executeLayerItemPixelsLockedClick(action: UiAction.LayerItemPixelsLockedClick) {
-        bpeEngine.execute(BpeAction.LayersSetPixelsLocked(action.layerUid, !action.isLocked))
+    private fun executeLayerItemMaskedClick(action: UiAction.LayerItemMaskedClick) {
+        bpeEngine.execute(BpeAction.LayersSetMasked(action.layerUid, !action.isLocked))
     }
 
     private fun executeLayerCreateClick() {

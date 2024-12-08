@@ -40,7 +40,7 @@ enum class GraphicsActionType(val value: Int, internal val polymorphicPacker: Ba
     ConvertLayer(18, GraphicsAction.ConvertLayer.Polymorphic),
 
     // v2
-    SetLayerPixelsLocked(19, GraphicsAction.SetLayerPixelsLocked.Polymorphic),
+    SetLayerMasked(19, GraphicsAction.SetLayerMasked.Polymorphic),
 }
 
 sealed interface GraphicsAction {
@@ -262,24 +262,24 @@ sealed interface GraphicsAction {
         }
     }
 
-    data class SetLayerPixelsLocked(val layerUid: LayerUid, val isPixelsLocked: Boolean) : GraphicsAction {
-        override val type = GraphicsActionType.SetLayerPixelsLocked
+    data class SetLayerMasked(val layerUid: LayerUid, val isMasked: Boolean) : GraphicsAction {
+        override val type = GraphicsActionType.SetLayerMasked
 
-        internal object Polymorphic : BagStuffPacker<SetLayerPixelsLocked>, BagStuffUnpacker<SetLayerPixelsLocked> {
+        internal object Polymorphic : BagStuffPacker<SetLayerMasked>, BagStuffUnpacker<SetLayerMasked> {
             override val putInTheBagVersion = 1
 
-            override fun putInTheBag(bag: PackableBag, value: SetLayerPixelsLocked) {
+            override fun putInTheBag(bag: PackableBag, value: SetLayerMasked) {
                 bag.put(value.layerUid.value)
-                bag.put(value.isPixelsLocked)
+                bag.put(value.isMasked)
             }
 
-            override fun getOutOfTheBag(version: Int, bag: UnpackableBag): SetLayerPixelsLocked {
-                requireSupportedStuffVersion("GraphicsAction.SetLayerPixelsLocked", 1, version)
+            override fun getOutOfTheBag(version: Int, bag: UnpackableBag): SetLayerMasked {
+                requireSupportedStuffVersion("GraphicsAction.SetLayerMasked", 1, version)
 
                 val layerUid = LayerUid(bag.getString())
-                val isPixelsLocked = bag.getBoolean()
+                val isMasked = bag.getBoolean()
 
-                return SetLayerPixelsLocked(layerUid, isPixelsLocked)
+                return SetLayerMasked(layerUid, isMasked)
             }
         }
     }
@@ -476,7 +476,7 @@ sealed interface GraphicsAction {
                 GraphicsActionType.DeleteLayer.value -> bag.getStuff(DeleteLayer.Polymorphic)
                 GraphicsActionType.SetLayerVisible.value -> bag.getStuff(SetLayerVisible.Polymorphic)
                 GraphicsActionType.SetLayerLocked.value -> bag.getStuff(SetLayerLocked.Polymorphic)
-                GraphicsActionType.SetLayerPixelsLocked.value -> bag.getStuff(SetLayerPixelsLocked.Polymorphic)
+                GraphicsActionType.SetLayerMasked.value -> bag.getStuff(SetLayerMasked.Polymorphic)
                 GraphicsActionType.MoveLayer.value -> bag.getStuff(MoveLayer.Polymorphic)
                 GraphicsActionType.MergeShape.value -> bag.getStuff(MergeShape.Polymorphic)
                 GraphicsActionType.ReplaceShape.value -> bag.getStuff(ReplaceShape.Polymorphic)

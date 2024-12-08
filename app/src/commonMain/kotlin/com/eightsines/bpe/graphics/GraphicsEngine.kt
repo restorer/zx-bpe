@@ -72,7 +72,7 @@ class GraphicsEngine(
         is GraphicsAction.DeleteLayer -> canDeleteLayer(action) != null
         is GraphicsAction.SetLayerVisible -> canSetLayerVisible(action) != null
         is GraphicsAction.SetLayerLocked -> canSetLayerLocked(action) != null
-        is GraphicsAction.SetLayerPixelsLocked -> canSetLayerPixelsLocked(action) != null
+        is GraphicsAction.SetLayerMasked -> canSetLayerMasked(action) != null
         is GraphicsAction.MoveLayer -> canMoveLayer(action) != null
         is GraphicsAction.MergeShape -> canMergeShape(action) != null
         is GraphicsAction.ReplaceShape -> canReplaceShape(action) != null
@@ -99,7 +99,7 @@ class GraphicsEngine(
             is GraphicsAction.DeleteLayer -> executeDeleteLayer(action)
             is GraphicsAction.SetLayerVisible -> executeSetLayerVisible(action)
             is GraphicsAction.SetLayerLocked -> executeSetLayerLocked(action)
-            is GraphicsAction.SetLayerPixelsLocked -> executeSetLayerPixelsLocked(action)
+            is GraphicsAction.SetLayerMasked -> executeSetLayerMasked(action)
             is GraphicsAction.MoveLayer -> executeMoveLayer(action)
             is GraphicsAction.MergeShape -> executeMergeShape(action)
             is GraphicsAction.ReplaceShape -> executeReplaceShape(action)
@@ -293,16 +293,16 @@ class GraphicsEngine(
         return undoAction
     }
 
-    private fun canSetLayerPixelsLocked(action: GraphicsAction.SetLayerPixelsLocked): MutableCanvasLayer<*>? {
+    private fun canSetLayerMasked(action: GraphicsAction.SetLayerMasked): MutableCanvasLayer<*>? {
         val layer = canvasLayersMap[action.layerUid.value] ?: return null
-        return if (layer.isPixelsLocked == action.isPixelsLocked) null else layer
+        return if (layer.isMasked == action.isMasked) null else layer
     }
 
-    private fun executeSetLayerPixelsLocked(action: GraphicsAction.SetLayerPixelsLocked): GraphicsAction? {
-        val layer = canSetLayerPixelsLocked(action) ?: return null
+    private fun executeSetLayerMasked(action: GraphicsAction.SetLayerMasked): GraphicsAction? {
+        val layer = canSetLayerMasked(action) ?: return null
 
-        val undoAction = GraphicsAction.SetLayerPixelsLocked(layer.uid, layer.isPixelsLocked)
-        layer.isPixelsLocked = action.isPixelsLocked
+        val undoAction = GraphicsAction.SetLayerMasked(layer.uid, layer.isMasked)
+        layer.isMasked = action.isMasked
         return undoAction
     }
 
@@ -359,7 +359,7 @@ class GraphicsEngine(
 
         canvas.mutate { mutator ->
             painter.paint(action.shape) { x, y, cell ->
-                if (!layer.isPixelsLocked || !canvas.getDrawingCell(x, y).isTransparent) {
+                if (layer.isOpaque(x, y)) {
                     mutator.mergeDrawingCell(x, y, cell)
                 }
             }

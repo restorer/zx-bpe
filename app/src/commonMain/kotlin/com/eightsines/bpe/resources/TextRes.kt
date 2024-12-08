@@ -53,8 +53,8 @@ object TextRes {
     val LayerInvisible = TextResId("layer_invisible")
     val LayerLocked = TextResId("layer_locked")
     val LayerUnlocked = TextResId("layer_unlocked")
-    val LayerPixelsLocked = TextResId("layer_pixels_locked")
-    val LayerPixelsUnlocked = TextResId("layer_pixels_unlocked")
+    val LayerMasked = TextResId("layer_masked")
+    val LayerUnmasked = TextResId("layer_unmasked")
 
     val CanvasScii = TextResId("canvas_scii")
     val CanvasHBlock = TextResId("canvas_hblock")

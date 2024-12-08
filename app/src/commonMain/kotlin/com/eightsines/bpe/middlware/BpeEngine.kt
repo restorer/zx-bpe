@@ -62,7 +62,7 @@ class BpeEngine(
             is BpeAction.LayersSetCurrent -> executeLayersSetCurrent(action)
             is BpeAction.LayersSetVisible -> executeLayersSetVisible(action)
             is BpeAction.LayersSetLocked -> executeLayersSetLocked(action)
-            is BpeAction.LayersSetPixelsLocked -> executeLayersSetPixelsLocked(action)
+            is BpeAction.LayersSetMasked -> executeLayersSetMasked(action)
             is BpeAction.LayersMoveUp -> executeLayersMoveUp()
             is BpeAction.LayersMoveDown -> executeLayersMoveDown()
             is BpeAction.LayersCreate -> executeLayersCreate(action)
@@ -238,17 +238,17 @@ class BpeEngine(
         shouldRefresh = true
     }
 
-    private fun executeLayersSetPixelsLocked(action: BpeAction.LayersSetPixelsLocked) {
+    private fun executeLayersSetMasked(action: BpeAction.LayersSetMasked) {
         val currentCanvasLayer = currentLayer as? CanvasLayer<*> ?: return
 
-        if (action.layerUid == currentLayer.uid && action.isPixelsLocked == currentCanvasLayer.isPixelsLocked) {
+        if (action.layerUid == currentLayer.uid && action.isMasked == currentCanvasLayer.isMasked) {
             return
         }
 
         val cancelStep = cancelPaintingAndFloating(selectionController.selection?.canvasType)
 
         val actionStep = graphicsEngine.executePair(
-            GraphicsAction.SetLayerPixelsLocked(layerUid = action.layerUid, isPixelsLocked = action.isPixelsLocked)
+            GraphicsAction.SetLayerMasked(layerUid = action.layerUid, isMasked = action.isMasked)
         ).toHistoryStep()
 
         appendHistoryStep(cancelStep.merge(actionStep))

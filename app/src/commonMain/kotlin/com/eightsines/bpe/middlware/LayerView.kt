@@ -50,7 +50,7 @@ class CanvasLayerView(override val layer: CanvasLayer<*>) : LayerView<CanvasLaye
     private val uid = layer.uid
     private val isVisible = layer.isVisible
     private val isLocked = layer.isLocked
-    private val isPixelsLocked = layer.isPixelsLocked
+    private val isMasked = layer.isMasked
     private val canvasMutations = layer.canvas.mutations
 
     override fun equals(other: Any?): Boolean {
@@ -67,7 +67,7 @@ class CanvasLayerView(override val layer: CanvasLayer<*>) : LayerView<CanvasLaye
         return uid == other.uid &&
                 isVisible == other.isVisible &&
                 isLocked == other.isLocked &&
-                isPixelsLocked == other.isPixelsLocked &&
+                isMasked == other.isMasked &&
                 canvasMutations == other.canvasMutations
     }
 
@@ -75,11 +75,11 @@ class CanvasLayerView(override val layer: CanvasLayer<*>) : LayerView<CanvasLaye
         var result = uid.hashCode()
         result = 31 * result + isVisible.hashCode()
         result = 31 * result + isLocked.hashCode()
-        result = 31 * result + isPixelsLocked.hashCode()
+        result = 31 * result + isMasked.hashCode()
         result = 31 * result + canvasMutations
         return result
     }
 
     override fun toString() =
-        "CanvasLayerView(uid=$uid, isVisible=$isVisible, isLocked=$isLocked, isPixelsLocked=$isPixelsLocked, canvasMutations=$canvasMutations)"
+        "CanvasLayerView(uid=$uid, isVisible=$isVisible, isLocked=$isLocked, isMasked=$isMasked, canvasMutations=$canvasMutations)"
 }

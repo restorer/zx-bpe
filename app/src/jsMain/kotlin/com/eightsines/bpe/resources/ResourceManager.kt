@@ -55,8 +55,8 @@ class ResourceManager {
             put(TextRes.LayerInvisible.id, "Invisible")
             put(TextRes.LayerLocked.id, "Locked")
             put(TextRes.LayerUnlocked.id, "Unlocked")
-            put(TextRes.LayerPixelsLocked.id, "Pixels locked")
-            put(TextRes.LayerPixelsUnlocked.id, "Pixels unlocked")
+            put(TextRes.LayerMasked.id, "Masked")
+            put(TextRes.LayerUnmasked.id, "Unmasked")
 
             put(TextRes.CanvasScii.id, "SpecSCII")
             put(TextRes.CanvasHBlock.id, "HBlock")

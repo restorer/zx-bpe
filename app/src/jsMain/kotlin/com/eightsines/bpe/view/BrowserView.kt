@@ -444,12 +444,12 @@ class BrowserView(
 
                                 if (layer is CanvasLayer<*>) {
                                     title = resourceManager.resolveText(
-                                        if (layer.isPixelsLocked) TextRes.LayerPixelsLocked else TextRes.LayerPixelsUnlocked
+                                        if (layer.isMasked) TextRes.LayerMasked else TextRes.LayerUnmasked
                                     )
 
                                     addClickListener {
                                         _actionFlow.tryEmit(
-                                            BrowserAction.Ui(UiAction.LayerItemPixelsLockedClick(layer.uid, layer.isPixelsLocked)),
+                                            BrowserAction.Ui(UiAction.LayerItemMaskedClick(layer.uid, layer.isMasked)),
                                         )
                                     }
                                 }
@@ -460,7 +460,7 @@ class BrowserView(
                                         this as HTMLImageElement
 
                                         className = "tool__icon"
-                                        src = if (canvasLayer.isPixelsLocked) SRC_LAYER_PIXELS_LOCKED else SRC_LAYER_PIXELS_UNLOCKED
+                                        src = if (canvasLayer.isMasked) SRC_LAYER_MASKED else SRC_LAYER_UNMASKED
                                         alt = ""
                                     }
                                 }
@@ -796,8 +796,8 @@ class BrowserView(
         private const val SRC_LAYER_INVISIBLE = "drawable/layer__invisible.svg"
         private const val SRC_LAYER_LOCKED = "drawable/layer__locked.svg"
         private const val SRC_LAYER_UNLOCKED = "drawable/layer__unlocked.svg"
-        private const val SRC_LAYER_PIXELS_LOCKED = "drawable/layer__pixels_locked.svg"
-        private const val SRC_LAYER_PIXELS_UNLOCKED = "drawable/layer__pixels_unlocked.svg"
+        private const val SRC_LAYER_MASKED = "drawable/layer__masked.svg"
+        private const val SRC_LAYER_UNMASKED = "drawable/layer__unmasked.svg"
 
         private const val SRC_TYPE_SCII = "drawable/type__scii.svg"
         private const val SRC_TYPE_HBLOCK = "drawable/type__hblock.svg"
