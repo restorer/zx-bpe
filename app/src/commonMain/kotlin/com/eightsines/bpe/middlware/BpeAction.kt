@@ -33,6 +33,10 @@ sealed interface BpeAction {
     data object SelectionDeselect : BpeAction
     data object SelectionCut : BpeAction
     data object SelectionCopy : BpeAction
+    data object SelectionFlipHorizontal : BpeAction
+    data object SelectionFlipVertical : BpeAction
+    data object SelectionRotateCw : BpeAction
+    data object SelectionRotateCcw : BpeAction
 
     data class CanvasDown(val drawingX: Int, val drawingY: Int) : BpeAction
     data class CanvasMove(val drawingX: Int, val drawingY: Int) : BpeAction

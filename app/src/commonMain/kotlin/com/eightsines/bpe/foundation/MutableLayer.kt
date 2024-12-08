@@ -56,7 +56,7 @@ class MutableCanvasLayer<T : Cell>(
             refreshOpaqueness()
         }
 
-    private val opaqueness = MutableList(canvas.drawingHeight) { MutableList(canvas.drawingHeight) { true } }
+    private val opaqueness = MutableList(canvas.drawingHeight) { MutableList(canvas.drawingWidth) { true } }
 
     init {
         refreshOpaqueness()

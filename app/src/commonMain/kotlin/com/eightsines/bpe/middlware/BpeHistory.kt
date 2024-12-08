@@ -1,6 +1,7 @@
 package com.eightsines.bpe.middlware
 
 import com.eightsines.bpe.foundation.LayerUid
+import com.eightsines.bpe.foundation.TransformType
 import com.eightsines.bpe.graphics.GraphicsAction
 import com.eightsines.bpe.graphics.GraphicsActionPair
 import com.eightsines.bpe.util.BagStuffPacker
@@ -10,6 +11,7 @@ import com.eightsines.bpe.util.UnknownPolymorphicTypeBagUnpackException
 import com.eightsines.bpe.util.UnpackableBag
 import com.eightsines.bpe.util.getList
 import com.eightsines.bpe.util.putList
+import com.eightsines.bpe.util.requireNoIllegalArgumentException
 import com.eightsines.bpe.util.requireSupportedStuffVersion
 
 data class HistoryStep(val actions: List<HistoryAction>, val undoActions: List<HistoryAction>) {
@@ -37,6 +39,7 @@ enum class HistoryActionType(val value: Int, internal val polymorphicPacker: Bag
     CurrentLayer(1, HistoryAction.CurrentLayer.Polymorphic),
     SelectionState(2, HistoryAction.SelectionState.Polymorphic),
     Graphics(3, HistoryAction.Graphics.Polymorphic),
+    SelectionTransform(4, HistoryAction.SelectionTransform.Polymorphic),
 }
 
 sealed interface HistoryAction {
@@ -96,6 +99,24 @@ sealed interface HistoryAction {
         }
     }
 
+    data class SelectionTransform(val transformType: TransformType) : HistoryAction {
+        override val type = HistoryActionType.SelectionTransform
+
+        internal object Polymorphic : BagStuffPacker<SelectionTransform>, BagStuffUnpacker<SelectionTransform> {
+            override val putInTheBagVersion = 1
+
+            override fun putInTheBag(bag: PackableBag, value: SelectionTransform) {
+                bag.put(GraphicsAction, value.transformType.value)
+            }
+
+            override fun getOutOfTheBag(version: Int, bag: UnpackableBag): SelectionTransform {
+                requireSupportedStuffVersion("HistoryAction.SelectionTransform", 1, version)
+                val transformType = requireNoIllegalArgumentException { TransformType.of(bag.getInt()) }
+                return SelectionTransform(transformType)
+            }
+        }
+    }
+
     companion object : BagStuffPacker<HistoryAction>, BagStuffUnpacker<HistoryAction> {
         override val putInTheBagVersion = 1
 
@@ -111,6 +132,7 @@ sealed interface HistoryAction {
                 HistoryActionType.CurrentLayer.value -> bag.getStuff(CurrentLayer.Polymorphic)
                 HistoryActionType.SelectionState.value -> bag.getStuff(SelectionState.Polymorphic)
                 HistoryActionType.Graphics.value -> bag.getStuff(Graphics.Polymorphic)
+                HistoryActionType.SelectionTransform.value -> bag.getStuff(SelectionTransform.Polymorphic)
                 else -> throw UnknownPolymorphicTypeBagUnpackException("HistoryAction", type)
             }
         }

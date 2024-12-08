@@ -244,28 +244,28 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
     private fun executeSelectionFlipHorizontalClick() {
         if (state.selectionMenu.isInteractable) {
-            // TODO
+            bpeEngine.execute(BpeAction.SelectionFlipHorizontal)
             activePanel = null
         }
     }
 
     private fun executeSelectionFlipVerticalClick() {
         if (state.selectionMenu.isInteractable) {
-            // TODO
+            bpeEngine.execute(BpeAction.SelectionFlipVertical)
             activePanel = null
         }
     }
 
     private fun executeSelectionRotateCwClick() {
         if (state.selectionMenu.isInteractable) {
-            // TODO
+            bpeEngine.execute(BpeAction.SelectionRotateCw)
             activePanel = null
         }
     }
 
     private fun executeSelectionRotateCcwClick() {
         if (state.selectionMenu.isInteractable) {
-            // TODO
+            bpeEngine.execute(BpeAction.SelectionRotateCcw)
             activePanel = null
         }
     }

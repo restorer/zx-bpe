@@ -6,6 +6,7 @@ import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.foundation.Crate
 import com.eightsines.bpe.foundation.Selection
+import com.eightsines.bpe.foundation.TransformType
 import com.eightsines.bpe.graphics.GraphicsAction
 import com.eightsines.bpe.graphics.GraphicsActionPair
 import com.eightsines.bpe.graphics.GraphicsEngine
@@ -82,20 +83,96 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
         )
     }
 
-    fun copy(currentCanvasLayer: CanvasLayer<*>): SelectionResult {
-        val selection = this.selection ?: return SelectionResult.Empty
+    fun copy(currentCanvasLayer: CanvasLayer<*>) = when (val selectionState = selectionState) {
+        is BpeSelectionState.None -> SelectionResult.Empty
 
-        val deselectResult = deselect()
-        val selectionBox = selection.drawingBox
+        is BpeSelectionState.Selected -> {
+            val selectionBox = selectionState.selection.drawingBox
 
-        val clipboard = BpeClipboard(
-            drawingX = selectionBox.x,
-            drawingY = selectionBox.y,
-            crate = Crate.fromCanvasDrawing(currentCanvasLayer.canvas, selectionBox),
+            val clipboard = BpeClipboard(
+                drawingX = selectionBox.x,
+                drawingY = selectionBox.y,
+                crate = Crate.fromCanvasDrawing(currentCanvasLayer.canvas, selectionBox),
+            )
+
+            SelectionResult(shouldRefresh = true, historyStep = HistoryStep.Empty, clipboard = clipboard)
+        }
+
+        is BpeSelectionState.Floating -> {
+            val selectionBox = selectionState.selection.drawingBox
+
+            val clipboard = BpeClipboard(
+                drawingX = selectionBox.x,
+                drawingY = selectionBox.y,
+                crate = selectionState.crate,
+            )
+
+            SelectionResult(shouldRefresh = true, historyStep = HistoryStep.Empty, clipboard = clipboard)
+        }
+    }
+
+    fun transform(currentCanvasLayer: CanvasLayer<*>, transformType: TransformType): SelectionResult {
+        val floatResult = tryFloatUp(currentCanvasLayer) ?: return SelectionResult.Empty
+
+        val cutActions = floatResult.cutActions
+        val floatingState = floatResult.floatingState
+
+        val floatHistoryStep = if (cutActions != null) {
+            HistoryStep(
+                listOfNotNull(
+                    HistoryAction.Graphics(cutActions.action),
+                    HistoryAction.Graphics(floatingState.overlayActions.action),
+                    HistoryAction.SelectionState(floatingState),
+                ),
+                listOfNotNull(
+                    HistoryAction.Graphics(floatingState.overlayActions.undoAction),
+                    HistoryAction.Graphics(cutActions.undoAction),
+                    HistoryAction.SelectionState(BpeSelectionState.Selected(floatingState.selection)),
+                ),
+            )
+        } else {
+            HistoryStep.Empty
+        }
+
+        transformFromHistory(transformType)
+
+        val historyStep = floatHistoryStep.merge(
+            HistoryStep(
+                listOf(HistoryAction.SelectionTransform(transformType)),
+                listOf(HistoryAction.SelectionTransform(transformType.inverse())),
+            )
         )
 
-        selectionState = BpeSelectionState.Selected(selection)
-        return SelectionResult(shouldRefresh = true, historyStep = deselectResult.historyStep, clipboard = clipboard)
+        return SelectionResult(shouldRefresh = true, historyStep = historyStep)
+    }
+
+    fun transformFromHistory(transformType: TransformType) {
+        val floatingState = selectionState as? BpeSelectionState.Floating ?: return
+
+        var x = floatingState.selection.drawingBox.x
+        var y = floatingState.selection.drawingBox.y
+        val crate = floatingState.crate.copyTransformed(transformType)
+
+        if (transformType == TransformType.RotateCw || transformType == TransformType.RotateCcw) {
+            val mx = x + floatingState.crate.width / 2
+            val my = y + floatingState.crate.height / 2
+
+            x = mx - crate.width / 2
+            y = my - crate.height / 2
+        }
+
+        graphicsEngine.execute(floatingState.overlayActions.undoAction)
+
+        val overlayActions = graphicsEngine.executePair(
+            GraphicsAction.MergeShape(floatingState.layerUid, Shape.Cells(x, y, crate)),
+        ) ?: return
+
+        selectionState = BpeSelectionState.Floating(
+            selection = Selection(floatingState.selection.canvasType, Box(x, y, crate.width, crate.height)),
+            layerUid = floatingState.layerUid,
+            crate = crate,
+            overlayActions = overlayActions,
+        )
     }
 
     fun paste(currentCanvasLayer: CanvasLayer<*>, clipboard: BpeClipboard): SelectionResult {
@@ -142,45 +219,8 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
         }
     }
 
-    fun ongoingFloatUp(currentCanvasLayer: CanvasLayer<*>, drawingX: Int, drawingY: Int): SelectionFloatResult? {
-        val selectionState = this.selectionState as? BpeSelectionState.Selected ?: return null
-
-        if (selectionState.selection.canvasType != currentCanvasLayer.canvasType) {
-            return null
-        }
-
-        val selectionBox = selectionState.selection.drawingBox
-
-        if (!selectionBox.contains(drawingX, drawingY)) {
-            return null
-        }
-
-        val crate = Crate.fromCanvasDrawing(currentCanvasLayer.canvas, selectionBox)
-
-        val cutActions = graphicsEngine.executePair(
-            GraphicsAction.ReplaceShape(
-                currentCanvasLayer.uid,
-                Shape.FillBox(selectionBox, currentCanvasLayer.canvasType.transparentCell),
-            ),
-        ) ?: return null
-
-        val overlayActions = graphicsEngine.executePair(
-            @Suppress("UNCHECKED_CAST")
-            GraphicsAction.MergeShape(
-                currentCanvasLayer.uid,
-                Shape.Cells(selectionBox.x, selectionBox.y, crate as Crate<Cell>),
-            ),
-        ) ?: return null
-
-        val floatingState = BpeSelectionState.Floating(
-            selection = selectionState.selection,
-            layerUid = currentCanvasLayer.uid,
-            crate = crate,
-            overlayActions = overlayActions,
-        )
-
-        this.selectionState = floatingState
-        return SelectionFloatResult(cutActions = cutActions, floatingState = floatingState)
+    fun ongoingFloatUp(currentCanvasLayer: CanvasLayer<*>, drawingX: Int, drawingY: Int) = executeFloatUp(currentCanvasLayer) {
+        it.contains(drawingX, drawingY)
     }
 
     fun ongoingSelectedUpdate(selection: Selection): Boolean {
@@ -214,6 +254,11 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
         return newState
     }
 
+    private fun tryFloatUp(currentCanvasLayer: CanvasLayer<*>) =
+        (selectionState as? BpeSelectionState.Floating)
+            ?.let { SelectionFloatResult(cutActions = null, floatingState = it) }
+            ?: executeFloatUp(currentCanvasLayer) { true }
+
     private fun executeSelectedDeselect(selectedState: BpeSelectionState): SelectionResult {
         this.selectionState = BpeSelectionState.None
 
@@ -224,6 +269,47 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
                 listOf(HistoryAction.SelectionState(selectedState)),
             ),
         )
+    }
+
+    private fun executeFloatUp(currentCanvasLayer: CanvasLayer<*>, hitCheck: (Box) -> Boolean): SelectionFloatResult? {
+        val selectionState = this.selectionState as? BpeSelectionState.Selected ?: return null
+
+        if (selectionState.selection.canvasType != currentCanvasLayer.canvasType) {
+            return null
+        }
+
+        val selectionBox = selectionState.selection.drawingBox
+
+        if (!hitCheck(selectionBox)) {
+            return null
+        }
+
+        val crate = Crate.fromCanvasDrawing(currentCanvasLayer.canvas, selectionBox)
+
+        val cutActions = graphicsEngine.executePair(
+            GraphicsAction.ReplaceShape(
+                currentCanvasLayer.uid,
+                Shape.FillBox(selectionBox, currentCanvasLayer.canvasType.transparentCell),
+            ),
+        ) ?: return null
+
+        val overlayActions = graphicsEngine.executePair(
+            @Suppress("UNCHECKED_CAST")
+            GraphicsAction.MergeShape(
+                currentCanvasLayer.uid,
+                Shape.Cells(selectionBox.x, selectionBox.y, crate as Crate<Cell>),
+            ),
+        ) ?: return null
+
+        val floatingState = BpeSelectionState.Floating(
+            selection = selectionState.selection,
+            layerUid = currentCanvasLayer.uid,
+            crate = crate,
+            overlayActions = overlayActions,
+        )
+
+        this.selectionState = floatingState
+        return SelectionFloatResult(cutActions = cutActions, floatingState = floatingState)
     }
 
     private fun executeFloatingAnchor(floatingState: BpeSelectionState.Floating): SelectionResult {
@@ -258,6 +344,6 @@ data class SelectionResult(
 }
 
 data class SelectionFloatResult(
-    val cutActions: GraphicsActionPair,
+    val cutActions: GraphicsActionPair?,
     val floatingState: BpeSelectionState.Floating,
 )

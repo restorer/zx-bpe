@@ -5,6 +5,7 @@ import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.foundation.Layer
 import com.eightsines.bpe.foundation.LayerUid
+import com.eightsines.bpe.foundation.TransformType
 import com.eightsines.bpe.graphics.GraphicsAction
 import com.eightsines.bpe.graphics.GraphicsEngine
 import com.eightsines.bpe.graphics.executePair
@@ -79,6 +80,10 @@ class BpeEngine(
             is BpeAction.SelectionDeselect -> executeSelectionDeselect()
             is BpeAction.SelectionCut -> executeSelectionCut()
             is BpeAction.SelectionCopy -> executeSelectionCopy()
+            is BpeAction.SelectionFlipHorizontal -> executeSelectionFlipHorizontal()
+            is BpeAction.SelectionFlipVertical -> executeSelectionFlipVertical()
+            is BpeAction.SelectionRotateCw -> executeSelectionRotateCw()
+            is BpeAction.SelectionRotateCcw -> executeSelectionRotateCcw()
 
             is BpeAction.CanvasDown -> executeCanvasDown(action)
             is BpeAction.CanvasMove -> executeCanvasMove(action)
@@ -432,6 +437,26 @@ class BpeEngine(
         processSelectionResult(selectionController.copy(it))
     }
 
+    private fun executeSelectionFlipHorizontal() = (currentLayer as? CanvasLayer<*>)?.let {
+        cancelPainting()
+        processSelectionResult(selectionController.transform(it, TransformType.FlipHorizontal))
+    }
+
+    private fun executeSelectionFlipVertical() = (currentLayer as? CanvasLayer<*>)?.let {
+        cancelPainting()
+        processSelectionResult(selectionController.transform(it, TransformType.FlipVertical))
+    }
+
+    private fun executeSelectionRotateCw() = (currentLayer as? CanvasLayer<*>)?.let {
+        cancelPainting()
+        processSelectionResult(selectionController.transform(it, TransformType.RotateCw))
+    }
+
+    private fun executeSelectionRotateCcw() = (currentLayer as? CanvasLayer<*>)?.let {
+        cancelPainting()
+        processSelectionResult(selectionController.transform(it, TransformType.RotateCcw))
+    }
+
     //
     // Canvas
     //
@@ -527,6 +552,11 @@ class BpeEngine(
                 }
 
                 is HistoryAction.Graphics -> if (graphicsEngine.execute(action.graphicsAction) != null) {
+                    shouldRefresh = true
+                }
+
+                is HistoryAction.SelectionTransform -> {
+                    selectionController.transformFromHistory(action.transformType)
                     shouldRefresh = true
                 }
             }

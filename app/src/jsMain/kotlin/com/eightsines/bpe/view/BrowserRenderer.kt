@@ -30,7 +30,10 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         htmlContext.clearRect(0.0, 0.0, PICTURE_WIDTH, PICTURE_HEIGHT)
 
         when (layer) {
-            is BackgroundLayer -> renderBackground(htmlContext, layer, BACKGROUND_PREVIEW_PICTURE_WIDTH, BACKGROUND_PREVIEW_PICTURE_HEIGHT)
+            is BackgroundLayer -> {
+                renderBackgroundBorder(htmlContext, layer, BACKGROUND_PREVIEW_PICTURE_WIDTH, BACKGROUND_PREVIEW_PICTURE_HEIGHT)
+                renderBackgroundPaper(htmlContext, layer, BACKGROUND_PREVIEW_PICTURE_WIDTH, BACKGROUND_PREVIEW_PICTURE_HEIGHT)
+            }
 
             is CanvasLayer<*> -> when (val canvas = layer.canvas) {
                 is SciiCanvas -> renderSciiCanvas(htmlContext, canvas, 0.0, 0.0)
@@ -45,18 +48,19 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         val htmlContext = htmlCanvas.getContext("2d", GET_CONTEXT_OPTIONS) as CanvasRenderingContext2D
         htmlContext.clearRect(0.0, 0.0, FULL_WIDTH, FULL_HEIGHT)
 
-        if (backgroundLayer.border == SciiColor.Transparent) {
+        if (backgroundLayer.isVisible && backgroundLayer.border != SciiColor.Transparent) {
+            renderBackgroundBorder(htmlContext, backgroundLayer, PICTURE_WIDTH, PICTURE_HEIGHT)
+        } else {
             renderTransparent(htmlContext, TRANSPARENT_COLORS_BORDER, 0.0, 0.0, FULL_WIDTH, BORDER_SIZE)
             renderTransparent(htmlContext, TRANSPARENT_COLORS_BORDER, 0.0, BORDER_SIZE, BORDER_SIZE, PICTURE_HEIGHT)
             renderTransparent(htmlContext, TRANSPARENT_COLORS_BORDER, PICTURE_WIDTH + BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, PICTURE_HEIGHT)
             renderTransparent(htmlContext, TRANSPARENT_COLORS_BORDER, 0.0, PICTURE_HEIGHT + BORDER_SIZE, FULL_WIDTH, BORDER_SIZE)
         }
 
-        if (backgroundLayer.color == SciiColor.Transparent) {
+        if (!backgroundLayer.isVisible || backgroundLayer.color == SciiColor.Transparent) {
             renderTransparent(htmlContext, TRANSPARENT_COLORS_SCREEN, BORDER_SIZE, BORDER_SIZE, PICTURE_WIDTH, PICTURE_HEIGHT)
         }
 
-        renderBackground(htmlContext, backgroundLayer, PICTURE_WIDTH, PICTURE_HEIGHT)
         renderSciiCanvas(htmlContext, canvas, BORDER_SIZE, BORDER_SIZE)
     }
 
@@ -190,9 +194,8 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         }
     }
 
-    private fun renderBackground(htmlContext: CanvasRenderingContext2D, layer: BackgroundLayer, fullWidth: Double, fullHeight: Double) {
+    private fun renderBackgroundBorder(htmlContext: CanvasRenderingContext2D, layer: BackgroundLayer, fullWidth: Double, fullHeight: Double) {
         val borderColor = getColor(layer.border, SciiLight.Off)
-        val paperColor = getColor(layer.color, layer.bright)
 
         if (borderColor != null) {
             htmlContext.fillStyle = borderColor.value
@@ -202,6 +205,10 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
             htmlContext.fillRect(fullWidth + BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, fullHeight)
             htmlContext.fillRect(0.0, fullHeight + BORDER_SIZE, fullWidth + BORDER_SIZE * 2.0, BORDER_SIZE)
         }
+    }
+
+    private fun renderBackgroundPaper(htmlContext: CanvasRenderingContext2D, layer: BackgroundLayer, fullWidth: Double, fullHeight: Double) {
+        val paperColor = getColor(layer.color, layer.bright)
 
         if (paperColor != null) {
             htmlContext.fillStyle = paperColor.value
