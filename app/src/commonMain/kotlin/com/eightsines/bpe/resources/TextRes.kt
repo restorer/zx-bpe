@@ -28,8 +28,8 @@ object TextRes {
     val ShapeLine = TextResId("shape_line")
     val ShapeStrokeBox = TextResId("shape_stroke_box")
     val ShapeFillBox = TextResId("shape_fill_box")
-    val ShapeStrokeOval = TextResId("shape_stroke_oval")
-    val ShapeFillOval = TextResId("shape_fill_oval")
+    val ShapeStrokeEllipse = TextResId("shape_stroke_ellipse")
+    val ShapeFillEllipse = TextResId("shape_fill_ellipse")
 
     val ToolboxPaste = TextResId("toolbox_paste")
     val ToolboxUndo = TextResId("toolbox_undo")

@@ -70,7 +70,12 @@ class MutableCanvasLayer<T : Cell>(
         canvas = canvas.copyMutable(),
     )
 
-    override fun isOpaque(drawingX: Int, drawingY: Int) = opaqueness[drawingY][drawingX]
+    override fun isOpaque(drawingX: Int, drawingY: Int) =
+        if (drawingX >= 0 && drawingX < canvas.drawingWidth && drawingY >= 0 && drawingY < canvas.drawingHeight) {
+            opaqueness[drawingY][drawingX]
+        } else {
+            false
+        }
 
     override fun toString() =
         "CanvasLayer(uid=$uid, isVisible=$isVisible, isLocked=$isLocked, isMasked=$isMasked, canvas=$canvas)"

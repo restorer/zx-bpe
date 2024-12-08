@@ -510,11 +510,11 @@ body {
     display: block;
 }
 
-.tool__shape--stroke_oval > .tool__icon--shape__stroke_oval {
+.tool__shape--stroke_ellipse > .tool__icon--shape__stroke_ellipse {
     display: block;
 }
 
-.tool__shape--fill_oval > .tool__icon--shape__fill_oval {
+.tool__shape--fill_ellipse > .tool__icon--shape__fill_ellipse {
     display: block;
 }
 

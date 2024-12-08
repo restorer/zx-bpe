@@ -30,8 +30,8 @@ class ResourceManager {
             put(TextRes.ShapeLine.id, "Line")
             put(TextRes.ShapeStrokeBox.id, "Stroke box")
             put(TextRes.ShapeFillBox.id, "Fill box")
-            put(TextRes.ShapeStrokeOval.id, "Stroke oval")
-            put(TextRes.ShapeFillOval.id, "Fill oval")
+            put(TextRes.ShapeStrokeEllipse.id, "Stroke ellipse")
+            put(TextRes.ShapeFillEllipse.id, "Fill ellipse")
 
             put(TextRes.ToolboxPaste.id, "Paste")
             put(TextRes.ToolboxUndo.id, "Undo")

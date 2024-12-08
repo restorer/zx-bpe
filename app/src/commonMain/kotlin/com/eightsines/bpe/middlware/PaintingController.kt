@@ -382,6 +382,38 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                     )
                 }
             )
+
+            put(
+                BpeShape.FillEllipse,
+                object : PaintingShapeDescriptor {
+                    override fun createPaintingSpec(
+                        cell: Cell,
+                        shapePainter: (Shape<Cell>) -> GraphicsAction,
+                        drawingX: Int,
+                        drawingY: Int,
+                    ) = PaintingSpec.Single(
+                        painter = { startX, startY, endX, endY -> shapePainter(Shape.FillEllipse(startX, startY, endX, endY, cell)) },
+                        startX = drawingX,
+                        startY = drawingY,
+                    )
+                }
+            )
+
+            put(
+                BpeShape.StrokeEllipse,
+                object : PaintingShapeDescriptor {
+                    override fun createPaintingSpec(
+                        cell: Cell,
+                        shapePainter: (Shape<Cell>) -> GraphicsAction,
+                        drawingX: Int,
+                        drawingY: Int,
+                    ) = PaintingSpec.Single(
+                        painter = { startX, startY, endX, endY -> shapePainter(Shape.StrokeEllipse(startX, startY, endX, endY, cell)) },
+                        startX = drawingX,
+                        startY = drawingY,
+                    )
+                }
+            )
         }
     }
 }

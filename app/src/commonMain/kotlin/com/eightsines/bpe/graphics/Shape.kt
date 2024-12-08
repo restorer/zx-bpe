@@ -18,7 +18,17 @@ enum class ShapeType(val value: Int, internal val polymorphicPacker: BagStuffPac
     Line(2, Shape.Line.Polymorphic),
     FillBox(3, Shape.FillBox.Polymorphic),
     StrokeBox(4, Shape.StrokeBox.Polymorphic),
+    FillEllipse(6, Shape.FillBox.Polymorphic),
+    StrokeEllipse(7, Shape.StrokeBox.Polymorphic),
     Cells(5, Shape.Cells.Polymorphic),
+    // Last value is 7 (StrokeEllipse)
+}
+
+interface BoxLikeShape {
+    val sx: Int
+    val sy: Int
+    val ex: Int
+    val ey: Int
 }
 
 sealed interface Shape<T : Cell> {
@@ -41,6 +51,8 @@ sealed interface Shape<T : Cell> {
                 ShapeType.Line.value -> bag.getStuff(Line.Polymorphic)
                 ShapeType.FillBox.value -> bag.getStuff(FillBox.Polymorphic)
                 ShapeType.StrokeBox.value -> bag.getStuff(StrokeBox.Polymorphic)
+                ShapeType.FillEllipse.value -> bag.getStuff(FillEllipse.Polymorphic)
+                ShapeType.StrokeEllipse.value -> bag.getStuff(StrokeEllipse.Polymorphic)
                 ShapeType.Cells.value -> bag.getStuff(Cells.Polymorphic)
                 else -> throw UnknownPolymorphicTypeBagUnpackException("Shape", type)
             }
@@ -77,7 +89,13 @@ sealed interface Shape<T : Cell> {
         }
     }
 
-    data class Line<T : Cell>(val sx: Int, val sy: Int, val ex: Int, val ey: Int, val cell: T) : Shape<T> {
+    data class Line<T : Cell>(
+        override val sx: Int,
+        override val sy: Int,
+        override val ex: Int,
+        override val ey: Int,
+        val cell: T,
+    ) : Shape<T>, BoxLikeShape {
         override val type = ShapeType.Line
         override val cellType = cell.type
 
@@ -106,7 +124,13 @@ sealed interface Shape<T : Cell> {
         }
     }
 
-    data class FillBox<T : Cell>(val sx: Int, val sy: Int, val ex: Int, val ey: Int, val cell: T) : Shape<T> {
+    data class FillBox<T : Cell>(
+        override val sx: Int,
+        override val sy: Int,
+        override val ex: Int,
+        override val ey: Int,
+        val cell: T,
+    ) : Shape<T>, BoxLikeShape {
         constructor(box: Box, cell: T) : this(box.x, box.y, box.ex, box.ey, cell)
 
         override val type = ShapeType.FillBox
@@ -137,7 +161,13 @@ sealed interface Shape<T : Cell> {
         }
     }
 
-    data class StrokeBox<T : Cell>(val sx: Int, val sy: Int, val ex: Int, val ey: Int, val cell: T) : Shape<T> {
+    data class StrokeBox<T : Cell>(
+        override val sx: Int,
+        override val sy: Int,
+        override val ex: Int,
+        override val ey: Int,
+        val cell: T,
+    ) : Shape<T>, BoxLikeShape {
         override val type = ShapeType.StrokeBox
         override val cellType = cell.type
 
@@ -156,6 +186,76 @@ sealed interface Shape<T : Cell> {
                 requireSupportedStuffVersion("Shape.StrokeBox", 1, version)
 
                 return StrokeBox(
+                    sx = bag.getInt(),
+                    sy = bag.getInt(),
+                    ex = bag.getInt(),
+                    ey = bag.getInt(),
+                    cell = bag.getStuff(Cell)
+                )
+            }
+        }
+    }
+
+    data class FillEllipse<T : Cell>(
+        override val sx: Int,
+        override val sy: Int,
+        override val ex: Int,
+        override val ey: Int,
+        val cell: T,
+    ) : Shape<T>, BoxLikeShape {
+        override val type = ShapeType.FillEllipse
+        override val cellType = cell.type
+
+        internal object Polymorphic : BagStuffPacker<FillEllipse<*>>, BagStuffUnpacker<FillEllipse<*>> {
+            override val putInTheBagVersion = 1
+
+            override fun putInTheBag(bag: PackableBag, value: FillEllipse<*>) {
+                bag.put(value.sx)
+                bag.put(value.sy)
+                bag.put(value.ex)
+                bag.put(value.ey)
+                bag.put(Cell, value.cell)
+            }
+
+            override fun getOutOfTheBag(version: Int, bag: UnpackableBag): FillEllipse<*> {
+                requireSupportedStuffVersion("Shape.FillEllipse", 1, version)
+
+                return FillEllipse(
+                    sx = bag.getInt(),
+                    sy = bag.getInt(),
+                    ex = bag.getInt(),
+                    ey = bag.getInt(),
+                    cell = bag.getStuff(Cell)
+                )
+            }
+        }
+    }
+
+    data class StrokeEllipse<T : Cell>(
+        override val sx: Int,
+        override val sy: Int,
+        override val ex: Int,
+        override val ey: Int,
+        val cell: T,
+    ) : Shape<T>, BoxLikeShape {
+        override val type = ShapeType.StrokeEllipse
+        override val cellType = cell.type
+
+        internal object Polymorphic : BagStuffPacker<StrokeEllipse<*>>, BagStuffUnpacker<StrokeEllipse<*>> {
+            override val putInTheBagVersion = 1
+
+            override fun putInTheBag(bag: PackableBag, value: StrokeEllipse<*>) {
+                bag.put(value.sx)
+                bag.put(value.sy)
+                bag.put(value.ex)
+                bag.put(value.ey)
+                bag.put(Cell, value.cell)
+            }
+
+            override fun getOutOfTheBag(version: Int, bag: UnpackableBag): StrokeEllipse<*> {
+                requireSupportedStuffVersion("Shape.StrokeEllipse", 1, version)
+
+                return StrokeEllipse(
                     sx = bag.getInt(),
                     sy = bag.getInt(),
                     ex = bag.getInt(),

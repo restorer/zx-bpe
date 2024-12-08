@@ -19,7 +19,6 @@ import com.eightsines.bpe.util.requireNoIllegalArgumentException
 import com.eightsines.bpe.util.requireSupportedStuffVersion
 
 enum class GraphicsActionType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out GraphicsAction>) {
-    // v1
     SetBackgroundBorder(1, GraphicsAction.SetBackgroundBorder.Polymorphic),
     SetBackgroundColor(2, GraphicsAction.SetBackgroundColor.Polymorphic),
     SetBackgroundBright(3, GraphicsAction.SetBackgroundBright.Polymorphic),
@@ -31,6 +30,7 @@ enum class GraphicsActionType(val value: Int, internal val polymorphicPacker: Ba
     DeleteLayer(9, GraphicsAction.DeleteLayer.Polymorphic),
     SetLayerVisible(10, GraphicsAction.SetLayerVisible.Polymorphic),
     SetLayerLocked(11, GraphicsAction.SetLayerLocked.Polymorphic),
+    SetLayerMasked(19, GraphicsAction.SetLayerMasked.Polymorphic),
     MoveLayer(12, GraphicsAction.MoveLayer.Polymorphic),
     MergeShape(13, GraphicsAction.MergeShape.Polymorphic),
     ReplaceShape(14, GraphicsAction.ReplaceShape.Polymorphic),
@@ -38,9 +38,7 @@ enum class GraphicsActionType(val value: Int, internal val polymorphicPacker: Ba
     MergeLayers(16, GraphicsAction.MergeLayers.Polymorphic),
     UndoMergeLayers(17, GraphicsAction.UndoMergeLayers.Polymorphic),
     ConvertLayer(18, GraphicsAction.ConvertLayer.Polymorphic),
-
-    // v2
-    SetLayerMasked(19, GraphicsAction.SetLayerMasked.Polymorphic),
+    // Last value is 19 (SetLayerMasked)
 }
 
 sealed interface GraphicsAction {

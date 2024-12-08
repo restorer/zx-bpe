@@ -114,8 +114,8 @@ class BrowserView(
     private val shapesLine = document.find<HTMLElement>(".js-shape-line")
     private val shapesStrokeBox = document.find<HTMLElement>(".js-shape-stroke-box")
     private val shapesFillBox = document.find<HTMLElement>(".js-shape-fill-box")
-    private val shapesStrokeOval = document.find<HTMLElement>(".js-shape-stroke-oval")
-    private val shapesFillOval = document.find<HTMLElement>(".js-shape-fill-oval")
+    private val shapesStrokeEllipse = document.find<HTMLElement>(".js-shape-stroke-ellipse")
+    private val shapesFillEllipse = document.find<HTMLElement>(".js-shape-fill-ellipse")
 
     private val menuPanel = document.find<HTMLElement>(".js-menu-panel")
 
@@ -202,8 +202,8 @@ class BrowserView(
         shapesLine?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.Line))) }
         shapesStrokeBox?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.StrokeBox))) }
         shapesFillBox?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.FillBox))) }
-        shapesStrokeOval?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.StrokeOval))) }
-        shapesFillOval?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.FillOval))) }
+        shapesStrokeEllipse?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.StrokeEllipse))) }
+        shapesFillEllipse?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.FillEllipse))) }
 
         menu?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.MenuClick)) }
         menuLoad?.also { menuLoad -> menuLoad.addEventListener(EVENT_CHANGE, { _actionFlow.tryEmit(BrowserAction.Load(menuLoad)) }) }
@@ -306,8 +306,8 @@ class BrowserView(
                 shapesLine?.setActive(panel.shape == BpeShape.Line)
                 shapesStrokeBox?.setActive(panel.shape == BpeShape.StrokeBox)
                 shapesFillBox?.setActive(panel.shape == BpeShape.FillBox)
-                shapesStrokeOval?.setActive(panel.shape == BpeShape.StrokeOval)
-                shapesFillOval?.setActive(panel.shape == BpeShape.FillOval)
+                shapesStrokeEllipse?.setActive(panel.shape == BpeShape.StrokeEllipse)
+                shapesFillEllipse?.setActive(panel.shape == BpeShape.FillEllipse)
             }
 
             null, is UiPanel.SelectionMenu, is UiPanel.Layers, is UiPanel.Menu -> Unit
@@ -770,8 +770,8 @@ class BrowserView(
         BpeShape.Line -> "line"
         BpeShape.StrokeBox -> "stroke_box"
         BpeShape.FillBox -> "fill_box"
-        BpeShape.StrokeOval -> "stroke_oval"
-        BpeShape.FillOval -> "fill_oval"
+        BpeShape.StrokeEllipse -> "stroke_ellipse"
+        BpeShape.FillEllipse -> "fill_ellipse"
     }
 
     private companion object {
