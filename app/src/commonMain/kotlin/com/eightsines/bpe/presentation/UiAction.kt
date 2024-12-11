@@ -21,6 +21,8 @@ sealed interface UiAction {
     data object PaletteFlashClick : UiAction
     data object PaletteCharClick : UiAction
 
+    data object PaintingModeClick : UiAction
+
     data object SelectionMenuClick : UiAction
     data object SelectionCutClick : UiAction
     data object SelectionCopyClick : UiAction

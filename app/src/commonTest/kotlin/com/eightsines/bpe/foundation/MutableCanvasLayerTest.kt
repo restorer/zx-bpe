@@ -22,7 +22,7 @@ class MutableCanvasLayerTest {
             bag.put(CanvasLayer, sut)
             bag.toString()
         },
-        assert = { assertEquals("BAG1u1s4TESTBbu1i1i1i1u1u1i1u1iFiFiFiFiF", it) },
+        assert = { assertEquals("BAG1u2s4TESTBbu1i1i1i1u1u1i1u1iFiFiFiFiFb", it) },
     )
 
     @Test

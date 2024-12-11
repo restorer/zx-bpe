@@ -6,30 +6,56 @@ import com.eightsines.bpe.util.PackableBag
 import com.eightsines.bpe.util.UnpackableBag
 import com.eightsines.bpe.util.requireSupportedStuffVersion
 
-data class Box(val x: Int, val y: Int, val width: Int, val height: Int) {
-    val ex = x + width - 1
-    val ey = y + height - 1
+class Box private constructor(val lx: Int, val ly: Int, val width: Int, val height: Int) {
+    val rx = lx + width - 1
+    val ry = ly + height - 1
 
-    fun copyWithOffset(x: Int, y: Int) = copy(x = this.x + x, y = this.y + y)
-    fun copyWithOffset(point: Pair<Int, Int>) = copy(x = this.x + point.first, y = this.y + point.second)
+    fun copyWithOffset(x: Int, y: Int) = Box(lx + x, ly + y, width, height)
+    fun copyWithOffset(point: Pair<Int, Int>) = Box(lx + point.first, ly + point.second, width, height)
+    fun contains(x: Int, y: Int) = x in lx..rx && y in ly..ry
 
-    fun contains(x: Int, y: Int) = x >= this.x && x <= ex && y >= this.y && y <= ey
+    override fun equals(other: Any?): Boolean {
+        if (this === other) {
+            return true
+        }
+
+        if (other == null || this::class != other::class) {
+            return false
+        }
+
+        other as Box
+
+        return lx == other.lx &&
+                ly == other.ly &&
+                width == other.width &&
+                height == other.height
+    }
+
+    override fun hashCode(): Int {
+        var result = lx
+        result = 31 * result + ly
+        result = 31 * result + width
+        result = 31 * result + height
+        return result
+    }
 
     companion object : BagStuffPacker<Box>, BagStuffUnpacker<Box> {
-        fun of(sx: Int, sy: Int, ex: Int, ey: Int): Box {
-            val boxSx = minOf(sx, ex)
-            val boxSy = minOf(sy, ey)
-            val boxEx = maxOf(sx, ex)
-            val boxEy = maxOf(sy, ey)
+        fun ofSize(x: Int, y: Int, width: Int, height: Int) = Box(x, y, width, height)
 
-            return Box(boxSx, boxSy, boxEx - boxSx + 1, boxEy - boxSy + 1)
+        fun ofCoords(sx: Int, sy: Int, ex: Int, ey: Int): Box {
+            val lx = minOf(sx, ex)
+            val ly = minOf(sy, ey)
+            val width = maxOf(sx, ex) - lx + 1
+            val height = maxOf(sy, ey) - ly + 1
+
+            return Box(lx, ly, width, height)
         }
 
         override val putInTheBagVersion = 1
 
         override fun putInTheBag(bag: PackableBag, value: Box) {
-            bag.put(value.x)
-            bag.put(value.y)
+            bag.put(value.lx)
+            bag.put(value.ly)
             bag.put(value.width)
             bag.put(value.height)
         }
@@ -37,12 +63,12 @@ data class Box(val x: Int, val y: Int, val width: Int, val height: Int) {
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Box {
             requireSupportedStuffVersion("Box", 1, version)
 
-            val x = bag.getInt()
-            val y = bag.getInt()
+            val lx = bag.getInt()
+            val ly = bag.getInt()
             val width = bag.getInt()
             val height = bag.getInt()
 
-            return Box(x, y, width, height)
+            return Box(lx, ly, width, height)
         }
     }
 }

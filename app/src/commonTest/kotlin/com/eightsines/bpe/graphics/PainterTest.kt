@@ -17,42 +17,42 @@ class PainterTest {
     fun shouldGetBBoxPoint() = performTest(
         arrange = { Painter() to Shape.Points(listOf(5 to 8), BlockCellMother.WhiteBright) },
         act = { (sut, shape) -> sut.getBBox(shape) },
-        assert = { assertEquals(Box(5, 8, 1, 1), it) }
+        assert = { assertEquals(Box.ofSize(5, 8, 1, 1), it) }
     )
 
     @Test
     fun shouldGetBBoxLine() = performTest(
         arrange = { Painter() to Shape.Line(5, 2, 1, 8, BlockCellMother.WhiteBright) },
         act = { (sut, shape) -> sut.getBBox(shape) },
-        assert = { assertEquals(Box(1, 2, 5, 7), it) }
+        assert = { assertEquals(Box.ofSize(1, 2, 5, 7), it) }
     )
 
     @Test
     fun shouldGetBBoxFillBox() = performTest(
         arrange = { Painter() to Shape.FillBox(5, 2, 1, 8, BlockCellMother.WhiteBright) },
         act = { (sut, shape) -> sut.getBBox(shape) },
-        assert = { assertEquals(Box(1, 2, 5, 7), it) }
+        assert = { assertEquals(Box.ofSize(1, 2, 5, 7), it) }
     )
 
     @Test
     fun shouldGetBBoxStrokeBox() = performTest(
         arrange = { Painter() to Shape.StrokeBox(5, 2, 1, 8, BlockCellMother.WhiteBright) },
         act = { (sut, shape) -> sut.getBBox(shape) },
-        assert = { assertEquals(Box(1, 2, 5, 7), it) }
+        assert = { assertEquals(Box.ofSize(1, 2, 5, 7), it) }
     )
 
     @Test
     fun shouldGetBBoxFillEllipse() = performTest(
         arrange = { Painter() to Shape.FillEllipse(5, 2, 1, 8, BlockCellMother.WhiteBright) },
         act = { (sut, shape) -> sut.getBBox(shape) },
-        assert = { assertEquals(Box(1, 2, 5, 7), it) }
+        assert = { assertEquals(Box.ofSize(1, 2, 5, 7), it) }
     )
 
     @Test
     fun shouldGetBBoxStrokeEllipse() = performTest(
         arrange = { Painter() to Shape.StrokeEllipse(5, 2, 1, 8, BlockCellMother.WhiteBright) },
         act = { (sut, shape) -> sut.getBBox(shape) },
-        assert = { assertEquals(Box(1, 2, 5, 7), it) }
+        assert = { assertEquals(Box.ofSize(1, 2, 5, 7), it) }
     )
 
     @Test
@@ -70,7 +70,7 @@ class PainterTest {
             )
         },
         act = { (sut, shape) -> sut.getBBox(shape) },
-        assert = { assertEquals(Box(5, 2, 2, 1), it) }
+        assert = { assertEquals(Box.ofSize(5, 2, 2, 1), it) }
     )
 
     // Paint

@@ -3,6 +3,7 @@ package com.eightsines.bpe.middlware
 import com.eightsines.bpe.core.BlockCell
 import com.eightsines.bpe.core.Box
 import com.eightsines.bpe.core.Cell
+import com.eightsines.bpe.core.Rect
 import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.foundation.BackgroundLayer
 import com.eightsines.bpe.foundation.CanvasLayer
@@ -17,7 +18,11 @@ import com.eightsines.bpe.graphics.Shape
 import com.eightsines.bpe.graphics.executePair
 
 class PaintingController(private val graphicsEngine: GraphicsEngine, private val selectionController: SelectionController) {
+    var paintingMode = BpePaintingMode.Edge
+        private set
+
     private var currentPaintingSpec: PaintingSpec? = null
+    private var lastDrawingPoint: Pair<Int, Int>? = null
     private var pendingHistoryStep: HistoryStep = HistoryStep.Empty
 
     fun cancel(historyActionsPerformer: (List<HistoryAction>) -> Unit): Boolean {
@@ -47,6 +52,7 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
         }
 
         currentPaintingSpec = null
+        lastDrawingPoint = null
 
         if (pendingHistoryStep.undoActions.isNotEmpty()) {
             historyActionsPerformer(pendingHistoryStep.undoActions)
@@ -54,6 +60,19 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
 
         pendingHistoryStep = HistoryStep.Empty
         return shouldRefresh
+    }
+
+    fun updatePaintingMode(mode: BpePaintingMode): PaintingResult {
+        if (paintingMode == mode) {
+            return PaintingResult.Empty
+        }
+
+        paintingMode = mode
+
+        return PaintingResult(
+            shouldRefresh = true,
+            informer = lastDrawingPoint?.let { update(it.first, it.second) }?.informer,
+        )
     }
 
     fun start(
@@ -65,28 +84,37 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
         drawingX: Int,
         drawingY: Int,
         historyActionsPerformer: (List<HistoryAction>) -> Unit,
-    ): Boolean {
+    ): PaintingResult {
         val shouldRefresh = cancel(historyActionsPerformer)
 
-        return when (tool) {
-            BpeTool.None -> false
+        val startResult = when (tool) {
+            BpeTool.None -> PaintingResult.Empty
             BpeTool.Paint -> executeStartPaint(tool, paintShape, currentLayer, palette, drawingX, drawingY)
             BpeTool.Erase -> executeStartPaint(tool, eraseShape, currentLayer, palette, drawingX, drawingY)
             BpeTool.Select -> executeStartSelect(currentLayer, drawingX, drawingY)
             BpeTool.PickColor -> executePickColor(currentLayer, palette, drawingX, drawingY)
-        } || shouldRefresh
+        }
+
+        return PaintingResult(
+            shouldRefresh = shouldRefresh || startResult.shouldRefresh,
+            informer = startResult.informer,
+        )
     }
 
-    fun update(drawingX: Int, drawingY: Int): Boolean = when (val spec = currentPaintingSpec) {
-        null -> false
-        is PaintingSpec.Single -> executeUpdateSingle(spec, drawingX, drawingY)
-        is PaintingSpec.Multiple -> executeUpdateMultiple(spec, drawingX, drawingY)
-        is PaintingSpec.Selection -> executeUpdateSelection(spec, drawingX, drawingY)
-        is PaintingSpec.Floating -> executeUpdateFloating(spec, drawingX, drawingY)
+    fun update(drawingX: Int, drawingY: Int): PaintingResult {
+        val spec = currentPaintingSpec ?: return PaintingResult.Empty
+        lastDrawingPoint = drawingX to drawingY
+
+        return when (spec) {
+            is PaintingSpec.Single -> executeUpdateSingle(spec, drawingX, drawingY)
+            is PaintingSpec.Multiple -> executeUpdateMultiple(spec, drawingX, drawingY)
+            is PaintingSpec.Selection -> executeUpdateSelection(spec, drawingX, drawingY)
+            is PaintingSpec.Floating -> executeUpdateFloating(spec, drawingX, drawingY)
+        }
     }
 
     fun finish(drawingX: Int, drawingY: Int): PaintingFinishResult {
-        val shouldRefresh = update(drawingX, drawingY)
+        val paintingResult = update(drawingX, drawingY)
 
         val historyStep = when (val spec = currentPaintingSpec) {
             is PaintingSpec.Single -> spec.paintActions.toHistoryStep()
@@ -133,11 +161,12 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
         }
 
         val result = PaintingFinishResult(
-            shouldRefresh = shouldRefresh,
+            shouldRefresh = paintingResult.shouldRefresh,
             historyStep = pendingHistoryStep.merge(historyStep),
         )
 
         currentPaintingSpec = null
+        lastDrawingPoint = null
         pendingHistoryStep = HistoryStep.Empty
 
         return result
@@ -150,41 +179,52 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
         palette: MutablePalette,
         drawingX: Int,
         drawingY: Int,
-    ): Boolean {
-        val currentCanvasLayer = currentLayer as? CanvasLayer<*> ?: return false
-        val toolDescriptor = TOOL_DESCRIPTORS[tool] ?: return false
-        val shapeDescriptor = SHAPE_DESCRIPTORS[shape] ?: return false
+    ): PaintingResult {
+        val currentCanvasLayer = currentLayer as? CanvasLayer<*> ?: return PaintingResult.Empty
+        val toolDescriptor = TOOL_DESCRIPTORS[tool] ?: return PaintingResult.Empty
+        val shapeDescriptor = SHAPE_DESCRIPTORS[shape] ?: return PaintingResult.Empty
 
         val deselectResult = selectionController.deselect()
         pendingHistoryStep = deselectResult.historyStep
 
         currentPaintingSpec = shapeDescriptor.createPaintingSpec(
+            canvasType = currentCanvasLayer.canvasType,
             cell = toolDescriptor.getCell(currentCanvasLayer.canvasType, palette),
             shapePainter = toolDescriptor.createShapePainter(currentCanvasLayer.uid),
             drawingX = drawingX,
             drawingY = drawingY,
         )
 
-        return update(drawingX, drawingY) || deselectResult.shouldRefresh
+        val updateResult = update(drawingX, drawingY)
+
+        return PaintingResult(
+            shouldRefresh = deselectResult.shouldRefresh || updateResult.shouldRefresh,
+            informer = updateResult.informer,
+        )
     }
 
-    private fun executeStartSelect(currentLayer: Layer, drawingX: Int, drawingY: Int): Boolean {
-        val currentCanvasLayer = currentLayer as? CanvasLayer<*> ?: return false
+    private fun executeStartSelect(currentLayer: Layer, drawingX: Int, drawingY: Int): PaintingResult {
+        val currentCanvasLayer = currentLayer as? CanvasLayer<*> ?: return PaintingResult.Empty
 
         val (paintingSpec, shouldRefresh) = executeStartSelectFloatMove(drawingX, drawingY)
             ?: executeStartSelectFloatUp(currentCanvasLayer, drawingX, drawingY)
             ?: executeStartSelectSelection(currentCanvasLayer, drawingX, drawingY)
 
         currentPaintingSpec = paintingSpec
-        return update(drawingX, drawingY) || shouldRefresh
+        val updateResult = update(drawingX, drawingY)
+
+        return PaintingResult(
+            shouldRefresh = shouldRefresh || updateResult.shouldRefresh,
+            informer = updateResult.informer,
+        )
     }
 
     private fun executeStartSelectFloatMove(drawingX: Int, drawingY: Int) =
         selectionController.ongoingFloatMove(drawingX, drawingY)?.let {
             PaintingSpec.Floating(
                 initialState = it,
-                startX = drawingX,
-                startY = drawingY,
+                initialX = drawingX,
+                initialY = drawingY,
                 lastState = it,
             ) to false
         }
@@ -194,8 +234,8 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
             PaintingSpec.Floating(
                 initialState = it.floatingState,
                 cutActions = it.cutActions,
-                startX = drawingX,
-                startY = drawingY,
+                initialX = drawingX,
+                initialY = drawingY,
                 lastState = it.floatingState,
             ) to true
         }
@@ -209,15 +249,15 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
         return PaintingSpec.Selection(
             initialState = initialState as? BpeSelectionState.Selected,
             canvasType = currentCanvasLayer.canvasType,
-            startY = drawingY,
-            startX = drawingX,
+            initialY = drawingY,
+            initialX = drawingX,
         ) to deselectResult.shouldRefresh
     }
 
     private fun executePickColor(currentLayer: Layer, palette: MutablePalette, drawingX: Int, drawingY: Int) = when (currentLayer) {
         is BackgroundLayer -> {
             palette.ink = currentLayer.color
-            true
+            PaintingResult.Updated
         }
 
         is CanvasLayer<*> -> when (val cell = currentLayer.canvas.getDrawingCell(drawingX, drawingY)) {
@@ -228,62 +268,97 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 palette.flash = cell.flash
                 palette.character = cell.character
 
-                true
+                PaintingResult.Updated
             }
 
             is BlockCell -> {
                 palette.ink = cell.color
                 palette.bright = cell.bright
-                true
+                PaintingResult.Updated
             }
         }
 
-        else -> false
+        else -> PaintingResult.Empty
     }
 
-    private fun executeUpdateSingle(spec: PaintingSpec.Single, drawingX: Int, drawingY: Int) =
-        if (spec.lastX != drawingX || spec.lastY != drawingY) {
-            spec.paintActions?.let { graphicsEngine.execute(it.undoAction) }
-            spec.lastX = drawingX
-            spec.lastY = drawingY
-            spec.paintActions = graphicsEngine.executePair(spec.painter(spec.startX, spec.startY, drawingX, drawingY))
-            true
-        } else {
-            false
+    private fun executeUpdateSingle(spec: PaintingSpec.Single, drawingX: Int, drawingY: Int): PaintingResult {
+        val rect = getPaintingRect(spec.initialX, spec.initialY, drawingX, drawingY)
+
+        if (rect == spec.lastRect) {
+            return PaintingResult.Empty
         }
 
-    private fun executeUpdateMultiple(spec: PaintingSpec.Multiple, drawingX: Int, drawingY: Int): Boolean {
+        spec.paintActions?.let { graphicsEngine.execute(it.undoAction) }
+        spec.lastRect = rect
+        spec.paintActions = graphicsEngine.executePair(spec.painter(rect.sx, rect.sy, rect.ex, rect.ey))
+
+        return PaintingResult(
+            shouldRefresh = true,
+            informer = BpeInformer(
+                canvasType = spec.canvasType,
+                initialX = spec.initialX,
+                initialY = spec.initialY,
+                rect = rect,
+            ),
+        )
+    }
+
+    private fun executeUpdateMultiple(spec: PaintingSpec.Multiple, drawingX: Int, drawingY: Int): PaintingResult {
         val point = drawingX to drawingY
 
         if (spec.points.contains(point)) {
-            return false
+            return PaintingResult.Empty
         }
 
         spec.paintActions?.let { graphicsEngine.execute(it.undoAction) }
         spec.points.add(point)
         spec.paintActions = graphicsEngine.executePair(spec.painter(spec.points.toList()))
 
-        return true
+        return PaintingResult.Updated
     }
 
-    private fun executeUpdateSelection(spec: PaintingSpec.Selection, drawingX: Int, drawingY: Int) =
-        selectionController.ongoingSelectedUpdate(Selection(spec.canvasType, Box.of(spec.startX, spec.startY, drawingX, drawingY)))
+    private fun executeUpdateSelection(spec: PaintingSpec.Selection, drawingX: Int, drawingY: Int): PaintingResult {
+        val rect = getPaintingRect(spec.initialX, spec.initialY, drawingX, drawingY)
 
-    private fun executeUpdateFloating(spec: PaintingSpec.Floating, drawingX: Int, drawingY: Int): Boolean {
-        val offsetX = drawingX - spec.startX
-        val offsetY = drawingY - spec.startY
-
-        if (offsetX == spec.lastOffsetX && offsetY == spec.lastOffsetY) {
-            return false
+        if (rect == spec.lastRect) {
+            return PaintingResult.Empty
         }
 
-        val newState = selectionController.ongoingFloatingUpdate(spec.initialState, offsetX, offsetY) ?: return false
+        spec.lastRect = rect
+        selectionController.ongoingSelectedUpdate(Selection(spec.canvasType, Box.ofCoords(rect.sx, rect.sy, rect.ex, rect.ey)))
+
+        return PaintingResult(
+            shouldRefresh = true,
+            informer = BpeInformer(
+                canvasType = spec.canvasType,
+                initialX = spec.initialX,
+                initialY = spec.initialY,
+                rect = rect,
+            ),
+        )
+    }
+
+    private fun executeUpdateFloating(spec: PaintingSpec.Floating, drawingX: Int, drawingY: Int): PaintingResult {
+        val offsetX = drawingX - spec.initialX
+        val offsetY = drawingY - spec.initialY
+
+        if (offsetX == spec.lastOffsetX && offsetY == spec.lastOffsetY) {
+            return PaintingResult.Empty
+        }
+
+        val newState = selectionController.ongoingFloatingUpdate(spec.initialState, offsetX, offsetY)
+            ?: return PaintingResult.Empty
 
         spec.lastOffsetX = offsetX
         spec.lastOffsetY = offsetY
         spec.lastState = newState
 
-        return true
+        return PaintingResult.Updated
+    }
+
+    private fun getPaintingRect(initialX: Int, initialY: Int, drawingX: Int, drawingY: Int) = when (paintingMode) {
+        BpePaintingMode.Center -> Rect(initialX * 2 - drawingX, initialY * 2 - drawingY, drawingX, drawingY)
+        BpePaintingMode.Edge -> Rect(initialX, initialY, drawingX, drawingY)
     }
 
     private companion object {
@@ -324,6 +399,7 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 BpeShape.Point,
                 object : PaintingShapeDescriptor {
                     override fun createPaintingSpec(
+                        canvasType: CanvasType,
                         cell: Cell,
                         shapePainter: (Shape<Cell>) -> GraphicsAction,
                         drawingX: Int,
@@ -339,14 +415,16 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 BpeShape.Line,
                 object : PaintingShapeDescriptor {
                     override fun createPaintingSpec(
+                        canvasType: CanvasType,
                         cell: Cell,
                         shapePainter: (Shape<Cell>) -> GraphicsAction,
                         drawingX: Int,
                         drawingY: Int,
                     ) = PaintingSpec.Single(
-                        painter = { startX, startY, endX, endY -> shapePainter(Shape.Line(startX, startY, endX, endY, cell)) },
-                        startX = drawingX,
-                        startY = drawingY,
+                        canvasType = canvasType,
+                        painter = { sx, sy, ex, ey -> shapePainter(Shape.Line(sx, sy, ex, ey, cell)) },
+                        initialX = drawingX,
+                        initialY = drawingY,
                     )
                 }
             )
@@ -355,14 +433,16 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 BpeShape.FillBox,
                 object : PaintingShapeDescriptor {
                     override fun createPaintingSpec(
+                        canvasType: CanvasType,
                         cell: Cell,
                         shapePainter: (Shape<Cell>) -> GraphicsAction,
                         drawingX: Int,
                         drawingY: Int,
                     ) = PaintingSpec.Single(
-                        painter = { startX, startY, endX, endY -> shapePainter(Shape.FillBox(startX, startY, endX, endY, cell)) },
-                        startX = drawingX,
-                        startY = drawingY,
+                        canvasType = canvasType,
+                        painter = { sx, sy, ex, ey -> shapePainter(Shape.FillBox(sx, sy, ex, ey, cell)) },
+                        initialX = drawingX,
+                        initialY = drawingY,
                     )
                 }
             )
@@ -371,14 +451,16 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 BpeShape.StrokeBox,
                 object : PaintingShapeDescriptor {
                     override fun createPaintingSpec(
+                        canvasType: CanvasType,
                         cell: Cell,
                         shapePainter: (Shape<Cell>) -> GraphicsAction,
                         drawingX: Int,
                         drawingY: Int,
                     ) = PaintingSpec.Single(
-                        painter = { startX, startY, endX, endY -> shapePainter(Shape.StrokeBox(startX, startY, endX, endY, cell)) },
-                        startX = drawingX,
-                        startY = drawingY,
+                        canvasType = canvasType,
+                        painter = { sx, sy, ex, ey -> shapePainter(Shape.StrokeBox(sx, sy, ex, ey, cell)) },
+                        initialX = drawingX,
+                        initialY = drawingY,
                     )
                 }
             )
@@ -387,14 +469,16 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 BpeShape.FillEllipse,
                 object : PaintingShapeDescriptor {
                     override fun createPaintingSpec(
+                        canvasType: CanvasType,
                         cell: Cell,
                         shapePainter: (Shape<Cell>) -> GraphicsAction,
                         drawingX: Int,
                         drawingY: Int,
                     ) = PaintingSpec.Single(
-                        painter = { startX, startY, endX, endY -> shapePainter(Shape.FillEllipse(startX, startY, endX, endY, cell)) },
-                        startX = drawingX,
-                        startY = drawingY,
+                        canvasType = canvasType,
+                        painter = { sx, sy, ex, ey -> shapePainter(Shape.FillEllipse(sx, sy, ex, ey, cell)) },
+                        initialX = drawingX,
+                        initialY = drawingY,
                     )
                 }
             )
@@ -403,18 +487,30 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 BpeShape.StrokeEllipse,
                 object : PaintingShapeDescriptor {
                     override fun createPaintingSpec(
+                        canvasType: CanvasType,
                         cell: Cell,
                         shapePainter: (Shape<Cell>) -> GraphicsAction,
                         drawingX: Int,
                         drawingY: Int,
                     ) = PaintingSpec.Single(
-                        painter = { startX, startY, endX, endY -> shapePainter(Shape.StrokeEllipse(startX, startY, endX, endY, cell)) },
-                        startX = drawingX,
-                        startY = drawingY,
+                        canvasType = canvasType,
+                        painter = { sx, sy, ex, ey -> shapePainter(Shape.StrokeEllipse(sx, sy, ex, ey, cell)) },
+                        initialX = drawingX,
+                        initialY = drawingY,
                     )
                 }
             )
         }
+    }
+}
+
+data class PaintingResult(
+    val shouldRefresh: Boolean,
+    val informer: BpeInformer?,
+) {
+    companion object {
+        val Empty = PaintingResult(shouldRefresh = false, informer = null)
+        val Updated = PaintingResult(shouldRefresh = true, informer = null)
     }
 }
 
@@ -425,12 +521,12 @@ data class PaintingFinishResult(
 
 private sealed interface PaintingSpec {
     class Single(
+        val canvasType: CanvasType,
         val painter: (Int, Int, Int, Int) -> GraphicsAction,
-        val startX: Int,
-        val startY: Int,
+        val initialX: Int,
+        val initialY: Int,
         var paintActions: GraphicsActionPair? = null,
-        var lastX: Int? = null,
-        var lastY: Int? = null,
+        var lastRect: Rect? = null,
     ) : PaintingSpec
 
     class Multiple(
@@ -442,15 +538,16 @@ private sealed interface PaintingSpec {
     class Selection(
         val initialState: BpeSelectionState.Selected?,
         val canvasType: CanvasType,
-        val startX: Int,
-        val startY: Int,
+        val initialX: Int,
+        val initialY: Int,
+        var lastRect: Rect? = null,
     ) : PaintingSpec
 
     class Floating(
         val initialState: BpeSelectionState.Floating,
         val cutActions: GraphicsActionPair? = null,
-        val startX: Int,
-        val startY: Int,
+        val initialX: Int,
+        val initialY: Int,
         var lastOffsetX: Int = 0,
         var lastOffsetY: Int = 0,
         var lastState: BpeSelectionState.Floating,
@@ -463,5 +560,11 @@ private interface PaintingToolDescriptor {
 }
 
 private interface PaintingShapeDescriptor {
-    fun createPaintingSpec(cell: Cell, shapePainter: (Shape<Cell>) -> GraphicsAction, drawingX: Int, drawingY: Int): PaintingSpec
+    fun createPaintingSpec(
+        canvasType: CanvasType,
+        cell: Cell,
+        shapePainter: (Shape<Cell>) -> GraphicsAction,
+        drawingX: Int,
+        drawingY: Int,
+    ): PaintingSpec
 }

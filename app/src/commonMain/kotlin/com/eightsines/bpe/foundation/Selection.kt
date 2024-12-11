@@ -17,10 +17,10 @@ data class Selection(
     fun copyWithOffset(point: Pair<Int, Int>) = copy(drawingBox = drawingBox.copyWithOffset(point))
 
     private fun computeSciiBox(): Box {
-        val (sx, sy) = canvasType.toSciiPosition(drawingBox.x, drawingBox.y)
-        val (ex, ey) = canvasType.toSciiPosition(drawingBox.ex, drawingBox.ey)
+        val (sx, sy) = canvasType.toSciiPosition(drawingBox.lx, drawingBox.ly)
+        val (ex, ey) = canvasType.toSciiPosition(drawingBox.rx, drawingBox.ry)
 
-        return Box.of(sx, sy, ex, ey)
+        return Box.ofCoords(sx, sy, ex, ey)
     }
 
     companion object : BagStuffPacker<Selection>, BagStuffUnpacker<Selection> {

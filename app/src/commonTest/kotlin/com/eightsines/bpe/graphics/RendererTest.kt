@@ -332,7 +332,7 @@ class RendererTest {
                         },
                     ),
                 ),
-                box = Box(0, 0, 1, 1),
+                box = Box.ofSize(0, 0, 1, 1),
             )
         },
         act = { (sut, data) ->

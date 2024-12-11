@@ -61,10 +61,16 @@ object TextRes {
     val CanvasVBlock = TextResId("canvas_vblock")
     val CanvasQBlock = TextResId("canvas_qblock")
 
+    val ModeEdge = TextResId("mode_edge")
+    val ModeCenter = TextResId("mode_center")
+
     val AlertLoadReaderError = TextResId("alert_load_reader_error")
     val AlertLoadNullResult = TextResId("alert_load_null_result")
     val AlertLoadUnpackError = TextResId("alert_load_unpack_error")
     val AlertExportNotImplemented = TextResId("alert_export_not_implemented")
+
+    val InformerShort = TextResId("informer_short")
+    val InformerFull = TextResId("informer_full")
 }
 
 @JvmInline

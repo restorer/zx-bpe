@@ -85,8 +85,8 @@ data class Crate<T : Cell>(
         @Suppress("NOTHING_TO_INLINE")
         inline fun <T : Cell> fromCanvasDrawing(canvas: Canvas<T>, box: Box): Crate<T> = fromCanvasDrawing(
             canvas = canvas,
-            drawingX = box.x,
-            drawingY = box.y,
+            drawingX = box.lx,
+            drawingY = box.ly,
             drawingWidth = box.width,
             drawingHeight = box.height,
         )

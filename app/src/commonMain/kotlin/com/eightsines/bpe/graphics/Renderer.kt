@@ -23,8 +23,8 @@ class Renderer {
         val groups = groupLayers(layers)
 
         destination.mutate {
-            for (sciiY in box.y..box.ey) {
-                for (sciiX in box.x..box.ex) {
+            for (sciiY in box.ly..box.ry) {
+                for (sciiX in box.lx..box.rx) {
                     it.replaceSciiCell(sciiX, sciiY, mergeCell(backgroundCell, groups, sciiX, sciiY))
                 }
             }

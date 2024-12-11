@@ -42,4 +42,6 @@ sealed interface BpeAction {
     data class CanvasMove(val drawingX: Int, val drawingY: Int) : BpeAction
     data class CanvasUp(val drawingX: Int, val drawingY: Int) : BpeAction
     data object CanvasCancel : BpeAction
+
+    data class SetPaintingMode(val mode: BpePaintingMode) : BpeAction
 }

@@ -18,8 +18,8 @@ enum class ShapeType(val value: Int, internal val polymorphicPacker: BagStuffPac
     Line(2, Shape.Line.Polymorphic),
     FillBox(3, Shape.FillBox.Polymorphic),
     StrokeBox(4, Shape.StrokeBox.Polymorphic),
-    FillEllipse(6, Shape.FillBox.Polymorphic),
-    StrokeEllipse(7, Shape.StrokeBox.Polymorphic),
+    FillEllipse(6, Shape.FillEllipse.Polymorphic),
+    StrokeEllipse(7, Shape.StrokeEllipse.Polymorphic),
     Cells(5, Shape.Cells.Polymorphic),
     // Last value is 7 (StrokeEllipse)
 }
@@ -131,7 +131,7 @@ sealed interface Shape<T : Cell> {
         override val ey: Int,
         val cell: T,
     ) : Shape<T>, BoxLikeShape {
-        constructor(box: Box, cell: T) : this(box.x, box.y, box.ex, box.ey, cell)
+        constructor(box: Box, cell: T) : this(box.lx, box.ly, box.rx, box.ry, cell)
 
         override val type = ShapeType.FillBox
         override val cellType = cell.type

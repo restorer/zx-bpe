@@ -1,6 +1,8 @@
 package com.eightsines.bpe.middlware
 
+import com.eightsines.bpe.core.Box
 import com.eightsines.bpe.core.Cell
+import com.eightsines.bpe.core.Rect
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
@@ -49,6 +51,9 @@ data class BpeState(
     val selection: Selection?,
     val selectionIsActionable: Boolean,
     val selectionIsFloating: Boolean,
+
+    val paintingMode: BpePaintingMode,
+    val informer: BpeInformer?,
 )
 
 enum class BpeShape(val value: Int) {
@@ -195,3 +200,23 @@ data class BpeClipboard(val drawingX: Int, val drawingY: Int, val crate: Crate<*
         }
     }
 }
+
+enum class BpePaintingMode(val value: Int) {
+    Edge(1),
+    Center(2);
+
+    companion object {
+        fun of(value: Int) = when (value) {
+            Edge.value -> Edge
+            Center.value -> Center
+            else -> throw IllegalArgumentException("Unknown enum value=$value for BpePaintingMode")
+        }
+    }
+}
+
+data class BpeInformer(
+    val canvasType: CanvasType,
+    val initialX: Int,
+    val initialY: Int,
+    val rect: Rect,
+)

@@ -59,8 +59,8 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
         val selectionBox = selection.drawingBox
 
         val clipboard = BpeClipboard(
-            drawingX = selectionBox.x,
-            drawingY = selectionBox.y,
+            drawingX = selectionBox.lx,
+            drawingY = selectionBox.ly,
             crate = Crate.fromCanvasDrawing(currentCanvasLayer.canvas, selectionBox),
         )
 
@@ -90,8 +90,8 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
             val selectionBox = selectionState.selection.drawingBox
 
             val clipboard = BpeClipboard(
-                drawingX = selectionBox.x,
-                drawingY = selectionBox.y,
+                drawingX = selectionBox.lx,
+                drawingY = selectionBox.ly,
                 crate = Crate.fromCanvasDrawing(currentCanvasLayer.canvas, selectionBox),
             )
 
@@ -102,8 +102,8 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
             val selectionBox = selectionState.selection.drawingBox
 
             val clipboard = BpeClipboard(
-                drawingX = selectionBox.x,
-                drawingY = selectionBox.y,
+                drawingX = selectionBox.lx,
+                drawingY = selectionBox.ly,
                 crate = selectionState.crate,
             )
 
@@ -149,8 +149,8 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
     fun transformFromHistory(transformType: TransformType) {
         val floatingState = selectionState as? BpeSelectionState.Floating ?: return
 
-        var x = floatingState.selection.drawingBox.x
-        var y = floatingState.selection.drawingBox.y
+        var x = floatingState.selection.drawingBox.lx
+        var y = floatingState.selection.drawingBox.ly
         val crate = floatingState.crate.copyTransformed(transformType)
 
         if (transformType == TransformType.RotateCw || transformType == TransformType.RotateCcw) {
@@ -168,7 +168,7 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
         ) ?: return
 
         selectionState = BpeSelectionState.Floating(
-            selection = Selection(floatingState.selection.canvasType, Box(x, y, crate.width, crate.height)),
+            selection = Selection(floatingState.selection.canvasType, Box.ofSize(x, y, crate.width, crate.height)),
             layerUid = floatingState.layerUid,
             crate = crate,
             overlayActions = overlayActions,
@@ -193,7 +193,7 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
         selectionState = BpeSelectionState.Floating(
             selection = Selection(
                 clipboard.crate.canvasType,
-                Box(clipboard.drawingX, clipboard.drawingY, clipboard.crate.width, clipboard.crate.height),
+                Box.ofSize(clipboard.drawingX, clipboard.drawingY, clipboard.crate.width, clipboard.crate.height),
             ),
             layerUid = currentCanvasLayer.uid,
             crate = clipboard.crate,
@@ -241,7 +241,7 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
         val overlayActions = graphicsEngine.executePair(
             GraphicsAction.MergeShape(
                 initialState.layerUid,
-                Shape.Cells(newSelectionBox.x, newSelectionBox.y, initialState.crate),
+                Shape.Cells(newSelectionBox.lx, newSelectionBox.ly, initialState.crate),
             ),
         ) ?: return null
 
@@ -297,7 +297,7 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
             @Suppress("UNCHECKED_CAST")
             GraphicsAction.MergeShape(
                 currentCanvasLayer.uid,
-                Shape.Cells(selectionBox.x, selectionBox.y, crate as Crate<Cell>),
+                Shape.Cells(selectionBox.lx, selectionBox.ly, crate as Crate<Cell>),
             ),
         ) ?: return null
 

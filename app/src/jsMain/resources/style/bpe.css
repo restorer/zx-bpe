@@ -48,6 +48,11 @@
     --alert-padding: 24px;
     --alert-text: var(--material-white);
     --alert-font-size: 20px;
+
+    --informer-background: var(--material-red--900);
+    --informer-padding: 10px;
+    --informer-text: var(--material-white);
+    --informer-font-size: 16px;
 }
 
 body {
@@ -518,6 +523,18 @@ body {
     display: block;
 }
 
+.tool__mode > .tool__icon {
+    display: none;
+}
+
+.tool__mode--edge > .tool__icon--mode__edge {
+    display: block;
+}
+
+.tool__mode--center > .tool__icon--mode__center {
+    display: block;
+}
+
 .tool__color_ink--transparent {
     --half-size: calc(var(--tool-inner-size) / 2);
 
@@ -630,6 +647,18 @@ body {
     -ms-interpolation-mode: nearest-neighbor; /* IE */
 }
 
+.informer {
+    position: absolute;
+    right: 0;
+    bottom: calc(var(--tool-size) + var(--panel-divider-size));
+    background: var(--informer-background);
+    padding: var(--informer-padding);
+    color: var(--informer-text);
+    font-family: sans-serif;
+    font-size: var(--informer-font-size);
+    line-height: 1;
+}
+
 .alert {
     position: fixed;
     top: 0;
@@ -677,6 +706,7 @@ body {
         --tool-sm-size: 26px;
         --tool-xs-size: 20px;
         --menu-font-size: 18px;
+        --informer-font-size: 14px;
     }
 
     .tool--xs > .tool__char {
@@ -830,5 +860,9 @@ body {
     .subpanel--tools .tool--active::before {
         border-top: 0 none;
         border-right: 3px solid var(--subpanel-active-highlight);
+    }
+
+    .informer {
+        bottom: 0;
     }
 }

@@ -4,9 +4,11 @@ import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
+import com.eightsines.bpe.middlware.BpePaintingMode
 import com.eightsines.bpe.middlware.BpeShape
 import com.eightsines.bpe.middlware.LayerView
 import com.eightsines.bpe.resources.TextResId
+import com.eightsines.bpe.resources.TextDescriptor
 
 data class UiState(
     val sheet: UiSheetView,
@@ -47,6 +49,9 @@ data class UiState(
     val layersMoveUp: UiToolState<Unit>,
     val layersMoveDown: UiToolState<Unit>,
     val layersTypesIsVisible: Boolean,
+
+    val paintingMode: BpePaintingMode,
+    val informerText: TextDescriptor?,
 )
 
 data class UiArea(val pointerX: Int, val pointerY: Int, val pointerWidth: Int, val pointerHeight: Int)

@@ -6,6 +6,7 @@ import com.eightsines.bpe.core.SciiLight
 import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.foundation.LayerUid
+import com.eightsines.bpe.middlware.BpePaintingMode
 import com.eightsines.bpe.middlware.BpeShape
 import com.eightsines.bpe.middlware.LayerView
 import com.eightsines.bpe.presentation.UiAction
@@ -117,7 +118,9 @@ class BrowserView(
     private val shapesStrokeEllipse = document.find<HTMLElement>(".js-shape-stroke-ellipse")
     private val shapesFillEllipse = document.find<HTMLElement>(".js-shape-fill-ellipse")
 
+    private val paintingMode = document.find<HTMLElement>(".js-painting-mode")
     private val menuPanel = document.find<HTMLElement>(".js-menu-panel")
+    private val informer = document.find<HTMLElement>(".js-informer")
 
     private val alert = document.find<HTMLElement>(".js-alert")
     private val alertContent = document.find<HTMLElement>(".js-alert-content")
@@ -205,6 +208,8 @@ class BrowserView(
         shapesStrokeEllipse?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.StrokeEllipse))) }
         shapesFillEllipse?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.FillEllipse))) }
 
+        paintingMode?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaintingModeClick)) }
+
         menu?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.MenuClick)) }
         menuLoad?.also { menuLoad -> menuLoad.addEventListener(EVENT_CHANGE, { _actionFlow.tryEmit(BrowserAction.Load(menuLoad)) }) }
         menuSave?.addClickListener { _actionFlow.tryEmit(BrowserAction.Save) }
@@ -275,6 +280,8 @@ class BrowserView(
         toolboxPaste?.setToolState(uiState.toolboxPaste)
         toolboxUndo?.setToolState(uiState.toolboxUndo)
         toolboxRedo?.setToolState(uiState.toolboxRedo)
+
+        paintingMode?.replaceClassModifier("tool__mode--", getModeClassSuffix(uiState.paintingMode))
         menu?.setToolState(uiState.menu)
 
         colorsPanel?.setVisible(uiState.activePanel is UiPanel.Colors)
@@ -347,6 +354,9 @@ class BrowserView(
                 renderer.renderAreas(it, selectionArea, cursorArea)
             }
         }
+
+        informer?.setVisible(uiState.informerText != null)
+        informer?.textContent = uiState.informerText?.let(resourceManager::resolveText) ?: ""
 
         alert?.setVisible(state.alertText != null)
         alertContent?.textContent = state.alertText?.let(resourceManager::resolveText) ?: ""
@@ -772,6 +782,11 @@ class BrowserView(
         BpeShape.FillBox -> "fill_box"
         BpeShape.StrokeEllipse -> "stroke_ellipse"
         BpeShape.FillEllipse -> "fill_ellipse"
+    }
+
+    private fun getModeClassSuffix(mode: BpePaintingMode) = when (mode) {
+        BpePaintingMode.Edge -> "edge"
+        BpePaintingMode.Center -> "center"
     }
 
     private companion object {

@@ -347,8 +347,8 @@ class GraphicsEngine(
 
         val drawingBBox = painter.getBBox(action.shape)
 
-        val (sciiSX, sciiSY) = canvas.type.toSciiPosition(drawingBBox.x, drawingBBox.y)
-        val (sciiEX, sciiEY) = canvas.type.toSciiPosition(drawingBBox.ex, drawingBBox.ey)
+        val (sciiSX, sciiSY) = canvas.type.toSciiPosition(drawingBBox.lx, drawingBBox.ly)
+        val (sciiEX, sciiEY) = canvas.type.toSciiPosition(drawingBBox.rx, drawingBBox.ry)
 
         val undoAction = GraphicsAction.ReplaceCells(
             layerUid = layer.uid,
@@ -365,7 +365,7 @@ class GraphicsEngine(
             }
         }
 
-        updatePreview(Box.of(sciiSX, sciiSY, sciiEX, sciiEY))
+        updatePreview(Box.ofCoords(sciiSX, sciiSY, sciiEX, sciiEY))
         return undoAction
     }
 
@@ -382,8 +382,8 @@ class GraphicsEngine(
 
         val drawingBBox = painter.getBBox(action.shape)
 
-        val (sciiSX, sciiSY) = canvas.type.toSciiPosition(drawingBBox.x, drawingBBox.y)
-        val (sciiEX, sciiEY) = canvas.type.toSciiPosition(drawingBBox.ex, drawingBBox.ey)
+        val (sciiSX, sciiSY) = canvas.type.toSciiPosition(drawingBBox.lx, drawingBBox.ly)
+        val (sciiEX, sciiEY) = canvas.type.toSciiPosition(drawingBBox.rx, drawingBBox.ry)
 
         val undoAction = GraphicsAction.ReplaceCells(
             layerUid = layer.uid,
@@ -398,7 +398,7 @@ class GraphicsEngine(
             }
         }
 
-        updatePreview(Box.of(sciiSX, sciiSY, sciiEX, sciiEY))
+        updatePreview(Box.ofCoords(sciiSX, sciiSY, sciiEX, sciiEY))
         return undoAction
     }
 
@@ -426,7 +426,7 @@ class GraphicsEngine(
             }
         }
 
-        updatePreview(Box(action.x, action.y, crate.width, crate.height))
+        updatePreview(Box.ofSize(action.x, action.y, crate.width, crate.height))
         return undoAction
     }
 
@@ -588,7 +588,7 @@ class GraphicsEngine(
         const val SCREEN_SCII_WIDTH = 32
         const val SCREEN_SCII_HEIGHT = 24
 
-        private val ScreenBox = Box(0, 0, SCREEN_SCII_WIDTH, SCREEN_SCII_HEIGHT)
+        private val ScreenBox = Box.ofSize(0, 0, SCREEN_SCII_WIDTH, SCREEN_SCII_HEIGHT)
     }
 }
 

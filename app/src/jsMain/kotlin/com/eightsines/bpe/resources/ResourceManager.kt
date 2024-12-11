@@ -3,6 +3,16 @@ package com.eightsines.bpe.resources
 class ResourceManager {
     fun resolveText(res: TextResId) = TEXT_MAP[res.id] ?: res.id
 
+    fun resolveText(textDescriptor: TextDescriptor): String {
+        var result = TEXT_MAP[textDescriptor.res.id] ?: textDescriptor.res.id
+
+        for ((key, value) in textDescriptor.params) {
+            result = result.replace("{${key}}", value)
+        }
+
+        return result
+    }
+
     private companion object {
         private val TEXT_MAP: Map<String, String> = buildMap {
             put(TextRes.PaletteSelectColor.id, "Select color")
@@ -63,10 +73,16 @@ class ResourceManager {
             put(TextRes.CanvasVBlock.id, "VBlock")
             put(TextRes.CanvasQBlock.id, "QBlock")
 
+            put(TextRes.ModeEdge.id, "Edge mode")
+            put(TextRes.ModeCenter.id, "Center mode")
+
             put(TextRes.AlertLoadReaderError.id, "Failed to read painting (reader error).")
             put(TextRes.AlertLoadNullResult.id, "Failed to read painting (result is null).")
             put(TextRes.AlertLoadUnpackError.id, "Failed to read painting (unpack).")
             put(TextRes.AlertExportNotImplemented.id, "Export is not implemented yet.")
+
+            put(TextRes.InformerShort.id, "{x} {y}")
+            put(TextRes.InformerFull.id, "{x} {y} — {w}×{h}")
         }
     }
 }

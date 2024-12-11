@@ -7,8 +7,10 @@ import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.graphics.GraphicsEngine
 import com.eightsines.bpe.middlware.BpeAction
 import com.eightsines.bpe.middlware.BpeEngine
+import com.eightsines.bpe.middlware.BpePaintingMode
 import com.eightsines.bpe.middlware.BpeShape
 import com.eightsines.bpe.middlware.BpeTool
+import com.eightsines.bpe.resources.TextDescriptor
 import com.eightsines.bpe.resources.TextRes
 import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.Logger
@@ -22,8 +24,8 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     private var activePanel: Panel? = null
     private var layerTypePanel: LayerTypePanel? = null
     private var currentDrawingType: CanvasType? = null
-    private var currentAreaSpec: AreaSpec = AreaSpec(0, 0, 0, 0)
-    private var cursorArea: UiArea? = null
+    private var currentAreaSpec: AreaSpec = AreaSpec(0, 0, 0, 0, 0.0, 0.0)
+    private var cursorSpec: CursorSpec? = null
     private var isSheetDown: Boolean = false
 
     var state: UiState = refresh()
@@ -54,6 +56,8 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             is UiAction.PaletteBrightClick -> executePaletteBrightClick()
             is UiAction.PaletteFlashClick -> executePaletteFlashClick()
             is UiAction.PaletteCharClick -> executePaletteCharClick()
+
+            is UiAction.PaintingModeClick -> executePaintingModeClick()
 
             is UiAction.SelectionMenuClick -> executeSelectionMenuClick()
             is UiAction.SelectionCutClick -> executeSelectionCutClick()
@@ -121,8 +125,8 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     private fun executeSheetEnter(action: UiAction.SheetEnter) {
         val (drawingX, drawingY) = pointerToDrawing(action.pointerX, action.pointerY)
 
-        cursorArea = if (isDrawingInside(drawingX, drawingY)) {
-            drawingToArea(currentAreaSpec, drawingX, drawingY)
+        cursorSpec = if (isDrawingInside(drawingX, drawingY)) {
+            drawingToCursorSpec(currentAreaSpec, drawingX, drawingY)
         } else {
             null
         }
@@ -133,11 +137,11 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         val (drawingX, drawingY) = pointerToDrawing(action.pointerX, action.pointerY)
 
         if (isDrawingInside(drawingX, drawingY)) {
-            cursorArea = drawingToArea(currentAreaSpec, drawingX, drawingY)
+            cursorSpec = drawingToCursorSpec(currentAreaSpec, drawingX, drawingY)
             isSheetDown = true
             bpeEngine.execute(BpeAction.CanvasDown(drawingX, drawingY))
         } else {
-            cursorArea = null
+            cursorSpec = null
         }
     }
 
@@ -148,16 +152,16 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             isSheetDown -> {
                 drawingX = drawingX.coerceIn(0, currentAreaSpec.drawingEX)
                 drawingY = drawingY.coerceIn(0, currentAreaSpec.drawingEY)
-                val newCursorArea = drawingToArea(currentAreaSpec, drawingX, drawingY)
+                val newCursorSpec = drawingToCursorSpec(currentAreaSpec, drawingX, drawingY)
 
-                if (cursorArea != newCursorArea) {
-                    cursorArea = newCursorArea
+                if (cursorSpec?.area != newCursorSpec.area) {
+                    cursorSpec = newCursorSpec
                     bpeEngine.execute(BpeAction.CanvasMove(drawingX, drawingY))
                 }
             }
 
-            isDrawingInside(drawingX, drawingY) -> cursorArea = drawingToArea(currentAreaSpec, drawingX, drawingY)
-            else -> cursorArea = null
+            isDrawingInside(drawingX, drawingY) -> cursorSpec = drawingToCursorSpec(currentAreaSpec, drawingX, drawingY)
+            else -> cursorSpec = null
         }
     }
 
@@ -171,7 +175,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         drawingX = drawingX.coerceIn(0, currentAreaSpec.drawingEX)
         drawingY = drawingY.coerceIn(0, currentAreaSpec.drawingEY)
 
-        cursorArea = drawingToArea(currentAreaSpec, drawingX, drawingY)
+        cursorSpec = drawingToCursorSpec(currentAreaSpec, drawingX, drawingY)
         bpeEngine.execute(BpeAction.CanvasUp(drawingX, drawingY))
 
         isSheetDown = false
@@ -183,7 +187,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             isSheetDown = false
         }
 
-        cursorArea = null
+        cursorSpec = null
     }
 
     private fun executePaletteColorClick() {
@@ -220,6 +224,19 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         if (state.paletteChar.isInteractable) {
             activePanel = if (activePanel == Panel.Chars) null else Panel.Chars
         }
+    }
+
+    private fun executePaintingModeClick() {
+        activePanel = null
+
+        bpeEngine.execute(
+            BpeAction.SetPaintingMode(
+                when (bpeEngine.state.paintingMode) {
+                    BpePaintingMode.Edge -> BpePaintingMode.Center
+                    BpePaintingMode.Center -> BpePaintingMode.Edge
+                },
+            ),
+        )
     }
 
     private fun executeSelectionMenuClick() {
@@ -449,6 +466,12 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         return (x / currentAreaSpec.cellWidth - if (x < 0) 1 else 0) to (y / currentAreaSpec.cellHeight - if (y < 0) 1 else 0)
     }
 
+    private fun drawingToCursorSpec(areaSpec: AreaSpec, drawingX: Int, drawingY: Int) = CursorSpec(
+        area = drawingToArea(areaSpec, drawingX, drawingY),
+        informerSciiX = drawingX * areaSpec.sciiXMultiplier,
+        informerSciiY = drawingY * areaSpec.sciiYMultiplier,
+    )
+
     private fun drawingToArea(areaSpec: AreaSpec, drawingX: Int, drawingY: Int, drawingWidth: Int = 1, drawingHeight: Int = 1) =
         UiArea(
             UiSpec.BORDER_SIZE + drawingX * areaSpec.cellWidth,
@@ -467,6 +490,8 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             cellHeight = UiSpec.PICTURE_HEIGHT,
             drawingEX = 0,
             drawingEY = 0,
+            sciiXMultiplier = 0.0,
+            sciiYMultiplier = 0.0,
         )
 
         is CanvasType.Scii -> AreaSpec(
@@ -474,6 +499,8 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             cellHeight = UiSpec.SCII_CELL_SIZE,
             drawingEX = GraphicsEngine.SCREEN_SCII_WIDTH - 1,
             drawingEY = GraphicsEngine.SCREEN_SCII_HEIGHT - 1,
+            sciiXMultiplier = 1.0,
+            sciiYMultiplier = 1.0,
         )
 
         is CanvasType.HBlock -> AreaSpec(
@@ -481,6 +508,8 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             cellHeight = UiSpec.BLOCK_CELL_SIZE,
             drawingEX = GraphicsEngine.SCREEN_SCII_WIDTH - 1,
             drawingEY = GraphicsEngine.SCREEN_SCII_HEIGHT * 2 - 1,
+            sciiXMultiplier = 1.0,
+            sciiYMultiplier = 0.5,
         )
 
         is CanvasType.VBlock -> AreaSpec(
@@ -488,6 +517,8 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             cellHeight = UiSpec.SCII_CELL_SIZE,
             drawingEX = GraphicsEngine.SCREEN_SCII_WIDTH * 2 - 1,
             drawingEY = GraphicsEngine.SCREEN_SCII_HEIGHT - 1,
+            sciiXMultiplier = 0.5,
+            sciiYMultiplier = 1.0,
         )
 
         is CanvasType.QBlock -> AreaSpec(
@@ -495,11 +526,14 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             cellHeight = UiSpec.BLOCK_CELL_SIZE,
             drawingEX = GraphicsEngine.SCREEN_SCII_WIDTH * 2 - 1,
             drawingEY = GraphicsEngine.SCREEN_SCII_HEIGHT * 2 - 1,
+            sciiXMultiplier = 0.5,
+            sciiYMultiplier = 0.5,
         )
     }
 
     private fun refresh(): UiState {
         val bpeState = bpeEngine.state
+        val cursorSpec = this.cursorSpec
 
         currentDrawingType = bpeState.drawingType
         currentAreaSpec = computeAreaSpec(bpeState.drawingType)
@@ -512,13 +546,13 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
         return UiState(
             sheet = UiSheetView(bpeState.background, bpeState.canvas),
-            cursorArea = cursorArea,
+            cursorArea = cursorSpec?.area,
 
             selectionArea = bpeState.selection?.let {
                 drawingToArea(
                     computeAreaSpec(it.canvasType),
-                    it.drawingBox.x,
-                    it.drawingBox.y,
+                    it.drawingBox.lx,
+                    it.drawingBox.ly,
                     it.drawingBox.width,
                     it.drawingBox.height,
                 )
@@ -641,6 +675,30 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             layersMoveUp = if (bpeState.layersCanMoveUp) UiToolState.Visible(Unit) else UiToolState.Disabled(Unit),
             layersMoveDown = if (bpeState.layersCanMoveDown) UiToolState.Visible(Unit) else UiToolState.Disabled(Unit),
             layersTypesIsVisible = layerTypePanel != null,
+
+            paintingMode = bpeState.paintingMode,
+
+            informerText = when {
+                bpeState.informer != null -> TextDescriptor(
+                    TextRes.InformerFull,
+                    buildMap {
+                        put("x", (cursorSpec?.informerSciiX ?: 0.0).toString())
+                        put("y", (cursorSpec?.informerSciiY ?: 0.0).toString())
+                        put("w", (bpeState.informer.rect.width * currentAreaSpec.sciiXMultiplier).toString())
+                        put("h", (bpeState.informer.rect.height * currentAreaSpec.sciiYMultiplier).toString())
+                    }
+                )
+
+                bpeState.drawingType != null && cursorSpec != null -> TextDescriptor(
+                    TextRes.InformerShort,
+                    buildMap {
+                        put("x", cursorSpec.informerSciiX.toString())
+                        put("y", cursorSpec.informerSciiY.toString())
+                    }
+                )
+
+                else -> null
+            },
         )
     }
 }
@@ -672,4 +730,8 @@ private data class AreaSpec(
     val cellHeight: Int,
     val drawingEX: Int,
     val drawingEY: Int,
+    val sciiXMultiplier: Double,
+    val sciiYMultiplier: Double,
 )
+
+private data class CursorSpec(val area: UiArea, val informerSciiX: Double, val informerSciiY: Double)

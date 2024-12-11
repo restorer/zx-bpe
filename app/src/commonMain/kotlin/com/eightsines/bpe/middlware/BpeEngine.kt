@@ -38,6 +38,7 @@ class BpeEngine(
     private var history: MutableList<HistoryStep> = mutableListOf()
     private var historyPosition: Int = 0
     private var clipboard: BpeClipboard? = null
+    private var informer: BpeInformer? = null
 
     private var cachedMoveUpOnTopOfLayer: Layer? = null
     private var cachedMoveDownOnTopOfLayer: Layer? = null
@@ -89,6 +90,8 @@ class BpeEngine(
             is BpeAction.CanvasMove -> executeCanvasMove(action)
             is BpeAction.CanvasUp -> executeCanvasUp(action)
             is BpeAction.CanvasCancel -> executeCanvasCancel()
+
+            is BpeAction.SetPaintingMode -> executeSetPaintingMode(action)
         }
 
         if (shouldRefresh) {
@@ -462,7 +465,7 @@ class BpeEngine(
     //
 
     private fun executeCanvasDown(action: BpeAction.CanvasDown) {
-        if (
+        processPaintingResult(
             paintingController.start(
                 tool = toolboxTool,
                 paintShape = toolboxPaintShape,
@@ -473,15 +476,11 @@ class BpeEngine(
                 drawingY = action.drawingY,
                 historyActionsPerformer = ::performHistoryActions,
             )
-        ) {
-            shouldRefresh = true
-        }
+        )
     }
 
     private fun executeCanvasMove(action: BpeAction.CanvasMove) {
-        if (paintingController.update(action.drawingX, action.drawingY)) {
-            shouldRefresh = true
-        }
+        processPaintingResult(paintingController.update(action.drawingX, action.drawingY))
     }
 
     private fun executeCanvasUp(action: BpeAction.CanvasUp) {
@@ -491,10 +490,23 @@ class BpeEngine(
         if (result.shouldRefresh) {
             shouldRefresh = true
         }
+
+        if (informer != null) {
+            informer = null
+            shouldRefresh = true
+        }
     }
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun executeCanvasCancel() = cancelPainting()
+
+    //
+    // Mode
+    //
+
+    private fun executeSetPaintingMode(action: BpeAction.SetPaintingMode) {
+        processPaintingResult(paintingController.updatePaintingMode(action.mode))
+    }
 
     //
     // Utils
@@ -503,6 +515,11 @@ class BpeEngine(
     @Suppress("NOTHING_TO_INLINE")
     private inline fun cancelPainting() {
         if (paintingController.cancel(::performHistoryActions)) {
+            shouldRefresh = true
+        }
+
+        if (informer != null) {
+            informer = null
             shouldRefresh = true
         }
     }
@@ -523,6 +540,16 @@ class BpeEngine(
 
         if (result.clipboard != null) {
             clipboard = result.clipboard
+        }
+
+        if (result.shouldRefresh) {
+            shouldRefresh = true
+        }
+    }
+
+    private fun processPaintingResult(result: PaintingResult) {
+        if (result.informer != null) {
+            informer = result.informer
         }
 
         if (result.shouldRefresh) {
@@ -696,6 +723,9 @@ class BpeEngine(
             selection = selectionController.selection,
             selectionIsActionable = selectionController.isSelected && currentLayer is CanvasLayer<*>,
             selectionIsFloating = selectionController.isFloating,
+
+            paintingMode = paintingController.paintingMode,
+            informer = informer,
         )
     }
 }

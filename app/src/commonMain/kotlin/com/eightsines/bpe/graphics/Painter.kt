@@ -18,7 +18,7 @@ class Painter {
         is Shape.StrokeBox -> getBBoxBoxLike(shape)
         is Shape.FillEllipse -> getBBoxBoxLike(shape)
         is Shape.StrokeEllipse -> getBBoxBoxLike(shape)
-        is Shape.Cells -> Box(shape.x, shape.y, shape.crate.width, shape.crate.height)
+        is Shape.Cells -> Box.ofSize(shape.x, shape.y, shape.crate.width, shape.crate.height)
     }
 
     fun <T : Cell> paint(shape: Shape<T>, pencil: Pencil<T>) {
@@ -34,7 +34,7 @@ class Painter {
     }
 
     private fun getBBoxPoints(shape: Shape.Points<*>) = if (shape.points.isEmpty()) {
-        Box(0, 0, 0, 0)
+        Box.ofSize(0, 0, 0, 0)
     } else {
         var sx = 0
         var sy = 0
@@ -55,17 +55,10 @@ class Painter {
             }
         }
 
-        Box.of(sx, sy, ex, ey)
+        Box.ofCoords(sx, sy, ex, ey)
     }
 
-    private fun getBBoxBoxLike(shape: BoxLikeShape): Box {
-        val sx = minOf(shape.sx, shape.ex)
-        val ex = maxOf(shape.sx, shape.ex)
-        val sy = minOf(shape.sy, shape.ey)
-        val ey = maxOf(shape.sy, shape.ey)
-
-        return Box(sx, sy, ex - sx + 1, ey - sy + 1)
-    }
+    private fun getBBoxBoxLike(shape: BoxLikeShape) = Box.ofCoords(shape.sx, shape.sy, shape.ex, shape.ey)
 
     private fun <T : Cell> paintPoints(shape: Shape.Points<T>, pencil: Pencil<T>) {
         for (point in shape.points) {
