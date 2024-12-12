@@ -56,6 +56,7 @@ const ASSETS = [
     "/bpe/drawable/layer__create.svg",
     "/bpe/drawable/type__hblock.svg",
     "/bpe/drawable/specscii__24x24.png",
+    "/bpe/style/../drawable/specscii__24x24.png",
     "/bpe/style/bpe.css",
     "/bpe/style/material.css",
     "/bpe/style/specscii.css",

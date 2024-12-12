@@ -11,8 +11,8 @@ def main() -> int:
     template_path = os.path.dirname(__file__) + '/service__template.js'
     result_path = resources_path + '/service.js'
 
-    assets = f'    "{WEBROOT}",\n'
-    assets += f'    "{WEBROOT}/"'
+    assets = f'    "{WEBROOT}"'
+    assets += f',\n    "{WEBROOT}/"'
 
     for root, _, files in os.walk(resources_path):
         path = os.path.abspath(root)[(len(resources_path) + 1):]
@@ -25,6 +25,9 @@ def main() -> int:
                 assets += ',\n'
 
             assets += f'    "{WEBROOT}/{path}{file}"'
+
+            if file == 'specscii__24x24.png':
+                assets += f',\n    "{WEBROOT}/style/../{path}{file}"'
 
     with open(template_path, 'r', encoding='utf-8') as file:
         template = file.read()
