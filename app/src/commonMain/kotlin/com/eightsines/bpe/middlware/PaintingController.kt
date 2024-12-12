@@ -245,10 +245,13 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
         val deselectResult = selectionController.deselect()
 
         pendingHistoryStep = deselectResult.historyStep
+        selectionController.ongoingSelectedUpdate(null)
 
         return PaintingSpec.Selection(
             initialState = initialState as? BpeSelectionState.Selected,
             canvasType = currentCanvasLayer.canvasType,
+            drawingEX = currentCanvasLayer.canvas.drawingWidth,
+            drawingEY = currentCanvasLayer.canvas.drawingHeight,
             initialY = drawingY,
             initialX = drawingX,
         ) to deselectResult.shouldRefresh
@@ -324,8 +327,22 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
             return PaintingResult.Empty
         }
 
+        val box = Box.ofCoords(
+            maxOf(0, rect.sx),
+            maxOf(0, rect.sy),
+            minOf(rect.ex, spec.drawingEX),
+            minOf(rect.ey, spec.drawingEY),
+        )
+
         spec.lastRect = rect
-        selectionController.ongoingSelectedUpdate(Selection(spec.canvasType, Box.ofCoords(rect.sx, rect.sy, rect.ex, rect.ey)))
+
+        if (box.width > 1 || box.height > 1) {
+            spec.isEmpty = false
+        }
+
+        if (!spec.isEmpty) {
+            selectionController.ongoingSelectedUpdate(Selection(spec.canvasType, box))
+        }
 
         return PaintingResult(
             shouldRefresh = true,
@@ -538,8 +555,11 @@ private sealed interface PaintingSpec {
     class Selection(
         val initialState: BpeSelectionState.Selected?,
         val canvasType: CanvasType,
+        val drawingEX: Int,
+        val drawingEY: Int,
         val initialX: Int,
         val initialY: Int,
+        var isEmpty: Boolean = true,
         var lastRect: Rect? = null,
     ) : PaintingSpec
 

@@ -223,8 +223,8 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
         it.contains(drawingX, drawingY)
     }
 
-    fun ongoingSelectedUpdate(selection: Selection): Boolean {
-        val newSelectionState = BpeSelectionState.Selected(selection)
+    fun ongoingSelectedUpdate(selection: Selection?): Boolean {
+        val newSelectionState = selection?.let { BpeSelectionState.Selected(it) } ?: BpeSelectionState.None
 
         return if (selectionState != newSelectionState) {
             selectionState = newSelectionState

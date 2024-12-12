@@ -49,7 +49,7 @@ object SpecScii {{
 
     os.makedirs(os.path.dirname(result_path), exist_ok=True)
 
-    with open(result_path, 'w') as file:
+    with open(result_path, 'w', encoding='utf-8') as file:
         file.write(content)
 
     print('Done')

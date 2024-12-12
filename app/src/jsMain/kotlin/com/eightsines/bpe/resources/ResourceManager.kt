@@ -73,8 +73,8 @@ class ResourceManager {
             put(TextRes.CanvasVBlock.id, "VBlock")
             put(TextRes.CanvasQBlock.id, "QBlock")
 
-            put(TextRes.ModeEdge.id, "Edge mode")
-            put(TextRes.ModeCenter.id, "Center mode")
+            put(TextRes.PaintingModeEdge.id, "Edge mode")
+            put(TextRes.PaintingModeCenter.id, "Center mode")
 
             put(TextRes.AlertLoadReaderError.id, "Failed to read painting (reader error).")
             put(TextRes.AlertLoadNullResult.id, "Failed to read painting (result is null).")

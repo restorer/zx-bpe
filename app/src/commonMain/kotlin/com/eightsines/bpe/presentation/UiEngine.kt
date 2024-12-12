@@ -142,6 +142,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             bpeEngine.execute(BpeAction.CanvasDown(drawingX, drawingY))
         } else {
             cursorSpec = null
+            bpeEngine.execute(BpeAction.SelectionDeselect)
         }
     }
 

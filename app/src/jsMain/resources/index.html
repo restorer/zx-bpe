@@ -3,11 +3,36 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+    <meta name="apple-mobile-web-app-status-bar" content="#3e2723"/>
+    <meta name="theme-color" content="#3e2723"/>
     <title>BPE</title>
+    <link rel="manifest" href="manifest.json"/>
     <link rel="stylesheet" type="text/css" href="style/material.css"/>
     <link rel="stylesheet" type="text/css" href="style/bpe.css"/>
     <link rel="stylesheet" type="text/css" href="style/specscii.css"/>
+    <link rel="icon" href="favicon.ico"/>
+    <link rel="apple-touch-icon" href="icons/icon__48x48.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__72x72.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__96x96.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__128x128.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__144x144.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__152x152.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__168x168.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__192x192.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__384x384.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__512x512.png"/>
     <script type="application/javascript" src="app.js"></script>
+    <script type="application/javascript">
+
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+        navigator.serviceWorker
+            .register("/service.js", { scope: "/bpe" })
+            .catch(err => console.log(String(err)))
+    });
+}
+
+    </script>
 </head>
 <body>
 <div class="loading js-loading"></div>

@@ -18,6 +18,7 @@ import com.eightsines.bpe.resources.ResourceManager
 import com.eightsines.bpe.resources.TextRes
 import com.eightsines.bpe.resources.TextResId
 import com.eightsines.bpe.util.ElapsedTimeProvider
+import kotlinx.browser.window
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.dom.addClass
@@ -32,6 +33,7 @@ import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.Node
 import org.w3c.dom.ParentNode
+import org.w3c.dom.TouchEvent
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 
@@ -143,14 +145,43 @@ class BrowserView(
             areas.addEventListener(
                 EVENT_MOUSE_ENTER,
                 {
+                    it.preventDefault()
                     val point = translateMouseToCanvas(areas, it as MouseEvent)
                     _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetEnter(point.first, point.second)))
                 }
             )
 
             areas.addEventListener(
+                EVENT_TOUCH_START,
+                {
+                    it.preventDefault()
+                    val point = translateMouseToCanvas(areas, it as TouchEvent)
+                    _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetDown(point.first, point.second)))
+                }
+            )
+
+            areas.addEventListener(
+                EVENT_TOUCH_MOVE,
+                {
+                    it.preventDefault()
+                    val point = translateMouseToCanvas(areas, it as TouchEvent)
+                    _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetMove(point.first, point.second)))
+                }
+            )
+
+            areas.addEventListener(
+                EVENT_TOUCH_END,
+                {
+                    it.preventDefault()
+                    val point = translateMouseToCanvas(areas, it as TouchEvent)
+                    _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetUp(point.first, point.second)))
+                }
+            )
+
+            areas.addEventListener(
                 EVENT_MOUSE_DOWN,
                 {
+                    it.preventDefault()
                     val point = translateMouseToCanvas(areas, it as MouseEvent)
                     _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetDown(point.first, point.second)))
                 }
@@ -159,6 +190,7 @@ class BrowserView(
             areas.addEventListener(
                 EVENT_MOUSE_MOVE,
                 {
+                    it.preventDefault()
                     val point = translateMouseToCanvas(areas, it as MouseEvent)
                     _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetMove(point.first, point.second)))
                 }
@@ -167,11 +199,13 @@ class BrowserView(
             areas.addEventListener(
                 EVENT_MOUSE_UP,
                 {
+                    it.preventDefault()
                     val point = translateMouseToCanvas(areas, it as MouseEvent)
                     _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetUp(point.first, point.second)))
                 }
             )
 
+            areas.addEventListener(EVENT_TOUCH_CANCEL, { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetLeave)) })
             areas.addEventListener(EVENT_MOUSE_LEAVE, { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetLeave)) })
         }
 
@@ -281,7 +315,9 @@ class BrowserView(
         toolboxUndo?.setToolState(uiState.toolboxUndo)
         toolboxRedo?.setToolState(uiState.toolboxRedo)
 
-        paintingMode?.replaceClassModifier("tool__mode--", getModeClassSuffix(uiState.paintingMode))
+        paintingMode?.replaceClassModifier("tool__mode--", getPaintingModeClassSuffix(uiState.paintingMode))
+        paintingMode?.title = getPaintingModeTitle(uiState.paintingMode)
+
         menu?.setToolState(uiState.menu)
 
         colorsPanel?.setVisible(uiState.activePanel is UiPanel.Colors)
@@ -645,7 +681,17 @@ class BrowserView(
         }
     )
 
-    private fun translateMouseToCanvas(canvas: HTMLCanvasElement, event: MouseEvent): Pair<Int, Int> {
+    private fun translateMouseToCanvas(canvas: HTMLCanvasElement, event: MouseEvent) =
+        translateMouseToCanvas(canvas, event.clientX, event.clientY)
+
+    private fun translateMouseToCanvas(canvas: HTMLCanvasElement, event: TouchEvent) =
+        translateMouseToCanvas(
+            canvas,
+            event.changedTouches.item(0)?.clientX ?: 0,
+            event.changedTouches.item(0)?.clientY ?: 0,
+        )
+
+    private fun translateMouseToCanvas(canvas: HTMLCanvasElement, clientX: Int, clientY: Int): Pair<Int, Int> {
         val bbox: DOMRect = canvas.getBoundingClientRect()
 
         if (bbox.width < 1.0 || bbox.height < 1.0) {
@@ -666,8 +712,8 @@ class BrowserView(
             offsetY = (bbox.height - canvas.height * scale) * 0.5
         }
 
-        val x = (event.clientX - bbox.left - offsetX) / scale
-        val y = (event.clientY - bbox.top - offsetY) / scale
+        val x = (clientX - bbox.left - offsetX) / scale
+        val y = (clientY - bbox.top - offsetY) / scale
 
         return x.toInt() to y.toInt()
     }
@@ -784,10 +830,17 @@ class BrowserView(
         BpeShape.FillEllipse -> "fill_ellipse"
     }
 
-    private fun getModeClassSuffix(mode: BpePaintingMode) = when (mode) {
+    private fun getPaintingModeClassSuffix(mode: BpePaintingMode) = when (mode) {
         BpePaintingMode.Edge -> "edge"
         BpePaintingMode.Center -> "center"
     }
+
+    private fun getPaintingModeTitle(mode: BpePaintingMode) = resourceManager.resolveText(
+        when (mode) {
+            BpePaintingMode.Edge -> TextRes.PaintingModeEdge
+            BpePaintingMode.Center -> TextRes.PaintingModeCenter
+        }
+    )
 
     private companion object {
         private const val CLASS_HIDDEN = "hidden"
@@ -802,6 +855,10 @@ class BrowserView(
         private const val EVENT_MOUSE_MOVE = "mousemove"
         private const val EVENT_MOUSE_UP = "mouseup"
         private const val EVENT_MOUSE_LEAVE = "mouseleave"
+        private const val EVENT_TOUCH_START = "touchstart"
+        private const val EVENT_TOUCH_MOVE = "touchmove"
+        private const val EVENT_TOUCH_END = "touchend"
+        private const val EVENT_TOUCH_CANCEL = "touchcancel"
 
         private const val NAME_DIV = "div"
         private const val NAME_IMG = "img"

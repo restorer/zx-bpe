@@ -61,8 +61,8 @@ object TextRes {
     val CanvasVBlock = TextResId("canvas_vblock")
     val CanvasQBlock = TextResId("canvas_qblock")
 
-    val ModeEdge = TextResId("mode_edge")
-    val ModeCenter = TextResId("mode_center")
+    val PaintingModeEdge = TextResId("painting_mode_edge")
+    val PaintingModeCenter = TextResId("painting_mode_center")
 
     val AlertLoadReaderError = TextResId("alert_load_reader_error")
     val AlertLoadNullResult = TextResId("alert_load_null_result")

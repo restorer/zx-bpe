@@ -116,7 +116,7 @@ class BrowserEngine(
 
         (document.createElement("a") as HTMLAnchorElement).apply {
             download = "painting.bpe"
-            href = URL.createObjectURL(Blob(arrayOf(bagData), BlobPropertyBag("text/plain")))
+            href = URL.createObjectURL(Blob(arrayOf(bagData), BlobPropertyBag("application/octet-stream")))
             click()
         }
 
