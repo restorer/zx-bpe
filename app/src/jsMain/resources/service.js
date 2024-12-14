@@ -4,6 +4,7 @@ const CACHE_NAME = "v1";
 
 const ASSETS = [
     "./",
+    "./app.js",
     "./favicon.ico",
     "./index.html",
     "./service.js",

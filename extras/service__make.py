@@ -12,6 +12,7 @@ def main() -> int:
     result_path = resources_path + '/service.js'
 
     assets = f'    "{WEBROOT}/"'
+    assets += f',\n    "{WEBROOT}/app.js"'
 
     for root, _, files in os.walk(resources_path):
         path = os.path.abspath(root)[(len(resources_path) + 1):]
@@ -20,10 +21,7 @@ def main() -> int:
             path += '/'
 
         for file in files:
-            if assets != '':
-                assets += ',\n'
-
-            assets += f'    "{WEBROOT}/{path}{file}"'
+            assets += f',\n    "{WEBROOT}/{path}{file}"'
 
     with open(template_path, 'r', encoding='utf-8') as file:
         template = file.read()
