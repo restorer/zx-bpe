@@ -1,6 +1,5 @@
 package com.eightsines.bpe.middlware
 
-import com.eightsines.bpe.core.Box
 import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.Rect
 import com.eightsines.bpe.core.SciiChar

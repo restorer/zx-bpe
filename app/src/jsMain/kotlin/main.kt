@@ -12,7 +12,9 @@ import com.eightsines.bpe.util.UidFactoryImpl
 import com.eightsines.bpe.view.BrowserEngine
 import com.eightsines.bpe.view.BrowserRenderer
 import com.eightsines.bpe.view.BrowserView
+import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -61,6 +63,24 @@ class BpeComponent(val window: Window) {
     val mainDispatcher by lazy { Dispatchers.Main }
 }
 
+var isUnhandledErrorHandlerInitialized = false
+
+fun handleUnhandledError(t: Throwable) {
+    console.error(t.stackTraceToString(), t)
+    val errorElement = document.querySelector(".js-error") ?: return
+
+    if (!isUnhandledErrorHandlerInitialized) {
+        isUnhandledErrorHandlerInitialized = true
+
+        document.querySelector(".js-error-header")?.addEventListener("click", {
+            errorElement.classList.add("hidden")
+        })
+    }
+
+    document.querySelector(".js-error-content")?.textContent = t.stackTraceToString()
+    errorElement.classList.remove("hidden")
+}
+
 fun refreshLoop(component: BpeComponent) {
     component.browserView.refresh()
     window.requestAnimationFrame { refreshLoop(component) }
@@ -70,7 +90,11 @@ fun ready(component: BpeComponent) {
     val browserEngine = component.browserEngine
     val browserView = component.browserView
 
-    CoroutineScope(SupervisorJob() + component.mainDispatcher).launch {
+    CoroutineScope(
+        SupervisorJob() +
+                component.mainDispatcher +
+                CoroutineExceptionHandler { _, t -> handleUnhandledError(t) }
+    ).launch {
         launch { browserView.actionFlow.collect(browserEngine::execute) }
         launch { browserEngine.browserStateFlow.collect(browserView::render) }
     }
@@ -79,5 +103,11 @@ fun ready(component: BpeComponent) {
 }
 
 fun main() {
-    window.onload = { ready(BpeComponent(window)) }
+    window.onload = {
+        try {
+            ready(BpeComponent(window))
+        } catch (t: Throwable) {
+            handleUnhandledError(t)
+        }
+    }
 }

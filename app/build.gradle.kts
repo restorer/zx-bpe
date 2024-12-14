@@ -8,8 +8,12 @@ plugins {
 kotlin {
     jvm()
 
-    js {
+    js(IR) {
         browser {
+            commonWebpackConfig {
+                this.devtool = null
+            }
+
             testTask {
                 useKarma {
                     useSafari()

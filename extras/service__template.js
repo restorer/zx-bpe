@@ -8,24 +8,30 @@ const ASSETS = [
 
 async function executeInstall() {
     const cache = await caches.open(CACHE_NAME);
-    return cache.addAll(ASSETS);
+    return cache.addAll(ASSETS.map((path) => (new URL(`https://eightsines.com/bpe/${path}`)).href));
 }
 
 async function executeFetch(request) {
-    if ((new URL(request.url)).pathname.endsWith(".bpe")) {
+    const url = new URL(request.url);
+
+    if (url.pathname.endsWith(".bpe")) {
         return null;
     }
 
-    const fetchPromise = fetch(request.clone()).then(async (response) => {
-        if (response.ok) {
-            const cache = await caches.open(CACHE_NAME);
-            await cache.put(request, response.clone());
-        }
+    const fetchPromise = fetch(request)
+        .then(async (response) => {
+            if (response.ok) {
+                const cache = await caches.open(CACHE_NAME);
+                await cache.put(url.href, response.clone());
 
-        return response;
-    });
+                return response;
+            }
 
-    return (await caches.match(request.clone())) || (await fetchPromise);
+            return await caches.match(url.href);
+        })
+        .catch(() => null);
+
+    return (await caches.match(url.href)) || (await fetchPromise);
 }
 
 self.addEventListener("install", (event) => {
@@ -35,7 +41,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("fetch", (event) => {
     const response = executeFetch(event.request);
 
-    if (response != null) {
+    if (response) {
         event.respondWith(response);
     }
 });

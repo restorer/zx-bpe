@@ -106,7 +106,7 @@ sealed interface HistoryAction {
             override val putInTheBagVersion = 1
 
             override fun putInTheBag(bag: PackableBag, value: SelectionTransform) {
-                bag.put(GraphicsAction, value.transformType.value)
+                bag.put(value.transformType.value)
             }
 
             override fun getOutOfTheBag(version: Int, bag: UnpackableBag): SelectionTransform {

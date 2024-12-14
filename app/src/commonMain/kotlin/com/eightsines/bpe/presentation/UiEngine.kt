@@ -104,6 +104,8 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
         }
     }
 
+    fun exportToTap(): List<Byte> = bpeEngine.exportToTap()
+
     fun putInTheBagSelf(bag: PackableBag) {
         bpeEngine.putInTheBagSelf(bag)
     }

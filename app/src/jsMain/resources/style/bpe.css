@@ -53,6 +53,16 @@
     --informer-padding: 10px;
     --informer-text: var(--material-white);
     --informer-font-size: 16px;
+
+    --error-header-background: var(--material-red--500);
+    --error-content-background: var(--material-red--900);
+    --error-text: var(--material-white);
+    --error-header-size: 48px;
+    --error-header-padding: 16px;
+    --error-header-font-size: 24px;
+    --error-cross-font-size: 32px;
+    --error-content-padding: 16px;
+    --error-content-font-size: 16px;
 }
 
 body {
@@ -691,6 +701,60 @@ body {
     font-size: var(--alert-font-size);
     line-height: 1.2;
     cursor: pointer;
+    font-family: sans-serif;
+}
+
+.error {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2000;
+    color: var(--error-text);
+}
+
+.error__header {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: var(--error-header-size);
+    padding: 0 var(--error-header-padding);
+    font-size: var(--error-header-font-size);
+    line-height: var(--error-header-size);
+    background-color: var(--error-header-background);
+    cursor: pointer;
+    font-family: sans-serif;
+}
+
+.error__header::after {
+    content: "×";
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: var(--error-header-size);
+    padding: 0 var(--error-header-padding);
+    font-family: sans-serif;
+    font-size: var(--error-cross-font-size);
+    line-height: var(--error-header-size);
+}
+
+.error__content {
+    display: block;
+    position: absolute;
+    top: var(--error-header-size);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    margin: 0;
+    background-color: var(--error-content-background);
+    padding: var(--error-content-padding);
+    font-size: var(--error-content-font-size);
+    font-family: monospace;
+    line-height: 1.2;
+    overflow: auto;
 }
 
 .hidden {

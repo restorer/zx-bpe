@@ -27,7 +27,7 @@
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", function() {
         navigator.serviceWorker
-            .register("/service.js", { scope: "/bpe" })
+            .register("/service.js", { scope: "." })
             .catch(err => console.log(String(err)))
     });
 }
@@ -220,6 +220,10 @@ if ("serviceWorker" in navigator) {
     <div class="alert js-alert hidden">
         <div class="alert__background"></div>
         <div class="alert__content js-alert-content"></div>
+    </div>
+    <div class="error js-error hidden">
+        <div class="error__header js-error-header">Unhandled error</div>
+        <pre class="error__content js-error-content"></pre>
     </div>
 </div>
 </body>

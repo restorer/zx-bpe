@@ -104,6 +104,10 @@ class BpeEngine(
         }
     }
 
+    fun exportToTap(): List<Byte> {
+        return emptyList()
+    }
+
     fun putInTheBagSelf(bag: PackableBag) {
         graphicsEngine.putInTheBagSelf(bag)
 
