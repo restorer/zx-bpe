@@ -12,7 +12,7 @@ import com.eightsines.bpe.util.UidFactoryImpl
 import com.eightsines.bpe.view.BrowserEngine
 import com.eightsines.bpe.view.BrowserRenderer
 import com.eightsines.bpe.view.BrowserView
-import kotlinx.browser.document
+import com.eightsines.bpe.view.UnhandledErrorView
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -21,7 +21,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.w3c.dom.Window
 
-class BpeComponent(val window: Window) {
+class BpeComponent(private val window: Window) {
     private val document by lazy { window.document }
     private val logger by lazy { LoggerImpl() }
     private val painter by lazy { Painter() }
@@ -49,7 +49,7 @@ class BpeComponent(val window: Window) {
     private val uiEngine by lazy { UiEngine(logger = logger, bpeEngine = bpeEngine) }
     private val resourceManager by lazy { ResourceManager() }
 
-    val browserEngine by lazy { BrowserEngine(logger = logger, document = document, uiEngine = uiEngine) }
+    val browserEngine by lazy { BrowserEngine(logger = logger, window = window, document = document, uiEngine = uiEngine) }
 
     val browserView by lazy {
         BrowserView(
@@ -61,24 +61,7 @@ class BpeComponent(val window: Window) {
     }
 
     val mainDispatcher by lazy { Dispatchers.Main }
-}
-
-var isUnhandledErrorHandlerInitialized = false
-
-fun handleUnhandledError(t: Throwable) {
-    console.error(t.stackTraceToString(), t)
-    val errorElement = document.querySelector(".js-error") ?: return
-
-    if (!isUnhandledErrorHandlerInitialized) {
-        isUnhandledErrorHandlerInitialized = true
-
-        document.querySelector(".js-error-header")?.addEventListener("click", {
-            errorElement.classList.add("hidden")
-        })
-    }
-
-    document.querySelector(".js-error-content")?.textContent = t.stackTraceToString()
-    errorElement.classList.remove("hidden")
+    val unhandledErrorView by lazy { UnhandledErrorView(document = document, logger = logger) }
 }
 
 fun refreshLoop(component: BpeComponent) {
@@ -89,11 +72,12 @@ fun refreshLoop(component: BpeComponent) {
 fun ready(component: BpeComponent) {
     val browserEngine = component.browserEngine
     val browserView = component.browserView
+    val unhandledErrorView = component.unhandledErrorView
 
     CoroutineScope(
         SupervisorJob() +
                 component.mainDispatcher +
-                CoroutineExceptionHandler { _, t -> handleUnhandledError(t) }
+                CoroutineExceptionHandler { _, t -> unhandledErrorView.show(t) }
     ).launch {
         launch { browserView.actionFlow.collect(browserEngine::execute) }
         launch { browserEngine.browserStateFlow.collect(browserView::render) }
@@ -103,11 +87,5 @@ fun ready(component: BpeComponent) {
 }
 
 fun main() {
-    window.onload = {
-        try {
-            ready(BpeComponent(window))
-        } catch (t: Throwable) {
-            handleUnhandledError(t)
-        }
-    }
+    window.onload = { ready(BpeComponent(window)) }
 }

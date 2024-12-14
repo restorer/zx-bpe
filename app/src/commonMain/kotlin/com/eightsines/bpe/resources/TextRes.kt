@@ -1,77 +1,80 @@
 package com.eightsines.bpe.resources
 
-import kotlin.jvm.JvmInline
+enum class TextRes(val id: String) {
+    PaletteSelectColor("palette_select_color"),
+    PaletteSelectPaper("palette_select_paper"),
+    PaletteSelectInk("palette_select_ink"),
+    PaletteSelectBright("palette_select_bright"),
+    PaletteSelectFlash("palette_select_flash"),
+    PaletteSelectCharacter("palette_select_character"),
 
-object TextRes {
-    val PaletteSelectColor = TextResId("palette_select_color")
-    val PaletteSelectPaper = TextResId("palette_select_paper")
-    val PaletteSelectInk = TextResId("palette_select_ink")
-    val PaletteSelectBright = TextResId("palette_select_bright")
-    val PaletteSelectFlash = TextResId("palette_select_flash")
-    val PaletteSelectCharacter = TextResId("palette_select_character")
+    SelectionMenu("selection_menu"),
+    SelectionCut("selection_cut"),
+    SelectionCopy("selection_copy"),
+    SelectionFlipHorizontal("selection_flip_horizontal"),
+    SelectionFlipVertical("selection_flip_vertical"),
+    SelectionRotateCw("selection_rotate_cw"),
+    SelectionRotateCcw("selection_rotate_ccw"),
+    Layers("layers"),
 
-    val SelectionMenu = TextResId("selection_menu")
-    val SelectionCut = TextResId("selection_cut")
-    val SelectionCopy = TextResId("selection_copy")
-    val SelectionFlipHorizontal = TextResId("selection_flip_horizontal")
-    val SelectionFlipVertical = TextResId("selection_flip_vertical")
-    val SelectionRotateCw = TextResId("selection_rotate_cw")
-    val SelectionRotateCcw = TextResId("selection_rotate_ccw")
-    val Layers = TextResId("layers")
+    ToolPaint("tool_paint"),
+    ToolErase("tool_erase"),
+    ToolSelect("tool_select"),
+    ToolPickColor("tool_pick_color"),
 
-    val ToolPaint = TextResId("tool_paint")
-    val ToolErase = TextResId("tool_erase")
-    val ToolSelect = TextResId("tool_select")
-    val ToolPickColor = TextResId("tool_pick_color")
+    ShapePoint("shape_point"),
+    ShapeLine("shape_line"),
+    ShapeStrokeBox("shape_stroke_box"),
+    ShapeFillBox("shape_fill_box"),
+    ShapeStrokeEllipse("shape_stroke_ellipse"),
+    ShapeFillEllipse("shape_fill_ellipse"),
 
-    val ShapePoint = TextResId("shape_point")
-    val ShapeLine = TextResId("shape_line")
-    val ShapeStrokeBox = TextResId("shape_stroke_box")
-    val ShapeFillBox = TextResId("shape_fill_box")
-    val ShapeStrokeEllipse = TextResId("shape_stroke_ellipse")
-    val ShapeFillEllipse = TextResId("shape_fill_ellipse")
+    ToolboxPaste("toolbox_paste"),
+    ToolboxUndo("toolbox_undo"),
+    ToolboxRedo("toolbox_redo"),
+    Menu("menu"),
 
-    val ToolboxPaste = TextResId("toolbox_paste")
-    val ToolboxUndo = TextResId("toolbox_undo")
-    val ToolboxRedo = TextResId("toolbox_redo")
-    val Menu = TextResId("menu")
+    LayersCreate("layers_create"),
+    LayersCreateCancel("layers_create_cancel"),
+    LayersMerge("layers_merge"),
+    LayersConvert("layers_convert"),
+    LayersConvertCancel("layers_convert_cancel"),
+    LayersDelete("layers_delete"),
+    LayersMoveUp("layers_move_up"),
+    LayersMoveDown("layers_move_down"),
 
-    val LayersCreate = TextResId("layers_create")
-    val LayersCreateCancel = TextResId("layers_create_cancel")
-    val LayersMerge = TextResId("layers_merge")
-    val LayersConvert = TextResId("layers_convert")
-    val LayersConvertCancel = TextResId("layers_convert_cancel")
-    val LayersDelete = TextResId("layers_delete")
-    val LayersMoveUp = TextResId("layers_move_up")
-    val LayersMoveDown = TextResId("layers_move_down")
+    MenuNew("menu_new"),
+    MenuLoad("menu_load"),
+    MenuSave("menu_save"),
+    MenuExport("menu_export"),
 
-    val MenuLoad = TextResId("menu_load")
-    val MenuSave = TextResId("menu_save")
-    val MenuExport = TextResId("menu_export")
+    LayerVisible("layer_visible"),
+    LayerInvisible("layer_invisible"),
+    LayerLocked("layer_locked"),
+    LayerUnlocked("layer_unlocked"),
+    LayerMasked("layer_masked"),
+    LayerUnmasked("layer_unmasked"),
 
-    val LayerVisible = TextResId("layer_visible")
-    val LayerInvisible = TextResId("layer_invisible")
-    val LayerLocked = TextResId("layer_locked")
-    val LayerUnlocked = TextResId("layer_unlocked")
-    val LayerMasked = TextResId("layer_masked")
-    val LayerUnmasked = TextResId("layer_unmasked")
+    CanvasScii("canvas_scii"),
+    CanvasHBlock("canvas_hblock"),
+    CanvasVBlock("canvas_vblock"),
+    CanvasQBlock("canvas_qblock"),
 
-    val CanvasScii = TextResId("canvas_scii")
-    val CanvasHBlock = TextResId("canvas_hblock")
-    val CanvasVBlock = TextResId("canvas_vblock")
-    val CanvasQBlock = TextResId("canvas_qblock")
+    PaintingModeEdge("painting_mode_edge"),
+    PaintingModeCenter("painting_mode_center"),
 
-    val PaintingModeEdge = TextResId("painting_mode_edge")
-    val PaintingModeCenter = TextResId("painting_mode_center")
+    AlertLoadReaderError("alert_load_reader_error"),
+    AlertLoadNullResult("alert_load_null_result"),
+    AlertLoadUnpackError("alert_load_unpack_error"),
+    AlertExportNotImplemented("alert_export_not_implemented"),
 
-    val AlertLoadReaderError = TextResId("alert_load_reader_error")
-    val AlertLoadNullResult = TextResId("alert_load_null_result")
-    val AlertLoadUnpackError = TextResId("alert_load_unpack_error")
-    val AlertExportNotImplemented = TextResId("alert_export_not_implemented")
+    InformerShort("informer_short"),
+    InformerFull("informer_full");
 
-    val InformerShort = TextResId("informer_short")
-    val InformerFull = TextResId("informer_full")
+    companion object {
+        private var entryMap: Map<String, TextRes>? = null
+
+        fun of(id: String) =
+            (entryMap ?: entries.associateBy(TextRes::id).also { entryMap = it })[id]
+    }
 }
-
-@JvmInline
-value class TextResId(val id: String)

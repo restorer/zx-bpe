@@ -16,9 +16,7 @@ import com.eightsines.bpe.presentation.UiSheetView
 import com.eightsines.bpe.presentation.UiToolState
 import com.eightsines.bpe.resources.ResourceManager
 import com.eightsines.bpe.resources.TextRes
-import com.eightsines.bpe.resources.TextResId
 import com.eightsines.bpe.util.ElapsedTimeProvider
-import kotlinx.browser.window
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.dom.addClass
@@ -85,6 +83,7 @@ class BrowserView(
     private val toolboxUndo = document.find<HTMLElement>(".js-toolbox-undo")
     private val toolboxRedo = document.find<HTMLElement>(".js-toolbox-redo")
     private val menu = document.find<HTMLElement>(".js-menu")
+    private val menuNew = document.find<HTMLElement>(".js-menu-new")
     private val menuLoad = document.find<HTMLInputElement>(".js-menu-load")
     private val menuSave = document.find<HTMLElement>(".js-menu-save")
     private val menuExport = document.find<HTMLElement>(".js-menu-export")
@@ -245,9 +244,10 @@ class BrowserView(
         paintingMode?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaintingModeClick)) }
 
         menu?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.MenuClick)) }
-        menuLoad?.also { menuLoad -> menuLoad.addEventListener(EVENT_CHANGE, { _actionFlow.tryEmit(BrowserAction.Load(menuLoad)) }) }
-        menuSave?.addClickListener { _actionFlow.tryEmit(BrowserAction.Save) }
-        menuExport?.addClickListener { _actionFlow.tryEmit(BrowserAction.Export) }
+        menuNew?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingNew) }
+        menuLoad?.also { menuLoad -> menuLoad.addEventListener(EVENT_CHANGE, { _actionFlow.tryEmit(BrowserAction.PaintingLoad(menuLoad)) }) }
+        menuSave?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingSave) }
+        menuExport?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingExport) }
 
         layersCreate?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerCreateClick)) }
         layersCreateCancel?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerCreateClick)) }
@@ -258,14 +258,18 @@ class BrowserView(
         layersMoveUp?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerMoveUpClick)) }
         layersMoveDown?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerMoveDownClick)) }
 
-        alert?.addClickListener { _actionFlow.tryEmit(BrowserAction.HideAlert) }
+        alert?.addClickListener { _actionFlow.tryEmit(BrowserAction.AlertHide) }
 
         for (element in document.findAll<HTMLElement>("[bpe-title]")) {
-            element.title = element.getAttribute("bpe-title")?.let { resourceManager.resolveText(TextResId(it)) } ?: ""
+            element.title = element.getAttribute("bpe-title")?.let { resId ->
+                TextRes.of(resId)?.let { resourceManager.resolveText(it) } ?: resId
+            } ?: ""
         }
 
         for (element in document.findAll<HTMLElement>("[bpe-text]")) {
-            element.textContent = element.getAttribute("bpe-text")?.let { resourceManager.resolveText(TextResId(it)) } ?: ""
+            element.textContent = element.getAttribute("bpe-text")?.let { resId ->
+                TextRes.of(resId)?.let { resourceManager.resolveText(it) } ?: resId
+            } ?: ""
         }
     }
 

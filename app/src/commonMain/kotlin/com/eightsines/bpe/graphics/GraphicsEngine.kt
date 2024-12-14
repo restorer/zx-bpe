@@ -139,6 +139,21 @@ class GraphicsEngine(
         updatePreview(ScreenBox)
     }
 
+    fun clearSelf() {
+        backgroundLayer = MutableBackgroundLayer(
+            isVisible = true,
+            isLocked = false,
+            border = SciiColor.Transparent,
+            color = SciiColor.Transparent,
+            bright = SciiLight.Transparent,
+        )
+
+        canvasLayers = mutableListOf()
+        canvasLayersMap.clear()
+
+        updatePreview(ScreenBox)
+    }
+
     private fun canSetBackgroundBorder(action: GraphicsAction.SetBackgroundBorder) =
         !backgroundLayer.isLocked && backgroundLayer.border != action.color
 

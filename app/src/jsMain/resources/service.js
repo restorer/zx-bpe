@@ -72,7 +72,7 @@ const ASSETS = [
 
 async function executeInstall() {
     const cache = await caches.open(CACHE_NAME);
-    return cache.addAll(ASSETS.map((path) => (new URL(`https://eightsines.com/bpe/${path}`)).href));
+    return cache.addAll(ASSETS);
 }
 
 async function executeFetch(request) {

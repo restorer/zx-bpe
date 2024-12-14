@@ -27,7 +27,7 @@
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", function() {
         navigator.serviceWorker
-            .register("/service.js", { scope: "." })
+            .register("./service.js", { scope: "." })
             .catch(err => console.log(String(err)))
     });
 }
@@ -206,6 +206,9 @@ if ("serviceWorker" in navigator) {
         </div>
     </div>
     <div class="subpanel subpanel--menu js-menu-panel">
+        <div class="menu__item js-menu-new">
+            <div class="menu__item-content" bpe-text="menu_new"></div>
+        </div>
         <div class="menu__item">
             <div class="menu__item-content" bpe-text="menu_load"></div>
             <input type="file" class="menu__item-load js-menu-load" accept=".bpe"/>
@@ -214,7 +217,7 @@ if ("serviceWorker" in navigator) {
             <div class="menu__item-content" bpe-text="menu_save"></div>
         </div>
         <div class="menu__item js-menu-export">
-            <div class="menu__item-content" bpe-text="menu_export">Export</div>
+            <div class="menu__item-content" bpe-text="menu_export"></div>
         </div>
     </div>
     <div class="alert js-alert hidden">

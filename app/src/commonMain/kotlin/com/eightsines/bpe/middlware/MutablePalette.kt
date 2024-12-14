@@ -24,6 +24,14 @@ class MutablePalette(
         character = other.character
     }
 
+    fun clearSelf() {
+        ink = SciiColor.Transparent
+        paper = SciiColor.Transparent
+        bright = SciiLight.Transparent
+        flash = SciiLight.Transparent
+        character = SciiChar.Transparent
+    }
+
     override fun toString() = "MutablePalette(ink=$ink, paper=$paper, bright=$bright, flash=$flash, character=$character)"
 
     companion object : BagStuffPacker<MutablePalette>, BagStuffUnpacker<MutablePalette> {

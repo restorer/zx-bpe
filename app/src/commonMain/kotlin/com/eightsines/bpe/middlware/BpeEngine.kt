@@ -142,6 +142,21 @@ class BpeEngine(
         state = refresh()
     }
 
+    fun clearSelf() {
+        graphicsEngine.clearSelf()
+
+        palette.clearSelf()
+        toolboxTool = BpeTool.Paint
+        toolboxPaintShape = BpeShape.Point
+        toolboxEraseShape = BpeShape.Point
+        currentLayer = graphicsEngine.state.backgroundLayer
+        history = mutableListOf()
+        historyPosition = 0
+        clipboard = null
+
+        state = refresh()
+    }
+
     //
     // Palette
     //

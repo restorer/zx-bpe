@@ -106,9 +106,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
     fun exportToTap(): List<Byte> = bpeEngine.exportToTap()
 
-    fun putInTheBagSelf(bag: PackableBag) {
-        bpeEngine.putInTheBagSelf(bag)
-    }
+    fun putInTheBagSelf(bag: PackableBag) = bpeEngine.putInTheBagSelf(bag)
 
     fun getOutOfTheBagSelf(bag: UnpackableBag) {
         val safeBagData = PackableStringBag()
@@ -122,6 +120,11 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             bpeEngine.getOutOfTheBagSelf(UnpackableStringBag(safeBagData))
             throw e
         }
+    }
+
+    fun clearSelf() {
+        bpeEngine.clearSelf()
+        state = refresh()
     }
 
     private fun executeSheetEnter(action: UiAction.SheetEnter) {

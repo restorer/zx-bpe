@@ -5,8 +5,10 @@ import org.w3c.dom.HTMLInputElement
 
 sealed interface BrowserAction {
     data class Ui(val action: UiAction) : BrowserAction
-    data class Load(val inputElement: HTMLInputElement) : BrowserAction
-    data object Save : BrowserAction
-    data object Export : BrowserAction
-    data object HideAlert : BrowserAction
+    data object AlertHide : BrowserAction
+
+    data object PaintingNew : BrowserAction
+    data class PaintingLoad(val inputElement: HTMLInputElement) : BrowserAction
+    data object PaintingSave : BrowserAction
+    data object PaintingExport : BrowserAction
 }
