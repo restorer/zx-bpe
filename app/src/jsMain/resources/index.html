@@ -24,13 +24,13 @@
     <script type="application/javascript" src="app.js"></script>
     <script type="application/javascript">
 
-if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function() {
-        navigator.serviceWorker
-            .register("./service.js", { scope: "." })
-            .catch(err => console.log(String(err)))
-    });
-}
+        if (window.origin != "null" && "serviceWorker" in navigator) {
+            window.addEventListener("load", function() {
+                navigator.serviceWorker
+                    .register("./service.js", { scope: "." })
+                    .catch(err => console.log(String(err)));
+            });
+        }
 
     </script>
 </head>
@@ -69,12 +69,11 @@ if ("serviceWorker" in navigator) {
             </div>
         </div>
         <div class="panel__pane">
+            <div class="tool js-selection-paste" bpe-title="selection_paste">
+                <img src="drawable/selection__paste.svg" alt="" class="tool__icon"/>
+            </div>
             <div class="tool js-selection-menu" bpe-title="selection_menu">
                 <img src="drawable/menu__secondary.svg" alt="" class="tool__icon"/>
-            </div>
-            <div class="tool tool__mode js-painting-mode">
-                <img src="drawable/mode__edge.svg" alt="" class="tool__icon tool__icon--mode__edge"/>
-                <img src="drawable/mode__center.svg" alt="" class="tool__icon tool__icon--mode__center"/>
             </div>
             <div class="tool js-layers" bpe-title="layers">
                 <img src="drawable/layers.svg" alt="" class="tool__icon"/>
@@ -105,14 +104,15 @@ if ("serviceWorker" in navigator) {
             </div>
         </div>
         <div class="panel__pane">
-            <div class="tool js-toolbox-paste" bpe-title="toolbox_paste">
-                <img src="drawable/toolbox__paste.svg" alt="" class="tool__icon"/>
-            </div>
             <div class="tool js-toolbox-undo" bpe-title="toolbox_undo">
                 <img src="drawable/toolbox__undo.svg" alt="" class="tool__icon"/>
             </div>
             <div class="tool js-toolbox-redo" bpe-title="toolbox_redo">
                 <img src="drawable/toolbox__redo.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool tool__mode js-toolbox-mode">
+                <img src="drawable/toolbox__mode_edge.svg" alt="" class="tool__icon tool__icon--mode__edge"/>
+                <img src="drawable/toolbox__mode_center.svg" alt="" class="tool__icon tool__icon--mode__center"/>
             </div>
             <div class="tool js-menu" bpe-title="menu">
                 <img src="drawable/menu__primary.svg" alt="" class="tool__icon"/>
@@ -216,13 +216,35 @@ if ("serviceWorker" in navigator) {
         <div class="menu__item js-menu-save">
             <div class="menu__item-content" bpe-text="menu_save"></div>
         </div>
-        <div class="menu__item js-menu-export">
-            <div class="menu__item-content" bpe-text="menu_export"></div>
+        <div class="menu__item js-menu-export-tap">
+            <div class="menu__item-content" bpe-text="menu_export_tap"></div>
+        </div>
+        <div class="menu__item js-menu-export-scr">
+            <div class="menu__item-content" bpe-text="menu_export_scr"></div>
+        </div>
+        <div class="menu__item js-menu-export-png">
+            <div class="menu__item-content" bpe-text="menu_export_png"></div>
         </div>
     </div>
-    <div class="alert js-alert hidden">
-        <div class="alert__background"></div>
-        <div class="alert__content js-alert-content"></div>
+    <div class="dialog js-dialog hidden">
+        <div class="dialog__background js-dialog-background"></div>
+        <div class="dialog__content">
+            <div class="dialog__alert js-dialog-alert hidden"></div>
+            <div class="dialog__confirm js-dialog-confirm hidden">
+                <div class="dialog__confirm_message js-dialog-confirm-message"></div>
+                <div class="dialog__button dialog__button--ok js-dialog-confirm-ok" bpe-text="dialog_ok"></div>
+                <div class="dialog__button dialog__button--cancel js-dialog-confirm-cancel" bpe-text="dialog_cancel"></div>
+            </div>
+            <div class="dialog__prompt js-dialog-prompt hidden">
+                <label for="prompt_input" class="dialog__prompt_message js-dialog-prompt-message"></label>
+                <div class="dialog__prompt_content">
+                    <input id="prompt_input" type="text" minlength="1" maxlength="8" class="dialog__prompt_input js-dialog-prompt-input"/>
+                    <div class="dialog__button dialog__button--ok js-dialog-prompt-ok" bpe-text="dialog_ok"></div>
+                    <div class="dialog__button dialog__button--cancel js-dialog-prompt-cancel" bpe-text="dialog_cancel"></div>
+                </div>
+                <div class="dialog__prompt_hint js-dialog-prompt-hint"></div>
+            </div>
+        </div>
     </div>
     <div class="error js-error hidden">
         <div class="error__header js-error-header">Unhandled error</div>

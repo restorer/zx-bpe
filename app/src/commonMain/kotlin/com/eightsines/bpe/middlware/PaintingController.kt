@@ -297,12 +297,7 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
 
         return PaintingResult(
             shouldRefresh = true,
-            informer = BpeInformer(
-                canvasType = spec.canvasType,
-                initialX = spec.initialX,
-                initialY = spec.initialY,
-                rect = rect,
-            ),
+            informer = BpeInformer(canvasType = spec.canvasType, rect = rect),
         )
     }
 
@@ -346,12 +341,7 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
 
         return PaintingResult(
             shouldRefresh = true,
-            informer = BpeInformer(
-                canvasType = spec.canvasType,
-                initialX = spec.initialX,
-                initialY = spec.initialY,
-                rect = rect,
-            ),
+            informer = BpeInformer(canvasType = spec.canvasType, rect = rect),
         )
     }
 

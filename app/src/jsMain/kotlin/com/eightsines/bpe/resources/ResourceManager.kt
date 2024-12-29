@@ -28,6 +28,7 @@ class ResourceManager {
             TextRes.PaletteSelectFlash -> "Select flash"
             TextRes.PaletteSelectCharacter -> "Select character"
 
+            TextRes.SelectionPaste -> "Paste"
             TextRes.SelectionMenu -> "Actions"
             TextRes.SelectionCut -> "Cut"
             TextRes.SelectionCopy -> "Copy"
@@ -49,7 +50,6 @@ class ResourceManager {
             TextRes.ShapeStrokeEllipse -> "Stroke ellipse"
             TextRes.ShapeFillEllipse -> "Fill ellipse"
 
-            TextRes.ToolboxPaste -> "Paste"
             TextRes.ToolboxUndo -> "Undo"
             TextRes.ToolboxRedo -> "Redo"
             TextRes.Menu -> "Menu"
@@ -66,7 +66,9 @@ class ResourceManager {
             TextRes.MenuNew -> "New"
             TextRes.MenuLoad -> "Load"
             TextRes.MenuSave -> "Save"
-            TextRes.MenuExport -> "Export"
+            TextRes.MenuExportTap -> "Export to TAP"
+            TextRes.MenuExportScr -> "Export to SCR"
+            TextRes.MenuExportPng -> "Export to PNG"
 
             TextRes.LayerVisible -> "Visible"
             TextRes.LayerInvisible -> "Invisible"
@@ -80,16 +82,24 @@ class ResourceManager {
             TextRes.CanvasVBlock -> "VBlock"
             TextRes.CanvasQBlock -> "QBlock"
 
-            TextRes.PaintingModeEdge -> "Edge mode"
-            TextRes.PaintingModeCenter -> "Center mode"
+            TextRes.ToolboxModeEdge -> "Edge mode"
+            TextRes.ToolboxModeCenter -> "Center mode"
+
+            TextRes.DialogOk -> "OK"
+            TextRes.DialogCancel -> "Cancel"
 
             TextRes.AlertLoadReaderError -> "Failed to read painting (reader error)."
             TextRes.AlertLoadNullResult -> "Failed to read painting (result is null)."
             TextRes.AlertLoadUnpackError -> "Failed to read painting (unpack)."
             TextRes.AlertExportNotImplemented -> "Export is not implemented yet."
 
-            TextRes.InformerShort -> "{x} {y}"
-            TextRes.InformerFull -> "{x} {y} — {w}×{h}"
+            TextRes.ConfirmNew -> "Clear everything? This action cannot be undone."
+
+            TextRes.PromptSaveMessage -> "File name (without extension):"
+            TextRes.PromptSaveHint -> "Should be between 1 and {len} characters and contains only 0-9, A-Z, a-z or {specials}"
+
+            TextRes.InformerSecondary -> "XY {x} {y}"
+            TextRes.InformerPrimary -> "WH {w}×{h}"
         }
     }
 }

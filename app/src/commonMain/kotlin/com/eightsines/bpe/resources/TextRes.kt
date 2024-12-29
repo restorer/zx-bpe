@@ -8,6 +8,7 @@ enum class TextRes(val id: String) {
     PaletteSelectFlash("palette_select_flash"),
     PaletteSelectCharacter("palette_select_character"),
 
+    SelectionPaste("selection_paste"),
     SelectionMenu("selection_menu"),
     SelectionCut("selection_cut"),
     SelectionCopy("selection_copy"),
@@ -29,9 +30,10 @@ enum class TextRes(val id: String) {
     ShapeStrokeEllipse("shape_stroke_ellipse"),
     ShapeFillEllipse("shape_fill_ellipse"),
 
-    ToolboxPaste("toolbox_paste"),
     ToolboxUndo("toolbox_undo"),
     ToolboxRedo("toolbox_redo"),
+    ToolboxModeEdge("toolbox_mode_edge"),
+    ToolboxModeCenter("toolbox_mode_center"),
     Menu("menu"),
 
     LayersCreate("layers_create"),
@@ -46,7 +48,9 @@ enum class TextRes(val id: String) {
     MenuNew("menu_new"),
     MenuLoad("menu_load"),
     MenuSave("menu_save"),
-    MenuExport("menu_export"),
+    MenuExportTap("menu_export_tap"),
+    MenuExportScr("menu_export_scr"),
+    MenuExportPng("menu_export_png"),
 
     LayerVisible("layer_visible"),
     LayerInvisible("layer_invisible"),
@@ -60,16 +64,21 @@ enum class TextRes(val id: String) {
     CanvasVBlock("canvas_vblock"),
     CanvasQBlock("canvas_qblock"),
 
-    PaintingModeEdge("painting_mode_edge"),
-    PaintingModeCenter("painting_mode_center"),
+    DialogOk("dialog_ok"),
+    DialogCancel("dialog_cancel"),
 
     AlertLoadReaderError("alert_load_reader_error"),
     AlertLoadNullResult("alert_load_null_result"),
     AlertLoadUnpackError("alert_load_unpack_error"),
     AlertExportNotImplemented("alert_export_not_implemented"),
 
-    InformerShort("informer_short"),
-    InformerFull("informer_full");
+    ConfirmNew("confirm_new"),
+
+    PromptSaveMessage("prompt_save_message"),
+    PromptSaveHint("prompt_save_hint"),
+
+    InformerSecondary("informer_short"),
+    InformerPrimary("informer_full");
 
     companion object {
         private var entryMap: Map<String, TextRes>? = null

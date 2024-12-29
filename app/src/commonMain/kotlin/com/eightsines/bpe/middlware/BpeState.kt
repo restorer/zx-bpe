@@ -53,6 +53,7 @@ data class BpeState(
 
     val paintingMode: BpePaintingMode,
     val informer: BpeInformer?,
+    val historySteps: Int,
 )
 
 enum class BpeShape(val value: Int) {
@@ -215,7 +216,5 @@ enum class BpePaintingMode(val value: Int) {
 
 data class BpeInformer(
     val canvasType: CanvasType,
-    val initialX: Int,
-    val initialY: Int,
     val rect: Rect,
 )

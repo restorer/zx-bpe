@@ -19,6 +19,7 @@ import com.eightsines.bpe.util.getList
 import com.eightsines.bpe.util.putList
 import com.eightsines.bpe.util.requireNoIllegalArgumentException
 import com.eightsines.bpe.util.requireSupportedStuffVersion
+import kotlin.math.max
 
 class BpeEngine(
     private val logger: Logger,
@@ -38,7 +39,7 @@ class BpeEngine(
     private var history: MutableList<HistoryStep> = mutableListOf()
     private var historyPosition: Int = 0
     private var clipboard: BpeClipboard? = null
-    private var informer: BpeInformer? = null
+    private var paintingInformer: BpeInformer? = null
 
     private var cachedMoveUpOnTopOfLayer: Layer? = null
     private var cachedMoveDownOnTopOfLayer: Layer? = null
@@ -108,8 +109,33 @@ class BpeEngine(
         return emptyList()
     }
 
-    fun putInTheBagSelf(bag: PackableBag) {
+    fun exportToScr(): List<Byte> {
+        return emptyList()
+    }
+
+    fun putInTheBagSelf(bag: PackableBag, historyStepsLimit: Int = -1) {
         graphicsEngine.putInTheBagSelf(bag)
+
+        val bagHistory: MutableList<HistoryStep>
+        val bagHistoryPosition: Int
+
+        when {
+            historyStepsLimit < 0 || history.size <= historyStepsLimit -> {
+                bagHistory = history
+                bagHistoryPosition = historyPosition
+            }
+
+            historyStepsLimit == 0 -> {
+                bagHistory = mutableListOf()
+                bagHistoryPosition = 0
+            }
+
+            else -> {
+                val sizeDiff = history.size - historyStepsLimit
+                bagHistory = history.subList(sizeDiff, history.size)
+                bagHistoryPosition = max(0, historyPosition - sizeDiff)
+            }
+        }
 
         bag.put(
             BpeStateStuff,
@@ -119,8 +145,8 @@ class BpeEngine(
                 toolboxPaintShape = toolboxPaintShape,
                 toolboxEraseShape = toolboxEraseShape,
                 currentLayerUid = currentLayer.uid,
-                history = history,
-                historyPosition = historyPosition,
+                history = bagHistory,
+                historyPosition = bagHistoryPosition,
                 clipboard = clipboard,
             ),
         )
@@ -510,8 +536,8 @@ class BpeEngine(
             shouldRefresh = true
         }
 
-        if (informer != null) {
-            informer = null
+        if (paintingInformer != null) {
+            paintingInformer = null
             shouldRefresh = true
         }
     }
@@ -537,8 +563,8 @@ class BpeEngine(
             shouldRefresh = true
         }
 
-        if (informer != null) {
-            informer = null
+        if (paintingInformer != null) {
+            paintingInformer = null
             shouldRefresh = true
         }
     }
@@ -568,7 +594,7 @@ class BpeEngine(
 
     private fun processPaintingResult(result: PaintingResult) {
         if (result.informer != null) {
-            informer = result.informer
+            paintingInformer = result.informer
         }
 
         if (result.shouldRefresh) {
@@ -744,7 +770,8 @@ class BpeEngine(
             selectionIsFloating = selectionController.isFloating,
 
             paintingMode = paintingController.paintingMode,
-            informer = informer,
+            informer = paintingInformer ?: selectionController.informer,
+            historySteps = history.size,
         )
     }
 }

@@ -49,7 +49,17 @@ class BpeComponent(private val window: Window) {
     private val uiEngine by lazy { UiEngine(logger = logger, bpeEngine = bpeEngine) }
     private val resourceManager by lazy { ResourceManager() }
 
-    val browserEngine by lazy { BrowserEngine(logger = logger, window = window, document = document, uiEngine = uiEngine) }
+    val mainDispatcher by lazy { Dispatchers.Main }
+
+    val browserEngine by lazy {
+        BrowserEngine(
+            logger = logger,
+            window = window,
+            document = document,
+            uiEngine = uiEngine,
+            mainDispatcher = mainDispatcher,
+        )
+    }
 
     val browserView by lazy {
         BrowserView(
@@ -60,7 +70,6 @@ class BpeComponent(private val window: Window) {
         )
     }
 
-    val mainDispatcher by lazy { Dispatchers.Main }
     val unhandledErrorView by lazy { UnhandledErrorView(document = document, logger = logger) }
 }
 

@@ -72,3 +72,5 @@ class Box private constructor(val lx: Int, val ly: Int, val width: Int, val heig
         }
     }
 }
+
+fun Box.toRect() = Rect(lx, ly, rx, ry)

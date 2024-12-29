@@ -9,6 +9,7 @@ import com.eightsines.bpe.middlware.BpeAction
 import com.eightsines.bpe.middlware.BpeEngine
 import com.eightsines.bpe.middlware.BpePaintingMode
 import com.eightsines.bpe.middlware.BpeShape
+import com.eightsines.bpe.middlware.BpeState
 import com.eightsines.bpe.middlware.BpeTool
 import com.eightsines.bpe.resources.TextDescriptor
 import com.eightsines.bpe.resources.TextRes
@@ -19,6 +20,12 @@ import com.eightsines.bpe.util.PackableStringBag
 import com.eightsines.bpe.util.Severity
 import com.eightsines.bpe.util.UnpackableBag
 import com.eightsines.bpe.util.UnpackableStringBag
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 
 class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     private var activePanel: Panel? = null
@@ -27,9 +34,19 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     private var currentAreaSpec: AreaSpec = AreaSpec(0, 0, 0, 0, 0.0, 0.0)
     private var cursorSpec: CursorSpec? = null
     private var isSheetDown: Boolean = false
+    private val bpeStateFlow = MutableSharedFlow<BpeState>(extraBufferCapacity = 1)
+
+    @Suppress("RedundantUnitExpression")
+    private val _visuallyChangedFlow = bpeStateFlow
+        .distinctUntilChanged { old, new -> old === new }
+        .drop(1)
+        .map { Unit }
 
     var state: UiState = refresh()
         private set
+
+    val visuallyChangedFlow: Flow<Unit>
+        get() = _visuallyChangedFlow
 
     fun execute(action: UiAction) {
         val severity = if (action is UiAction.SheetEnter ||
@@ -105,8 +122,10 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     }
 
     fun exportToTap(): List<Byte> = bpeEngine.exportToTap()
+    fun exportToScr(): List<Byte> = bpeEngine.exportToScr()
 
-    fun putInTheBagSelf(bag: PackableBag) = bpeEngine.putInTheBagSelf(bag)
+    fun putInTheBagSelf(bag: PackableBag, historyStepsLimit: Int = -1) =
+        bpeEngine.putInTheBagSelf(bag, historyStepsLimit)
 
     fun getOutOfTheBagSelf(bag: UnpackableBag) {
         val safeBagData = PackableStringBag()
@@ -350,7 +369,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     }
 
     private fun executeToolboxPasteClick() {
-        if (state.toolboxPaste.isInteractable) {
+        if (state.selectionPaste.isInteractable) {
             bpeEngine.execute(BpeAction.ToolboxPaste)
             activePanel = null
         }
@@ -538,7 +557,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     }
 
     private fun refresh(): UiState {
-        val bpeState = bpeEngine.state
+        val bpeState = bpeEngine.state.also(bpeStateFlow::tryEmit)
         val cursorSpec = this.cursorSpec
 
         currentDrawingType = bpeState.drawingType
@@ -595,6 +614,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
                 else -> UiToolState.Visible(bpeState.paletteChar)
             },
 
+            selectionPaste = if (bpeState.toolboxCanPaste) UiToolState.Visible(Unit) else UiToolState.Hidden,
             selectionMenu = when {
                 activePanel == Panel.SelectionMenu -> UiToolState.Active(Unit)
                 bpeState.selectionIsActionable -> UiToolState.Visible(Unit)
@@ -636,9 +656,9 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
                 else -> UiToolState.Active(Unit)
             },
 
-            toolboxPaste = if (bpeState.toolboxCanPaste) UiToolState.Visible(Unit) else UiToolState.Hidden,
             toolboxUndo = if (bpeState.toolboxCanUndo) UiToolState.Visible(Unit) else UiToolState.Disabled(Unit),
             toolboxRedo = if (bpeState.toolboxCanRedo) UiToolState.Visible(Unit) else UiToolState.Disabled(Unit),
+            toolboxMode = bpeState.paintingMode,
             menu = if (activePanel == Panel.Menu) UiToolState.Active(Unit) else UiToolState.Visible(Unit),
 
             activePanel = when (activePanel) {
@@ -682,29 +702,28 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
             layersMoveDown = if (bpeState.layersCanMoveDown) UiToolState.Visible(Unit) else UiToolState.Disabled(Unit),
             layersTypesIsVisible = layerTypePanel != null,
 
-            paintingMode = bpeState.paintingMode,
-
-            informerText = when {
-                bpeState.informer != null -> TextDescriptor(
-                    TextRes.InformerFull,
+            informerPrimary = bpeState.informer?.let {
+                TextDescriptor(
+                    TextRes.InformerPrimary,
                     buildMap {
-                        put("x", (cursorSpec?.informerSciiX ?: 0.0).toString())
-                        put("y", (cursorSpec?.informerSciiY ?: 0.0).toString())
-                        put("w", (bpeState.informer.rect.width * currentAreaSpec.sciiXMultiplier).toString())
-                        put("h", (bpeState.informer.rect.height * currentAreaSpec.sciiYMultiplier).toString())
-                    }
+                        put("w", (it.rect.width * currentAreaSpec.sciiXMultiplier).toString())
+                        put("h", (it.rect.height * currentAreaSpec.sciiYMultiplier).toString())
+                    },
                 )
-
-                bpeState.drawingType != null && cursorSpec != null -> TextDescriptor(
-                    TextRes.InformerShort,
+            },
+            informerSecondary = if (bpeState.drawingType != null && cursorSpec != null) {
+                TextDescriptor(
+                    TextRes.InformerSecondary,
                     buildMap {
                         put("x", cursorSpec.informerSciiX.toString())
                         put("y", cursorSpec.informerSciiY.toString())
-                    }
+                    },
                 )
-
-                else -> null
+            } else {
+                null
             },
+
+            historySteps = bpeState.historySteps,
         )
     }
 }

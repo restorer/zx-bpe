@@ -64,6 +64,7 @@ class BrowserView(
     private val paletteChar = document.find<HTMLElement>(".js-palette-char")
     private val paletteCharIndicator = document.find<HTMLElement>(".js-palette-char-indicator")
 
+    private val selectionPaste = document.find<HTMLElement>(".js-selection-paste")
     private val selectionMenu = document.find<HTMLElement>(".js-selection-menu")
     private val selectionCut = document.find<HTMLElement>(".js-selection-cut")
     private val selectionCopy = document.find<HTMLElement>(".js-selection-copy")
@@ -79,14 +80,17 @@ class BrowserView(
     private val toolboxSelect = document.find<HTMLElement>(".js-toolbox-select")
     private val toolboxPickColor = document.find<HTMLElement>(".js-toolbox-pick-color")
 
-    private val toolboxPaste = document.find<HTMLElement>(".js-toolbox-paste")
     private val toolboxUndo = document.find<HTMLElement>(".js-toolbox-undo")
     private val toolboxRedo = document.find<HTMLElement>(".js-toolbox-redo")
+    private val toolboxMode = document.find<HTMLElement>(".js-toolbox-mode")
+
     private val menu = document.find<HTMLElement>(".js-menu")
     private val menuNew = document.find<HTMLElement>(".js-menu-new")
     private val menuLoad = document.find<HTMLInputElement>(".js-menu-load")
     private val menuSave = document.find<HTMLElement>(".js-menu-save")
-    private val menuExport = document.find<HTMLElement>(".js-menu-export")
+    private val menuExportTap = document.find<HTMLElement>(".js-menu-export-tap")
+    private val menuExportScr = document.find<HTMLElement>(".js-menu-export-scr")
+    private val menuExportPng = document.find<HTMLElement>(".js-menu-export-png")
 
     private val colorsPanel = document.find<HTMLElement>(".js-colors-panel")
     private val lightsPanel = document.find<HTMLElement>(".js-lights-panel")
@@ -119,12 +123,22 @@ class BrowserView(
     private val shapesStrokeEllipse = document.find<HTMLElement>(".js-shape-stroke-ellipse")
     private val shapesFillEllipse = document.find<HTMLElement>(".js-shape-fill-ellipse")
 
-    private val paintingMode = document.find<HTMLElement>(".js-painting-mode")
     private val menuPanel = document.find<HTMLElement>(".js-menu-panel")
     private val informer = document.find<HTMLElement>(".js-informer")
 
-    private val alert = document.find<HTMLElement>(".js-alert")
-    private val alertContent = document.find<HTMLElement>(".js-alert-content")
+    private val dialog = document.find<HTMLElement>(".js-dialog")
+    private val dialogBackground = document.find<HTMLElement>(".js-dialog-background")
+    private val dialogAlert = document.find<HTMLElement>(".js-dialog-alert")
+    private val dialogConfirm = document.find<HTMLElement>(".js-dialog-confirm")
+    private val dialogConfirmMessage = document.find<HTMLElement>(".js-dialog-confirm-message")
+    private val dialogConfirmOk = document.find<HTMLElement>(".js-dialog-confirm-ok")
+    private val dialogConfirmCancel = document.find<HTMLElement>(".js-dialog-confirm-cancel")
+    private val dialogPrompt = document.find<HTMLElement>(".js-dialog-prompt")
+    private val dialogPromptMessage = document.find<HTMLElement>(".js-dialog-prompt-message")
+    private val dialogPromptInput = document.find<HTMLInputElement>(".js-dialog-prompt-input")
+    private val dialogPromptOk = document.find<HTMLElement>(".js-dialog-prompt-ok")
+    private val dialogPromptCancel = document.find<HTMLElement>(".js-dialog-prompt-cancel")
+    private val dialogPromptHint = document.find<HTMLElement>(".js-dialog-prompt-hint")
 
     private var layersItemsCache = mutableMapOf<LayerView<*>, CachedLayerItem>()
     private var sheetViewCache: UiSheetView? = null
@@ -133,6 +147,7 @@ class BrowserView(
 
     private var wasRendered = false
     private var lastRefreshTimeMs = 0L
+    private var activeDialog: BrowserDialog? = null
 
     init {
         createColorItems()
@@ -215,6 +230,7 @@ class BrowserView(
         paletteFlash?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteFlashClick)) }
         paletteChar?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteCharClick)) }
 
+        selectionPaste?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxPasteClick)) }
         selectionMenu?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SelectionMenuClick)) }
         selectionCut?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SelectionCutClick)) }
         selectionCopy?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SelectionCopyClick)) }
@@ -230,7 +246,6 @@ class BrowserView(
         toolboxSelect?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxSelectClick)) }
         toolboxPickColor?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxPickColorClick)) }
 
-        toolboxPaste?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxPasteClick)) }
         toolboxUndo?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxUndoClick)) }
         toolboxRedo?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ToolboxRedoClick)) }
 
@@ -241,13 +256,15 @@ class BrowserView(
         shapesStrokeEllipse?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.StrokeEllipse))) }
         shapesFillEllipse?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ShapesItemClick(BpeShape.FillEllipse))) }
 
-        paintingMode?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaintingModeClick)) }
+        toolboxMode?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaintingModeClick)) }
 
         menu?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.MenuClick)) }
         menuNew?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingNew) }
         menuLoad?.also { menuLoad -> menuLoad.addEventListener(EVENT_CHANGE, { _actionFlow.tryEmit(BrowserAction.PaintingLoad(menuLoad)) }) }
         menuSave?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingSave) }
-        menuExport?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingExport) }
+        menuExportTap?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingExportTap) }
+        menuExportScr?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingExportScr) }
+        menuExportPng?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingExportPng) }
 
         layersCreate?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerCreateClick)) }
         layersCreateCancel?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerCreateClick)) }
@@ -258,7 +275,22 @@ class BrowserView(
         layersMoveUp?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerMoveUpClick)) }
         layersMoveDown?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LayerMoveDownClick)) }
 
-        alert?.addClickListener { _actionFlow.tryEmit(BrowserAction.AlertHide) }
+        dialogBackground?.addClickListener { _actionFlow.tryEmit(BrowserAction.DialogHide) }
+        dialogAlert?.addClickListener { _actionFlow.tryEmit(BrowserAction.DialogHide) }
+
+        dialogConfirmOk?.addClickListener {
+            (activeDialog as? BrowserDialog.Confirm)?.let { _actionFlow.tryEmit(BrowserAction.DialogConfirmOk(it.tag)) }
+        }
+
+        dialogConfirmCancel?.addClickListener { _actionFlow.tryEmit(BrowserAction.DialogHide) }
+
+        dialogPromptOk?.addClickListener {
+            (activeDialog as? BrowserDialog.Prompt)?.let {
+                _actionFlow.tryEmit(BrowserAction.DialogPromptOk(it.tag, dialogPromptInput?.value ?: ""))
+            }
+        }
+
+        dialogPromptCancel?.addClickListener { _actionFlow.tryEmit(BrowserAction.DialogHide) }
 
         for (element in document.findAll<HTMLElement>("[bpe-title]")) {
             element.title = element.getAttribute("bpe-title")?.let { resId ->
@@ -303,6 +335,7 @@ class BrowserView(
             paletteCharIndicator?.replaceClassModifier("tool__char--", getCharClassSuffix(it))
         }
 
+        selectionPaste?.setToolState(uiState.selectionPaste)
         selectionMenu?.setToolState(uiState.selectionMenu)
         layers?.setToolState(uiState.layers)
 
@@ -315,12 +348,11 @@ class BrowserView(
         toolboxErase?.setToolState(uiState.toolboxErase)
         toolboxSelect?.setToolState(uiState.toolboxSelect)
         toolboxPickColor?.setToolState(uiState.toolboxPickColor)
-        toolboxPaste?.setToolState(uiState.toolboxPaste)
         toolboxUndo?.setToolState(uiState.toolboxUndo)
         toolboxRedo?.setToolState(uiState.toolboxRedo)
 
-        paintingMode?.replaceClassModifier("tool__mode--", getPaintingModeClassSuffix(uiState.paintingMode))
-        paintingMode?.title = getPaintingModeTitle(uiState.paintingMode)
+        toolboxMode?.replaceClassModifier("tool__mode--", getPaintingModeClassSuffix(uiState.toolboxMode))
+        toolboxMode?.title = getPaintingModeTitle(uiState.toolboxMode)
 
         menu?.setToolState(uiState.menu)
 
@@ -395,13 +427,53 @@ class BrowserView(
             }
         }
 
-        informer?.setVisible(uiState.informerText != null)
-        informer?.textContent = uiState.informerText?.let(resourceManager::resolveText) ?: ""
+        informer?.setVisible(uiState.informerPrimary != null || uiState.informerSecondary != null)
 
-        alert?.setVisible(state.alertText != null)
-        alertContent?.textContent = state.alertText?.let(resourceManager::resolveText) ?: ""
+        informer?.innerHTML = makeSpan(uiState.informerSecondary?.let(resourceManager::resolveText) ?: "") +
+                makeSpan(uiState.informerPrimary?.let(resourceManager::resolveText) ?: "")
+
+        if (state.dialog != null) {
+            dialog?.setVisible(true)
+
+            if (state.dialog is BrowserDialog.Alert) {
+                dialogAlert?.setVisible(true)
+                dialogAlert?.textContent = resourceManager.resolveText(state.dialog.message)
+            } else {
+                dialogAlert?.setVisible(false)
+            }
+
+            if (state.dialog is BrowserDialog.Confirm) {
+                dialogConfirm?.setVisible(true)
+                dialogConfirmMessage?.textContent = resourceManager.resolveText(state.dialog.message)
+            } else {
+                dialogConfirm?.setVisible(false)
+            }
+
+            if (state.dialog is BrowserDialog.Prompt) {
+                dialogPrompt?.setVisible(true)
+                dialogPromptMessage?.textContent = resourceManager.resolveText(state.dialog.message)
+
+                if (state.dialog !== activeDialog) {
+                    dialogPromptInput?.apply {
+                        value = state.dialog.value
+                        focus()
+
+                        selectionStart = 10000
+                        selectionEnd = 10000
+                    }
+                }
+
+                dialogPromptHint?.setVisible(state.dialog.hint != null)
+                dialogPromptHint?.textContent = state.dialog.hint?.let(resourceManager::resolveText) ?: ""
+            } else {
+                dialogPrompt?.setVisible(false)
+            }
+        } else {
+            dialog?.setVisible(false)
+        }
 
         wasRendered = true
+        activeDialog = state.dialog
     }
 
     fun refresh() {
@@ -841,10 +913,13 @@ class BrowserView(
 
     private fun getPaintingModeTitle(mode: BpePaintingMode) = resourceManager.resolveText(
         when (mode) {
-            BpePaintingMode.Edge -> TextRes.PaintingModeEdge
-            BpePaintingMode.Center -> TextRes.PaintingModeCenter
+            BpePaintingMode.Edge -> TextRes.ToolboxModeEdge
+            BpePaintingMode.Center -> TextRes.ToolboxModeCenter
         }
     )
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun makeSpan(innerHtml: String) = "<span>$innerHtml</span>"
 
     private companion object {
         private const val CLASS_HIDDEN = "hidden"

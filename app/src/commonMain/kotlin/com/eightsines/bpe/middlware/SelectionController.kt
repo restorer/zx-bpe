@@ -2,6 +2,7 @@ package com.eightsines.bpe.middlware
 
 import com.eightsines.bpe.core.Box
 import com.eightsines.bpe.core.Cell
+import com.eightsines.bpe.core.toRect
 import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.foundation.Crate
@@ -29,6 +30,9 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
             is BpeSelectionState.Floating -> selectionState.selection
             else -> null
         }
+
+    val informer: BpeInformer?
+        get() = selection?.let { BpeInformer(it.canvasType, it.drawingBox.toRect()) }
 
     fun restoreFromHistory(state: BpeSelectionState) {
         selectionState = state

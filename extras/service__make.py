@@ -31,7 +31,7 @@ def main() -> int:
     with open(result_path, 'w', encoding='utf-8') as file:
         file.write(result)
 
-    print('Done')
+    print('Success: service.js is refreshed')
     return 0
 
 if __name__ == '__main__':

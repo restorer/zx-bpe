@@ -2,13 +2,22 @@ package com.eightsines.bpe.view
 
 import com.eightsines.bpe.presentation.UiAction
 import com.eightsines.bpe.presentation.UiEngine
+import com.eightsines.bpe.resources.TextDescriptor
 import com.eightsines.bpe.resources.TextRes
 import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.PackableStringBag
 import com.eightsines.bpe.util.UnpackableStringBag
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.launch
 import org.w3c.dom.Document
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.Window
@@ -16,52 +25,50 @@ import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
 import org.w3c.files.FileReader
+import kotlin.time.Duration.Companion.seconds
 
 class BrowserEngine(
     private val logger: Logger,
     private val window: Window,
     private val document: Document,
     private val uiEngine: UiEngine,
+    mainDispatcher: CoroutineDispatcher,
 ) {
     private val _browserStateFlow = MutableStateFlow(BrowserState(uiState = uiEngine.state))
+    private var isInitiallyLoaded = false
+    private var fileName = DEFAULT_FILE_NAME
 
     val browserStateFlow: Flow<BrowserState>
         get() = _browserStateFlow
 
     init {
-        document.addEventListener("visibilitychange", {
-            if (document.asDynamic().visibilityState == "hidden") {
-                val bagData = PackableStringBag()
-                    .also { uiEngine.putInTheBagSelf(it) }
-                    .toString()
-
-                try {
-                    window.localStorage.setItem(KEY_STATE, bagData)
-                } catch (t: Throwable) {
-                    logger.general(t.toString())
-                }
-            }
-        })
-
-        try {
-            val bagData = window.localStorage.getItem(KEY_STATE)
-
-            if (bagData != null) {
-                uiEngine.getOutOfTheBagSelf(UnpackableStringBag(bagData))
-                _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
-            }
-        } catch (t: Throwable) {
-            logger.note(t.toString())
+        CoroutineScope(
+            SupervisorJob() +
+                    mainDispatcher +
+                    CoroutineExceptionHandler { _, t -> logger.critical(t.toString()) }
+        ).launch {
+            @OptIn(FlowPreview::class)
+            uiEngine.visuallyChangedFlow
+                .filter { isInitiallyLoaded }
+                .debounce(AUTOSAVE_TIMEOUT)
+                .collect { trySaveToStorage() }
         }
+
+        tryLoadFromStorage()
+        isInitiallyLoaded = true
     }
 
     fun execute(action: BrowserAction) = when (action) {
         is BrowserAction.Ui -> executeUi(action)
-        is BrowserAction.AlertHide -> executeAlertHide()
+        is BrowserAction.DialogHide -> executeDialogHide()
+        is BrowserAction.DialogConfirmOk -> executeDialogConfirmOk(action)
+        is BrowserAction.DialogPromptOk -> executeDialogPromptOk(action)
         is BrowserAction.PaintingNew -> executePaintingNew()
         is BrowserAction.PaintingLoad -> executePaintingLoad(action)
         is BrowserAction.PaintingSave -> executePaintingSave()
-        is BrowserAction.PaintingExport -> executePaintingExport()
+        is BrowserAction.PaintingExportTap -> executePaintingExportTap()
+        is BrowserAction.PaintingExportScr -> executePaintingExportScr()
+        is BrowserAction.PaintingExportPng -> executePaintingExportPng()
     }
 
     private fun executeUi(action: BrowserAction.Ui) {
@@ -69,15 +76,37 @@ class BrowserEngine(
         _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
     }
 
-    private fun executeAlertHide() {
-        _browserStateFlow.value = _browserStateFlow.value.copy(alertText = null)
+    private fun executeDialogHide() {
+        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = null)
+    }
+
+    private fun executeDialogConfirmOk(action: BrowserAction.DialogConfirmOk) {
+        if (action.tag === CONFIRM_TAG_NEW) {
+            performPaintingNewConfirmed()
+        }
+    }
+
+    private fun executeDialogPromptOk(action: BrowserAction.DialogPromptOk) {
+        if (action.tag === PROMPT_TAG_SAVE) {
+            performPaintingSaveConfirmed(action.value)
+        }
     }
 
     private fun executePaintingNew() {
-        // TODO: confirm
+        _browserStateFlow.value = _browserStateFlow.value.copy(
+            dialog = BrowserDialog.Confirm(CONFIRM_TAG_NEW, TextRes.ConfirmNew),
+        )
+    }
 
+    private fun performPaintingNewConfirmed() {
         uiEngine.clearSelf()
-        _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
+        uiEngine.execute(UiAction.MenuClick)
+        fileName = DEFAULT_FILE_NAME
+
+        _browserStateFlow.value = _browserStateFlow.value.copy(
+            uiState = uiEngine.state,
+            dialog = null,
+        )
     }
 
     private fun executePaintingLoad(action: BrowserAction.PaintingLoad) {
@@ -109,13 +138,13 @@ class BrowserEngine(
                     put("error", reader.error.toString())
                 }
 
-                _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.AlertLoadReaderError)
+                _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertLoadReaderError))
             } else {
                 val bagData = reader.result as? String
 
                 if (bagData == null) {
                     logger.general("BrowserEngine.executeLoad:error (result is null)")
-                    _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.AlertLoadNullResult)
+                    _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertLoadNullResult))
                 } else {
                     logger.trace("BrowserEngine.executeLoad:unpacking")
 
@@ -123,6 +152,7 @@ class BrowserEngine(
                         uiEngine.getOutOfTheBagSelf(UnpackableStringBag(bagData))
                         uiEngine.execute(UiAction.MenuClick)
                         _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
+                        fileName = webFile.name.replace(Regex(Regex.escape(FILE_EXT_BPE) + "\$"), "")
 
                         logger.note("BrowserEngine.executeLoad:end")
                     } catch (e: BagUnpackException) {
@@ -130,7 +160,7 @@ class BrowserEngine(
                             put("exception", e.toString())
                         }
 
-                        _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.AlertLoadUnpackError)
+                        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertLoadUnpackError))
                     }
                 }
             }
@@ -147,6 +177,34 @@ class BrowserEngine(
     }
 
     private fun executePaintingSave() {
+        _browserStateFlow.value = _browserStateFlow.value.copy(
+            dialog = BrowserDialog.Prompt(
+                tag = PROMPT_TAG_SAVE,
+                message = TextRes.PromptSaveMessage,
+                value = fileName,
+            ),
+        )
+    }
+
+    private fun performPaintingSaveConfirmed(promptValue: String) {
+        val newFileName = promptValue.trim()
+
+        if (!FILE_NAME_REGEX.matches(newFileName)) {
+            _browserStateFlow.value = _browserStateFlow.value.copy(
+                dialog = BrowserDialog.Prompt(
+                    tag = PROMPT_TAG_SAVE,
+                    message = TextRes.PromptSaveMessage,
+                    hint = TextDescriptor(TextRes.PromptSaveHint, buildMap {
+                        put("len", FILE_NAME_MAX_LENGTH.toString())
+                        put("specials", FILE_NAME_SPECIALS)
+                    }),
+                    value = newFileName,
+                ),
+            )
+
+            return
+        }
+
         logger.note("BrowserEngine.executeSave:begin")
 
         val bagData = PackableStringBag()
@@ -156,22 +214,96 @@ class BrowserEngine(
         logger.trace("BrowserEngine.executeSave:packed")
 
         (document.createElement("a") as HTMLAnchorElement).apply {
-            download = "painting.bpe"
+            download = newFileName + FILE_EXT_BPE
             href = URL.createObjectURL(Blob(arrayOf(bagData), BlobPropertyBag("application/octet-stream")))
             click()
         }
 
         uiEngine.execute(UiAction.MenuClick)
-        _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
+        _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state, dialog = null)
+        fileName = newFileName
 
         logger.note("BrowserEngine.executeSave:end")
     }
 
-    private fun executePaintingExport() {
-        _browserStateFlow.value = _browserStateFlow.value.copy(alertText = TextRes.AlertExportNotImplemented)
+    private fun executePaintingExportTap() {
+        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertExportNotImplemented))
+    }
+
+    private fun executePaintingExportScr() {
+        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertExportNotImplemented))
+    }
+
+    private fun executePaintingExportPng() {
+        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertExportNotImplemented))
+    }
+
+    private fun tryLoadFromStorage() {
+        try {
+            val bagData = window.localStorage.getItem(KEY_STATE)
+
+            if (bagData != null) {
+                uiEngine.getOutOfTheBagSelf(UnpackableStringBag(bagData))
+                _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
+            }
+        } catch (t: Throwable) {
+            logger.note(t.toString())
+        }
+    }
+
+    private fun trySaveToStorage() {
+        var historyStepsLimit = uiEngine.state.historySteps
+
+        while (true) {
+            val bagData = PackableStringBag()
+                .also { uiEngine.putInTheBagSelf(it, historyStepsLimit) }
+                .toString()
+
+            try {
+                window.localStorage.setItem(KEY_STATE, bagData)
+                break
+            } catch (t: Throwable) {
+                logger.trace("BrowserEngine.trySaveToStorage:setItem failed") {
+                    put("error", t.toString())
+                }
+            }
+
+            if (historyStepsLimit == 0) {
+                try {
+                    window.localStorage.removeItem(KEY_STATE)
+                } catch (t: Throwable) {
+                    logger.trace("BrowserEngine.trySaveToStorage:removeItem failed") {
+                        put("error", t.toString())
+                    }
+                }
+
+                break
+            }
+
+            historyStepsLimit /= 2
+        }
+
+        logger.note("BrowserEngine.trySaveToStorage:saved") {
+            put("originalHistoryStepsLimit", uiEngine.state.historySteps.toString())
+            put("actualHistoryStepsLimit", historyStepsLimit.toString())
+        }
     }
 
     private companion object {
         private const val KEY_STATE = "state"
+        private val AUTOSAVE_TIMEOUT = 1.seconds
+
+        private const val DEFAULT_FILE_NAME = "painting"
+        private const val FILE_EXT_BPE = ".bpe"
+        private const val FILE_EXT_TAP = ".tap"
+        private const val FILE_EXT_SCR = ".scr"
+        private const val FILE_EXT_PNG = ".png"
+
+        private const val FILE_NAME_MAX_LENGTH = 8
+        private const val FILE_NAME_SPECIALS = "._-=!?()[]{}"
+        private val FILE_NAME_REGEX = Regex("^[0-9A-Za-z._\\-=!?()\\[\\]{}]{1,8}$")
+
+        private val CONFIRM_TAG_NEW = object {}
+        private val PROMPT_TAG_SAVE = object {}
     }
 }

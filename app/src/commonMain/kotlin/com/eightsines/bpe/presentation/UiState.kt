@@ -22,6 +22,7 @@ data class UiState(
     val paletteFlash: UiToolState<SciiLight>,
     val paletteChar: UiToolState<SciiChar>,
 
+    val selectionPaste: UiToolState<Unit>,
     val selectionMenu: UiToolState<Unit>,
     val layers: UiToolState<Unit>,
 
@@ -31,9 +32,9 @@ data class UiState(
     val toolboxSelect: UiToolState<Unit>,
     val toolboxPickColor: UiToolState<Unit>,
 
-    val toolboxPaste: UiToolState<Unit>,
     val toolboxUndo: UiToolState<Unit>,
     val toolboxRedo: UiToolState<Unit>,
+    val toolboxMode: BpePaintingMode,
     val menu: UiToolState<Unit>,
 
     val activePanel: UiPanel?,
@@ -50,8 +51,10 @@ data class UiState(
     val layersMoveDown: UiToolState<Unit>,
     val layersTypesIsVisible: Boolean,
 
-    val paintingMode: BpePaintingMode,
-    val informerText: TextDescriptor?,
+    val informerPrimary: TextDescriptor?,
+    val informerSecondary: TextDescriptor?,
+
+    val historySteps: Int,
 )
 
 data class UiArea(val pointerX: Int, val pointerY: Int, val pointerWidth: Int, val pointerHeight: Int)
