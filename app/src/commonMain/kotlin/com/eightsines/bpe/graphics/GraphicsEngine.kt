@@ -117,29 +117,9 @@ class GraphicsEngine(
         return undoAction
     }
 
-    fun putInTheBagSelf(bag: PackableBag) {
-        bag.put(
-            GraphicsStateStuff,
-            GraphicsStateStuff(backgroundLayer = backgroundLayer, canvasLayers = canvasLayers),
-        )
-    }
+    fun selfUnpacker(): BagStuffUnpacker<GraphicsEngine> = Unpacker()
 
-    fun getOutOfTheBagSelf(bag: UnpackableBag) {
-        val stateStuff = bag.getStuff(GraphicsStateStuff)
-
-        backgroundLayer = stateStuff.backgroundLayer
-        canvasLayers = stateStuff.canvasLayers
-
-        canvasLayersMap.clear()
-
-        for (layer in canvasLayers) {
-            canvasLayersMap[layer.uid.value] = layer
-        }
-
-        updatePreview(ScreenBox)
-    }
-
-    fun clearSelf() {
+    fun clear() {
         backgroundLayer = MutableBackgroundLayer(
             isVisible = true,
             isLocked = false,
@@ -605,34 +585,38 @@ class GraphicsEngine(
 
         private val ScreenBox = Box.ofSize(0, 0, SCREEN_SCII_WIDTH, SCREEN_SCII_HEIGHT)
     }
-}
 
-fun GraphicsEngine.executePair(action: GraphicsAction) = execute(action)?.let { GraphicsActionPair(action, it) }
-
-private class GraphicsStateStuff(
-    val backgroundLayer: MutableBackgroundLayer,
-    val canvasLayers: MutableList<MutableCanvasLayer<*>>,
-) {
-    override fun toString() = "GraphicsStateStuff(backgroundLayer=$backgroundLayer, canvasLayers=$canvasLayers)"
-
-    companion object : BagStuffPacker<GraphicsStateStuff>, BagStuffUnpacker<GraphicsStateStuff> {
+    object Packer : BagStuffPacker<GraphicsEngine> {
         override val putInTheBagVersion = 1
 
-        override fun putInTheBag(bag: PackableBag, value: GraphicsStateStuff) {
+        override fun putInTheBag(bag: PackableBag, value: GraphicsEngine) {
             bag.put(BackgroundLayer, value.backgroundLayer)
             bag.putList(value.canvasLayers) { bag.put(CanvasLayer, it) }
         }
+    }
 
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): GraphicsStateStuff {
+    private inner class Unpacker : BagStuffUnpacker<GraphicsEngine> {
+        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): GraphicsEngine {
             requireSupportedStuffVersion("GraphicsEngine", 1, version)
 
             val backgroundLayer = bag.getStuff(MutableBackgroundLayer)
             val canvasLayers = bag.getList { bag.getStuff(MutableCanvasLayer) }
 
-            return GraphicsStateStuff(
-                backgroundLayer = backgroundLayer,
-                canvasLayers = canvasLayers,
-            )
+            // Unpacked successfully, can mutate safely
+
+            this@GraphicsEngine.backgroundLayer = backgroundLayer
+            this@GraphicsEngine.canvasLayers = canvasLayers
+
+            canvasLayersMap.clear()
+
+            for (layer in canvasLayers) {
+                canvasLayersMap[layer.uid.value] = layer
+            }
+
+            updatePreview(ScreenBox)
+            return this@GraphicsEngine
         }
     }
 }
+
+fun GraphicsEngine.executePair(action: GraphicsAction) = execute(action)?.let { GraphicsActionPair(action, it) }

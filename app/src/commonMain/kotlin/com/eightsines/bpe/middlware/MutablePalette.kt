@@ -24,7 +24,7 @@ class MutablePalette(
         character = other.character
     }
 
-    fun clearSelf() {
+    fun clear() {
         ink = SciiColor.Transparent
         paper = SciiColor.Transparent
         bright = SciiLight.Transparent

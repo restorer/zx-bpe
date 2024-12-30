@@ -13,19 +13,18 @@ import com.eightsines.bpe.middlware.BpeState
 import com.eightsines.bpe.middlware.BpeTool
 import com.eightsines.bpe.resources.TextDescriptor
 import com.eightsines.bpe.resources.TextRes
-import com.eightsines.bpe.util.BagUnpackException
+import com.eightsines.bpe.util.BagStuffPacker
+import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.PackableBag
-import com.eightsines.bpe.util.PackableStringBag
 import com.eightsines.bpe.util.Severity
 import com.eightsines.bpe.util.UnpackableBag
-import com.eightsines.bpe.util.UnpackableStringBag
+import com.eightsines.bpe.util.requireSupportedStuffVersion
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 
 class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     private var activePanel: Panel? = null
@@ -124,25 +123,10 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     fun exportToTap(): List<Byte> = bpeEngine.exportToTap()
     fun exportToScr(): List<Byte> = bpeEngine.exportToScr()
 
-    fun putInTheBagSelf(bag: PackableBag, historyStepsLimit: Int = -1) =
-        bpeEngine.putInTheBagSelf(bag, historyStepsLimit)
+    fun selfUnpacker(): BagStuffUnpacker<UiEngine> = Unpacker()
 
-    fun getOutOfTheBagSelf(bag: UnpackableBag) {
-        val safeBagData = PackableStringBag()
-            .also { bpeEngine.putInTheBagSelf(it) }
-            .toString()
-
-        try {
-            bpeEngine.getOutOfTheBagSelf(bag)
-            state = refresh()
-        } catch (e: BagUnpackException) {
-            bpeEngine.getOutOfTheBagSelf(UnpackableStringBag(safeBagData))
-            throw e
-        }
-    }
-
-    fun clearSelf() {
-        bpeEngine.clearSelf()
+    fun clear() {
+        bpeEngine.clear()
         state = refresh()
     }
 
@@ -725,6 +709,29 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
             historySteps = bpeState.historySteps,
         )
+    }
+
+    class Packer(private val historyStepsLimit: Int = -1) : BagStuffPacker<UiEngine> {
+        override val putInTheBagVersion = 3
+
+        override fun putInTheBag(bag: PackableBag, value: UiEngine) {
+            bag.put(BpeEngine.Packer(historyStepsLimit), value.bpeEngine)
+        }
+    }
+
+    private inner class Unpacker : BagStuffUnpacker<UiEngine> {
+        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): UiEngine {
+            requireSupportedStuffVersion("BpeEngine", 3, version)
+
+            if (version < 3) {
+                bpeEngine.selfUnpacker().getOutOfTheBag(version, bag)
+            } else {
+                bag.getStuff(bpeEngine.selfUnpacker())
+            }
+
+            state = refresh()
+            return this@UiEngine
+        }
     }
 }
 

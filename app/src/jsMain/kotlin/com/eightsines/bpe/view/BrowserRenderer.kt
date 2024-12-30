@@ -352,6 +352,6 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         private const val FLASH_CYCLE_MS = FLASH_MS * 2
 
         private val GET_CONTEXT_OPTIONS: dynamic = object {}
-            .apply { asDynamic()["willReadFrequently"] = true }
+            .also { it.asDynamic()["willReadFrequently"] = true }
     }
 }

@@ -14,6 +14,33 @@
     --tool-xs-size: 24px;
     --tool-char-size: 24px;
     --panel-divider-size: 4px;
+    --panel-active-highlight-size: 4px;
+    --subpanel-shift: 4px;
+    --menu-font-size: 20px;
+    --menu-offset: 24px;
+    --sheet-offset: 16px;
+    --layers-width: 272px;
+
+    --dialog-divider-size: 4px;
+    --dialog-padding-ver: 12px;
+    --dialog-padding-hor: 18px;
+    --dialog-min-height: 64px;
+    --dialog-font-size: 16px;
+    --dialog-control-height: 42px;
+    --dialog-input-padding-hor: 8px;
+    --dialog-button-padding-ver: 8px;
+    --dialog-button-padding-hor: 12px;
+
+    --informer-padding-ver: 6px;
+    --informer-padding-hor: 8px;
+    --informer-font-size: 16px;
+
+    --error-header-size: 48px;
+    --error-header-padding: 16px;
+    --error-header-font-size: 24px;
+    --error-cross-font-size: 32px;
+    --error-content-padding: 16px;
+    --error-content-font-size: 16px;
 
     --loading: var(--material-red--500);
 
@@ -38,49 +65,25 @@
     --layers-tool-active: var(--material-brown--700);
 
     --menu-text: var(--material-white);
-    --menu-font-size: 20px;
-    --menu-offset: 24px;
-
-    --sheet-offset: 16px;
 
     --dialog-background: var(--material-brown--900);
     --dialog-divider: var(--material-red--500);
-    --dialog-divider-size: 4px;
-    --dialog-padding-ver: 12px;
-    --dialog-padding-hor: 24px;
-    --dialog-min-height: 80px;
     --dialog-text: var(--material-white);
-    --dialog-font-size: 20px;
-    --dialog-prompt-spacing: 12px;
-    --dialog-prompt-input-height: 48px;
-    --dialog-prompt-input-padding-hor: 12px;
-    --dialog-prompt-input-font-size: 16px;
-    --dialog-prompt-hint-font-size: 16px;
     --dialog-prompt-hint-color: var(--material-red--500);
-    --dialog-button-offset: 16px;
-    --dialog-button-height: 48px;
-    --dialog-button-padding-ver: 8px;
-    --dialog-button-padding-hor: 16px;
     --dialog-button-background: var(--material-brown--600);
     --dialog-button-edge-ok: var(--material-lime--500);
     --dialog-button-edge-cancel: var(--material-red--500);
-    --dialog-button-edge-size: 4px;
 
     --informer-background: var(--material-blue-gray--700);
-    --informer-padding-ver: 6px;
-    --informer-padding-hor: 8px;
     --informer-text: var(--material-white);
-    --informer-font-size: 16px;
 
     --error-header-background: var(--material-red--500);
     --error-content-background: var(--material-red--900);
     --error-text: var(--material-white);
-    --error-header-size: 48px;
-    --error-header-padding: 16px;
-    --error-header-font-size: 24px;
-    --error-cross-font-size: 32px;
-    --error-content-padding: 16px;
-    --error-content-font-size: 16px;
+}
+
+*, *:before, *:after {
+    box-sizing: border-box;
 }
 
 body {
@@ -95,11 +98,6 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     color: var(--loading);
-}
-
-.loading,
-.loading:after {
-    box-sizing: border-box;
 }
 
 .loading {
@@ -187,7 +185,7 @@ body {
     right: 0;
     left: 0;
     border-bottom: var(--panel-divider-size) solid var(--subpanel-divider);
-    padding-left: 4px;
+    padding-left: var(--subpanel-shift);
 }
 
 .subpanel--palette_chars {
@@ -273,8 +271,7 @@ body {
     position: absolute;
     top: var(--tool-size);
     right: 0;
-    width: 272px;
-    box-sizing: border-box;
+    width: var(--layers-width);
     background: var(--subpanel-background);
     border-top: var(--panel-divider-size) solid var(--subpanel-background);
     border-bottom: var(--panel-divider-size) solid var(--subpanel-divider);
@@ -316,7 +313,6 @@ body {
 
 .layers__item {
     position: relative;
-    box-sizing: border-box;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -334,7 +330,6 @@ body {
 }
 
 .layers__preview {
-    box-sizing: border-box;
     height: var(--tool-sm-size);
     border: 1px solid var(--panel-divider);
 }
@@ -411,22 +406,22 @@ body {
 
 .panel--palette .tool--active::before {
     display: block;
-    border-top: 4px solid var(--panel-active-highlight);
+    border-top: var(--panel-active-highlight-size) solid var(--panel-active-highlight);
 }
 
 .panel--toolbox .tool--active::before {
     display: block;
-    border-bottom: 4px solid var(--panel-active-highlight);
+    border-bottom: var(--panel-active-highlight-size) solid var(--panel-active-highlight);
 }
 
 .subpanel--palette .tool--active::before {
     display: block;
-    border-bottom: 4px solid var(--subpanel-active-highlight);
+    border-bottom: var(--panel-active-highlight-size) solid var(--subpanel-active-highlight);
 }
 
 .subpanel--tools .tool--active::before {
     display: block;
-    border-top: 4px solid var(--subpanel-active-highlight);
+    border-top: var(--panel-active-highlight-size) solid var(--subpanel-active-highlight);
 }
 
 .layers .tool--active {
@@ -439,7 +434,6 @@ body {
     left: 0;
     width: var(--tool-size);
     height: var(--tool-size);
-    box-sizing: border-box;
     border: var(--tool-offset) solid var(--panel-background);
 }
 
@@ -486,7 +480,6 @@ body {
 }
 
 .tool__color_paper {
-    box-sizing: border-box;
     position: absolute;
     top: var(--tool-offset);
     right: var(--tool-offset);
@@ -720,10 +713,9 @@ body {
     top: 0;
     right: 0;
     left: 0;
-    box-sizing: border-box;
     background: var(--dialog-background);
     border-bottom: var(--dialog-divider-size) solid var(--dialog-divider);
-    padding: var(--dialog-padding-ver) var(--dialog-padding-hor) calc(var(--dialog-padding-ver) + var(--dialog-divider-size)) var(--dialog-padding-hor);
+    padding: var(--dialog-padding-ver) var(--dialog-padding-hor) var(--dialog-padding-ver) var(--dialog-padding-hor);
     min-height: var(--dialog-min-height);
     color: var(--dialog-text);
     font-family: sans-serif;
@@ -754,36 +746,34 @@ body {
 
 .dialog__prompt_content,
 .dialog__prompt_hint {
-    margin-top: var(--dialog-prompt-spacing);
+    margin-top: 8px;
 }
 
 .dialog__prompt_input {
-    box-sizing: border-box;
-    height: var(--dialog-prompt-input-height);
-    font-size: var(--dialog-prompt-input-font-size);
-    padding-left: var(--dialog-prompt-input-padding-hor);
-    padding-right: var(--dialog-prompt-input-padding-hor);
+    height: var(--dialog-control-height);
+    min-width: 96px;
+    font-size: var(--dialog-font-size);
+    padding-left: var(--dialog-input-padding-hor);
+    padding-right: var(--dialog-input-padding-hor);
 }
 
 .dialog__prompt_hint {
-    font-size: var(--dialog-prompt-hint-font-size);
     color: var(--dialog-prompt-hint-color);
 }
 
 .dialog__button {
-    box-sizing: border-box;
     padding: var(--dialog-button-padding-ver) var(--dialog-button-padding-hor);
-    margin-left: var(--dialog-button-offset);
+    margin-left: 16px;
     background: var(--dialog-button-background);
-    height: var(--dialog-button-height);
-    line-height: calc(var(--dialog-button-height) - var(--dialog-button-edge-size) - var(--dialog-button-padding-ver) * 2);
+    height: var(--dialog-control-height);
+    line-height: calc(var(--dialog-control-height) - var(--dialog-divider-size) - var(--dialog-button-padding-ver) * 2);
     cursor: pointer;
-    border-bottom-width: var(--dialog-button-edge-size);
+    border-bottom-width: var(--dialog-divider-size);
     border-bottom-style: solid;
 }
 
 .dialog__button:active {
-    border-top-width: var(--dialog-button-edge-size);
+    border-top-width: var(--dialog-divider-size);
     border-top-style: solid;
     border-bottom-width: 0;
     border-bottom-style: none;
@@ -856,55 +846,7 @@ body {
     display: none;
 }
 
-@media screen and (((orientation: portrait) and (max-width: 399px))
-    or ((orientation: landscape) and (max-height: 399px))) {
-
-    :root {
-        --tool-size: 40px;
-        --tool-md-size: 32px;
-        --tool-sm-size: 26px;
-        --tool-xs-size: 20px;
-        --menu-font-size: 18px;
-        --informer-font-size: 14px;
-    }
-
-    .tool--xs > .tool__char {
-        transform: scale(0.8);
-    }
-}
-
-@media screen and ((orientation: portrait) and (max-width: 399px)) {
-    .layers {
-        width: 224px;
-    }
-
-    .panel--palette .tool--active::before {
-        border-top: 3px solid var(--panel-active-highlight);
-    }
-
-    .panel--toolbox .tool--active::before {
-        border-bottom: 3px solid var(--panel-active-highlight);
-    }
-
-    .subpanel--palette .tool--active::before {
-        border-bottom: 3px solid var(--subpanel-active-highlight);
-    }
-
-    .subpanel--tools .tool--active::before {
-        border-top: 3px solid var(--subpanel-active-highlight);
-    }
-
-    .dialog__content {
-        border-top: 3px solid var(--dialog-divider);
-    }
-}
-
 @media screen and (orientation: landscape) {
-    :root {
-        --informer-padding-hor: 10px;
-        --informer-padding-ver: 8px;
-    }
-
     .panel {
         flex-direction: column;
         min-height: auto;
@@ -954,7 +896,7 @@ body {
         left: calc(var(--tool-size) * 2);
         border-right: var(--panel-divider-size) solid var(--subpanel-divider);
         border-bottom: 0 none;
-        padding-top: 4px;
+        padding-top: var(--subpanel-shift);
         padding-left: 0;
     }
 
@@ -966,7 +908,7 @@ body {
     .subpanel--palette_chars {
         align-items: center;
         justify-content: start;
-        padding-top: 4px;
+        padding-top: var(--subpanel-shift);
     }
 
     .subpanel--palette_selection {
@@ -1003,27 +945,27 @@ body {
 
     .panel--palette .tool--active::before {
         border-top: 0 none;
-        border-right: 4px solid var(--panel-active-highlight);
+        border-right:  var(--panel-active-highlight-size) solid var(--panel-active-highlight);
     }
 
     .panel--toolbox .tool--active::before {
         border-bottom: 0 none;
-        border-left: 4px solid var(--panel-active-highlight);
+        border-left: var(--panel-active-highlight-size) solid var(--panel-active-highlight);
     }
 
     .subpanel--palette .tool--active::before {
         border-bottom: 0 none;
-        border-right: 4px solid var(--subpanel-active-highlight);
+        border-right: var(--panel-active-highlight-size) solid var(--subpanel-active-highlight);
     }
 
     .subpanel--palette_chars .tool--active::before {
-        border-bottom: 4px solid var(--subpanel-active-highlight);
+        border-bottom: var(--panel-active-highlight-size) solid var(--subpanel-active-highlight);
         border-right: 0 none;
     }
 
     .subpanel--tools .tool--active::before {
         border-top: 0 none;
-        border-right: 3px solid var(--subpanel-active-highlight);
+        border-right: var(--panel-active-highlight-size) solid var(--subpanel-active-highlight);
     }
 
     .subpanel--menu {
@@ -1033,5 +975,45 @@ body {
     .informer {
         top: 0;
         left: calc(var(--tool-size) * 2 + var(--panel-divider-size));
+    }
+}
+
+@media screen and (((orientation: portrait) and (max-width: 399px))
+    or ((orientation: landscape) and (max-height: 399px))) {
+
+    :root {
+        --tool-size: 40px;
+        --tool-md-size: 32px;
+        --tool-sm-size: 26px;
+        --tool-xs-size: 20px;
+        --menu-font-size: 18px;
+        --dialog-divider-size: 3px;
+        --informer-font-size: 14px;
+    }
+
+    .tool--xs > .tool__char {
+        transform: scale(0.8);
+    }
+}
+
+@media screen and ((orientation: portrait) and (max-width: 399px)) {
+    :root {
+        --panel-active-highlight-size: 3px;
+        --layers-width: 224px;
+    }
+}
+
+@media screen and ((orientation: landscape) and (min-width: 400px)) {
+    :root {
+        --dialog-padding-ver: 16px;
+        --dialog-padding-hor: 24px;
+        --dialog-min-height: 80px;
+        --dialog-font-size: 18px;
+        --dialog-control-height: 48px;
+        --dialog-input-padding-hor: 12px;
+        --dialog-button-padding-hor: 16px;
+
+        --informer-padding-hor: 10px;
+        --informer-padding-ver: 8px;
     }
 }

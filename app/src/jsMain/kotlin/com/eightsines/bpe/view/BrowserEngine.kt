@@ -4,10 +4,15 @@ import com.eightsines.bpe.presentation.UiAction
 import com.eightsines.bpe.presentation.UiEngine
 import com.eightsines.bpe.resources.TextDescriptor
 import com.eightsines.bpe.resources.TextRes
+import com.eightsines.bpe.util.BagStuffPacker
+import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.Logger
+import com.eightsines.bpe.util.PackableBag
 import com.eightsines.bpe.util.PackableStringBag
+import com.eightsines.bpe.util.UnpackableBag
 import com.eightsines.bpe.util.UnpackableStringBag
+import com.eightsines.bpe.util.requireSupportedStuffVersion
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -99,7 +104,7 @@ class BrowserEngine(
     }
 
     private fun performPaintingNewConfirmed() {
-        uiEngine.clearSelf()
+        uiEngine.clear()
         uiEngine.execute(UiAction.MenuClick)
         fileName = DEFAULT_FILE_NAME
 
@@ -133,39 +138,43 @@ class BrowserEngine(
         val reader = FileReader()
 
         reader.addEventListener("loadend", {
+            action.inputElement.value = ""
+
             if (reader.error != null) {
                 logger.general("BrowserEngine.executeLoad:error (error)") {
                     put("error", reader.error.toString())
                 }
 
                 _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertLoadReaderError))
-            } else {
-                val bagData = reader.result as? String
-
-                if (bagData == null) {
-                    logger.general("BrowserEngine.executeLoad:error (result is null)")
-                    _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertLoadNullResult))
-                } else {
-                    logger.trace("BrowserEngine.executeLoad:unpacking")
-
-                    try {
-                        uiEngine.getOutOfTheBagSelf(UnpackableStringBag(bagData))
-                        uiEngine.execute(UiAction.MenuClick)
-                        _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
-                        fileName = webFile.name.replace(Regex(Regex.escape(FILE_EXT_BPE) + "\$"), "")
-
-                        logger.note("BrowserEngine.executeLoad:end")
-                    } catch (e: BagUnpackException) {
-                        logger.general("BrowserEngine.executeLoad:error (unpack)") {
-                            put("exception", e.toString())
-                        }
-
-                        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertLoadUnpackError))
-                    }
-                }
+                return@addEventListener
             }
 
-            action.inputElement.value = ""
+            val bagData = reader.result as? String
+
+            if (bagData == null) {
+                logger.general("BrowserEngine.executeLoad:error (result is null)")
+                _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertLoadNullResult))
+                return@addEventListener
+            }
+
+            logger.trace("BrowserEngine.executeLoad:unpacking")
+
+            try {
+                UnpackableStringBag(bagData).getStuff(uiEngine.selfUnpacker())
+            } catch (e: BagUnpackException) {
+                logger.general("BrowserEngine.executeLoad:error (unpack)") {
+                    put("exception", e.toString())
+                }
+
+                _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertLoadUnpackError))
+                return@addEventListener
+            }
+
+            uiEngine.execute(UiAction.MenuClick)
+            _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
+            fileName = webFile.name.replace(Regex(Regex.escape(FILE_EXT_BPE) + "\$"), "")
+
+            logger.note("BrowserEngine.executeLoad:end")
         })
 
         logger.trace("BrowserEngine.executeLoad:reading") {
@@ -208,15 +217,15 @@ class BrowserEngine(
         logger.note("BrowserEngine.executeSave:begin")
 
         val bagData = PackableStringBag()
-            .also { uiEngine.putInTheBagSelf(it) }
+            .also { it.put(UiEngine.Packer(), uiEngine) }
             .toString()
 
         logger.trace("BrowserEngine.executeSave:packed")
 
-        (document.createElement("a") as HTMLAnchorElement).apply {
-            download = newFileName + FILE_EXT_BPE
-            href = URL.createObjectURL(Blob(arrayOf(bagData), BlobPropertyBag("application/octet-stream")))
-            click()
+        (document.createElement("a") as HTMLAnchorElement).also {
+            it.download = newFileName + FILE_EXT_BPE
+            it.href = URL.createObjectURL(Blob(arrayOf(bagData), BlobPropertyBag("application/octet-stream")))
+            it.click()
         }
 
         uiEngine.execute(UiAction.MenuClick)
@@ -243,7 +252,7 @@ class BrowserEngine(
             val bagData = window.localStorage.getItem(KEY_STATE)
 
             if (bagData != null) {
-                uiEngine.getOutOfTheBagSelf(UnpackableStringBag(bagData))
+                UnpackableStringBag(bagData).getStuff(Unpacker())
                 _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
             }
         } catch (t: Throwable) {
@@ -256,7 +265,7 @@ class BrowserEngine(
 
         while (true) {
             val bagData = PackableStringBag()
-                .also { uiEngine.putInTheBagSelf(it, historyStepsLimit) }
+                .also { it.put(Packer(historyStepsLimit), this) }
                 .toString()
 
             try {
@@ -305,5 +314,33 @@ class BrowserEngine(
 
         private val CONFIRM_TAG_NEW = object {}
         private val PROMPT_TAG_SAVE = object {}
+    }
+
+    private class Packer(private val historyStepsLimit: Int) : BagStuffPacker<BrowserEngine> {
+        override val putInTheBagVersion = 4
+
+        override fun putInTheBag(bag: PackableBag, value: BrowserEngine) {
+            bag.put(value.fileName)
+
+            // Put UiEngine at the end, to be able to recover from unpack error in Unpacker
+            bag.put(UiEngine.Packer(historyStepsLimit), value.uiEngine)
+        }
+    }
+
+    private inner class Unpacker : BagStuffUnpacker<BrowserEngine> {
+        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): BrowserEngine {
+            requireSupportedStuffVersion("BrowserEngine", 4, version)
+
+            if (version < 4) {
+                uiEngine.selfUnpacker().getOutOfTheBag(version, bag)
+                fileName = DEFAULT_FILE_NAME
+            } else {
+                val fileName = bag.getString()
+                bag.getStuff(uiEngine.selfUnpacker())
+                this@BrowserEngine.fileName = fileName
+            }
+
+            return this@BrowserEngine
+        }
     }
 }

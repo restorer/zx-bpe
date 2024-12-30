@@ -454,12 +454,12 @@ class BrowserView(
                 dialogPromptMessage?.textContent = resourceManager.resolveText(state.dialog.message)
 
                 if (state.dialog !== activeDialog) {
-                    dialogPromptInput?.apply {
-                        value = state.dialog.value
-                        focus()
+                    dialogPromptInput?.also {
+                        it.value = state.dialog.value
+                        it.focus()
 
-                        selectionStart = 10000
-                        selectionEnd = 10000
+                        it.selectionEnd = 10000
+                        it.selectionStart = 10000
                     }
                 }
 

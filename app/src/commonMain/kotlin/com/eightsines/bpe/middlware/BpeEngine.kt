@@ -11,10 +11,13 @@ import com.eightsines.bpe.graphics.GraphicsEngine
 import com.eightsines.bpe.graphics.executePair
 import com.eightsines.bpe.util.BagStuffPacker
 import com.eightsines.bpe.util.BagStuffUnpacker
+import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.PackableBag
+import com.eightsines.bpe.util.PackableStringBag
 import com.eightsines.bpe.util.UidFactory
 import com.eightsines.bpe.util.UnpackableBag
+import com.eightsines.bpe.util.UnpackableStringBag
 import com.eightsines.bpe.util.getList
 import com.eightsines.bpe.util.putList
 import com.eightsines.bpe.util.requireNoIllegalArgumentException
@@ -113,65 +116,12 @@ class BpeEngine(
         return emptyList()
     }
 
-    fun putInTheBagSelf(bag: PackableBag, historyStepsLimit: Int = -1) {
-        graphicsEngine.putInTheBagSelf(bag)
+    fun selfUnpacker(): BagStuffUnpacker<BpeEngine> = Unpacker()
 
-        val bagHistory: MutableList<HistoryStep>
-        val bagHistoryPosition: Int
+    fun clear() {
+        graphicsEngine.clear()
 
-        when {
-            historyStepsLimit < 0 || history.size <= historyStepsLimit -> {
-                bagHistory = history
-                bagHistoryPosition = historyPosition
-            }
-
-            historyStepsLimit == 0 -> {
-                bagHistory = mutableListOf()
-                bagHistoryPosition = 0
-            }
-
-            else -> {
-                val sizeDiff = history.size - historyStepsLimit
-                bagHistory = history.subList(sizeDiff, history.size)
-                bagHistoryPosition = max(0, historyPosition - sizeDiff)
-            }
-        }
-
-        bag.put(
-            BpeStateStuff,
-            BpeStateStuff(
-                palette = palette,
-                toolboxTool = toolboxTool,
-                toolboxPaintShape = toolboxPaintShape,
-                toolboxEraseShape = toolboxEraseShape,
-                currentLayerUid = currentLayer.uid,
-                history = bagHistory,
-                historyPosition = bagHistoryPosition,
-                clipboard = clipboard,
-            ),
-        )
-    }
-
-    fun getOutOfTheBagSelf(bag: UnpackableBag) {
-        graphicsEngine.getOutOfTheBagSelf(bag)
-        val stateStuff = bag.getStuff(BpeStateStuff)
-
-        palette.setFrom(stateStuff.palette)
-        toolboxTool = stateStuff.toolboxTool
-        toolboxPaintShape = stateStuff.toolboxPaintShape
-        toolboxEraseShape = stateStuff.toolboxEraseShape
-        currentLayer = graphicsEngine.state.canvasLayersMap[stateStuff.currentLayerUid.value] ?: graphicsEngine.state.backgroundLayer
-        history = stateStuff.history
-        historyPosition = stateStuff.historyPosition
-        clipboard = stateStuff.clipboard
-
-        state = refresh()
-    }
-
-    fun clearSelf() {
-        graphicsEngine.clearSelf()
-
-        palette.clearSelf()
+        palette.clear()
         toolboxTool = BpeTool.Paint
         toolboxPaintShape = BpeShape.Point
         toolboxEraseShape = BpeShape.Point
@@ -774,40 +724,78 @@ class BpeEngine(
             historySteps = history.size,
         )
     }
-}
 
-private class BpeStateStuff(
-    val palette: MutablePalette,
-    val toolboxTool: BpeTool,
-    val toolboxPaintShape: BpeShape,
-    val toolboxEraseShape: BpeShape,
-    val currentLayerUid: LayerUid,
-    val history: MutableList<HistoryStep>,
-    val historyPosition: Int,
-    val clipboard: BpeClipboard?,
-) {
-    override fun toString() =
-        "BpeStateStuff(palette=$palette, toolboxTool=$toolboxTool, toolboxPaintShape=$toolboxPaintShape" +
-                ", toolboxEraseShape=$toolboxEraseShape, currentLayerUid=$currentLayerUid, history=$history" +
-                ", historyPosition=$historyPosition, clipboard=$clipboard)"
+    class Packer(private val historyStepsLimit: Int = -1) : BagStuffPacker<BpeEngine> {
+        override val putInTheBagVersion = 2
 
-    companion object : BagStuffPacker<BpeStateStuff>, BagStuffUnpacker<BpeStateStuff> {
-        override val putInTheBagVersion = 1
+        override fun putInTheBag(bag: PackableBag, value: BpeEngine) {
+            val history: MutableList<HistoryStep>
+            val historyPosition: Int
 
-        override fun putInTheBag(bag: PackableBag, value: BpeStateStuff) {
+            when {
+                historyStepsLimit < 0 || value.history.size <= historyStepsLimit -> {
+                    history = value.history
+                    historyPosition = value.historyPosition
+                }
+
+                historyStepsLimit == 0 -> {
+                    history = mutableListOf()
+                    historyPosition = 0
+                }
+
+                else -> {
+                    val sizeDiff = value.history.size - historyStepsLimit
+                    history = value.history.subList(sizeDiff, value.history.size)
+                    historyPosition = max(0, value.historyPosition - sizeDiff)
+                }
+            }
+
             bag.put(MutablePalette, value.palette)
             bag.put(value.toolboxTool.value)
             bag.put(value.toolboxPaintShape.value)
             bag.put(value.toolboxEraseShape.value)
-            bag.put(value.currentLayerUid.value)
-            bag.putList(value.history) { bag.put(HistoryStep, it) }
-            bag.put(value.historyPosition)
+            bag.put(value.currentLayer.uid.value)
+            bag.putList(history) { bag.put(HistoryStep, it) }
+            bag.put(historyPosition)
             bag.put(BpeClipboard, value.clipboard)
+
+            // Put GraphicsEngine at the end, to be able to recover from unpack error in Unpacker
+            bag.put(GraphicsEngine.Packer, value.graphicsEngine)
+        }
+    }
+
+    private inner class Unpacker(private val isLegacyMode: Boolean = false) : BagStuffUnpacker<BpeEngine> {
+        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): BpeEngine {
+            requireSupportedStuffVersion("BpeEngine", 2, version)
+
+            if (isLegacyMode) {
+                applyStuff(unpackStuff(bag))
+                return this@BpeEngine
+            }
+
+            if (version < 2) {
+                val stableGraphicsEngineBagData = PackableStringBag()
+                    .also { it.put(GraphicsEngine.Packer, graphicsEngine) }
+                    .toString()
+
+                graphicsEngine.selfUnpacker().getOutOfTheBag(1, bag)
+
+                return try {
+                    bag.getStuff(Unpacker(true))
+                } catch (e: BagUnpackException) {
+                    UnpackableStringBag(stableGraphicsEngineBagData).getStuff(graphicsEngine.selfUnpacker())
+                    throw e
+                }
+            }
+
+            val stuff = unpackStuff(bag)
+            bag.getStuff(graphicsEngine.selfUnpacker())
+            applyStuff(stuff)
+
+            return this@BpeEngine
         }
 
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): BpeStateStuff {
-            requireSupportedStuffVersion("BpeStateStuff", 1, version)
-
+        private fun unpackStuff(bag: UnpackableBag): UnpackerStuff {
             val palette = bag.getStuff(MutablePalette)
             val toolboxTool = requireNoIllegalArgumentException { BpeTool.of(bag.getInt()) }
             val toolboxPaintShape = requireNoIllegalArgumentException { BpeShape.of(bag.getInt()) }
@@ -817,7 +805,7 @@ private class BpeStateStuff(
             val historyPosition = bag.getInt()
             val clipboard = bag.getStuffOrNull(BpeClipboard)
 
-            return BpeStateStuff(
+            return UnpackerStuff(
                 palette = palette,
                 toolboxTool = toolboxTool,
                 toolboxPaintShape = toolboxPaintShape,
@@ -828,5 +816,29 @@ private class BpeStateStuff(
                 clipboard = clipboard,
             )
         }
+
+        private fun applyStuff(stuff: UnpackerStuff) {
+            palette.setFrom(stuff.palette)
+            toolboxTool = stuff.toolboxTool
+            toolboxPaintShape = stuff.toolboxPaintShape
+            toolboxEraseShape = stuff.toolboxEraseShape
+            currentLayer = graphicsEngine.state.canvasLayersMap[stuff.currentLayerUid.value] ?: graphicsEngine.state.backgroundLayer
+            history = stuff.history
+            historyPosition = stuff.historyPosition
+            clipboard = stuff.clipboard
+
+            state = refresh()
+        }
     }
+
+    private class UnpackerStuff(
+        val palette: MutablePalette,
+        val toolboxTool: BpeTool,
+        val toolboxPaintShape: BpeShape,
+        val toolboxEraseShape: BpeShape,
+        val currentLayerUid: LayerUid,
+        val history: MutableList<HistoryStep>,
+        val historyPosition: Int,
+        val clipboard: BpeClipboard?,
+    )
 }
