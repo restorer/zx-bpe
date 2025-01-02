@@ -109,7 +109,7 @@ class GraphicsEngine(
             is GraphicsAction.ConvertLayer -> executeConvertLayer(action)
         }
 
-        logger.note("GraphicsEngine.execute:end") {
+        logger.trace("GraphicsEngine.execute:end") {
             put("state", state.toString())
             put("undoAction", undoAction.toString())
         }

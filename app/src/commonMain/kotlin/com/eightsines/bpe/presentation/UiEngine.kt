@@ -115,7 +115,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
         state = refresh()
 
-        logger.log(severity, "UiEngine.execute:end") {
+        logger.trace("UiEngine.execute:end") {
             put("state", state.toString())
         }
     }

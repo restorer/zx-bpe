@@ -10,9 +10,7 @@ import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
 import com.eightsines.bpe.core.VBlockMergeCell
 import com.eightsines.bpe.util.BagStuffPacker
-import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.PackableBag
-import com.eightsines.bpe.util.UnpackableBag
 
 sealed class CanvasType {
     abstract val value: Int
@@ -331,13 +329,23 @@ abstract class QBlockCanvas(
         } else {
             val attr = attrs[sciiY][sciiX]
 
-            SciiCell(
-                character = SciiChar(charValue),
-                ink = attr.color,
-                paper = SciiColor.Transparent,
-                bright = attr.bright,
-                flash = SciiLight.Transparent,
-            )
+            if (charValue == SciiChar.BLOCK_VALUE_LAST) {
+                SciiCell(
+                    character = SciiChar(SciiChar.BLOCK_VALUE_FIRST),
+                    ink = SciiColor.Transparent,
+                    paper = attr.color,
+                    bright = attr.bright,
+                    flash = SciiLight.Transparent,
+                )
+            } else {
+                SciiCell(
+                    character = SciiChar(charValue),
+                    ink = attr.color,
+                    paper = SciiColor.Transparent,
+                    bright = attr.bright,
+                    flash = SciiLight.Transparent,
+                )
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package com.eightsines.bpe.middlware
 
+import com.eightsines.bpe.exporters.ScrExporter
 import com.eightsines.bpe.foundation.BackgroundLayer
 import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasType
@@ -30,6 +31,7 @@ class BpeEngine(
     private val graphicsEngine: GraphicsEngine,
     private val selectionController: SelectionController,
     private val paintingController: PaintingController,
+    private val scrExporter: ScrExporter,
     private val historyMaxSteps: Int = 10000,
 ) {
     private val palette = MutablePalette()
@@ -103,7 +105,7 @@ class BpeEngine(
             state = refresh()
         }
 
-        logger.note("BpeEngine.execute:end") {
+        logger.trace("BpeEngine.execute:end") {
             put("state", state.toString())
         }
     }
@@ -112,10 +114,7 @@ class BpeEngine(
         return emptyList()
     }
 
-    fun exportToScr(): List<Byte> {
-        return emptyList()
-    }
-
+    fun exportToScr(): List<Byte> = scrExporter.export(graphicsEngine.state.preview)
     fun selfUnpacker(): BagStuffUnpacker<BpeEngine> = Unpacker()
 
     fun clear() {

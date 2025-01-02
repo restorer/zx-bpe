@@ -22,9 +22,6 @@ import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 
 class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
-    private val specSciiCharRows = SpecScii.HEIGHT / UiSpec.SCII_CELL_SIZE
-    private val specSciiCharColumns = SpecScii.WIDTH / UiSpec.SCII_CELL_SIZE
-
     fun renderPreview(htmlCanvas: HTMLCanvasElement, layer: Layer) {
         val htmlContext = htmlCanvas.getContext("2d", GET_CONTEXT_OPTIONS) as CanvasRenderingContext2D
         htmlContext.clearRect(0.0, 0.0, PICTURE_WIDTH, PICTURE_HEIGHT)
@@ -230,9 +227,9 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
             return
         }
 
-        val charRow = charValue / specSciiCharColumns
+        val charRow = charValue / SPECSCII_CHAR_COLS
 
-        if (charRow >= specSciiCharRows) {
+        if (charRow >= SPECSCII_CHAR_ROWS) {
             return
         }
 
@@ -242,7 +239,7 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
             paperColor = tmpColor
         }
 
-        val charX = (charValue % specSciiCharColumns) * UiSpec.SCII_CELL_SIZE
+        val charX = (charValue % SPECSCII_CHAR_COLS) * UiSpec.SCII_CELL_SIZE
         val charY = charRow * UiSpec.SCII_CELL_SIZE
 
         val pixelsDataDyn = pixelsData.asDynamic()
@@ -316,6 +313,9 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         private const val BORDER_SIZE = UiSpec.BORDER_SIZE.toDouble()
         private const val FULL_WIDTH = UiSpec.FULL_WIDTH.toDouble()
         private const val FULL_HEIGHT = UiSpec.FULL_HEIGHT.toDouble()
+
+        private const val SPECSCII_CHAR_ROWS = SpecScii.HEIGHT / UiSpec.SCII_CELL_SIZE
+        private const val SPECSCII_CHAR_COLS = SpecScii.WIDTH / UiSpec.SCII_CELL_SIZE
 
         private const val BACKGROUND_PREVIEW_PICTURE_WIDTH = (UiSpec.PICTURE_WIDTH - UiSpec.BORDER_SIZE * 2).toDouble()
         private const val BACKGROUND_PREVIEW_PICTURE_HEIGHT = (UiSpec.PICTURE_HEIGHT - UiSpec.BORDER_SIZE * 2).toDouble()

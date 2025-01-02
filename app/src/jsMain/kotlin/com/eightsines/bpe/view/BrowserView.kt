@@ -48,8 +48,9 @@ class BrowserView(
 
     private val loading = document.find<HTMLElement>(".js-loading")
     private val container = document.find<HTMLElement>(".js-container")
-    private val sheet = document.find<HTMLCanvasElement>(".js-sheet")
-    private val areas = document.find<HTMLCanvasElement>(".js-areas")
+    private val drawing = document.find<HTMLElement>(".js-drawing")
+    private val drawingSheet = document.find<HTMLCanvasElement>(".js-drawing-sheet")
+    private val drawingAreas = document.find<HTMLCanvasElement>(".js-drawing-areas")
 
     private val paletteColor = document.find<HTMLElement>(".js-palette-color")
     private val paletteColorIndicator = document.find<HTMLElement>(".js-palette-color-indicator")
@@ -148,6 +149,7 @@ class BrowserView(
     private var wasRendered = false
     private var lastRefreshTimeMs = 0L
     private var activeDialog: BrowserDialog? = null
+    private var drawingTransform: DrawingTransform = DrawingTransform()
 
     init {
         createColorItems()
@@ -155,7 +157,7 @@ class BrowserView(
         createCharItems()
         createLayerTypeItems()
 
-        areas?.let { areas ->
+        drawingAreas?.let { areas ->
             areas.addEventListener(
                 EVENT_MOUSE_ENTER,
                 {
@@ -310,6 +312,7 @@ class BrowserView(
 
         loading?.addClass(CLASS_HIDDEN)
         container?.removeClass(CLASS_HIDDEN)
+        reposition()
 
         paletteColor?.setToolState(uiState.paletteColor) {
             paletteColorIndicator?.replaceClassModifier("tool__color--", getColorClassSuffix(it))
@@ -405,7 +408,7 @@ class BrowserView(
         layersToolbarPrimary?.setVisible(!uiState.layersTypesIsVisible)
         layersToolbarTypes?.setVisible(uiState.layersTypesIsVisible)
 
-        sheet?.let {
+        drawingSheet?.let {
             val sheetView = uiState.sheet
 
             if (sheetViewCache != sheetView) {
@@ -415,7 +418,7 @@ class BrowserView(
             }
         }
 
-        areas?.let {
+        drawingAreas?.let {
             val selectionArea = uiState.selectionArea
             val cursorArea = uiState.cursorArea
 
@@ -491,12 +494,59 @@ class BrowserView(
             renderer.renderPreview(cachedLayerItem.previewCanvas, layerView.layer)
         }
 
-        sheet?.let { sheet ->
+        drawingSheet?.let { sheet ->
             sheetViewCache?.let { renderer.renderSheet(sheet, it.backgroundView.layer, it.canvasView.canvas) }
         }
 
-        areas?.let { renderer.renderAreas(it, selectionAreaCache, cursorAreaCache) }
+        drawingAreas?.let { renderer.renderAreas(it, selectionAreaCache, cursorAreaCache) }
         lastRefreshTimeMs = elapsedTimeMs
+    }
+
+    fun reposition() {
+        val drawing = this.drawing ?: return
+
+        val drawingFullWidth = drawing.clientWidth
+        val drawingFullHeight = drawing.clientHeight
+        val drawingAvailWidth = (drawingFullWidth - DRAWING_OFFSET_DBL).toDouble()
+        val drawingAvailHeight = (drawingFullHeight - DRAWING_OFFSET_DBL).toDouble()
+
+        if (drawingAvailWidth < 1 || drawingAvailHeight < 1) {
+            return
+        }
+
+        val centerX = drawingFullWidth.toDouble() * 0.5 + drawingAvailWidth * drawingTransform.translateXRatio
+        val centerY = drawingFullHeight.toDouble() * 0.5 + drawingAvailHeight * drawingTransform.translateYRatio
+
+        val drawingRatio = drawingAvailWidth / drawingAvailHeight
+        val sheetRatio = DRAWING_SHEET_WIDTH / DRAWING_SHEET_HEIGHT
+
+        val scale = if (drawingRatio < sheetRatio) {
+            drawingAvailWidth / DRAWING_SHEET_WIDTH
+        } else {
+            drawingAvailHeight / DRAWING_SHEET_HEIGHT
+        } * drawingTransform.scale
+
+        val sheetWidth = DRAWING_SHEET_WIDTH * scale
+        val sheetHeight = DRAWING_SHEET_HEIGHT * scale
+
+        val sheetLeftStyle = "${(centerX - sheetWidth * 0.5).toInt()}px"
+        val sheetTopStyle = "${(centerY - sheetHeight * 0.5).toInt()}px"
+        val sheetWidthStyle = "${sheetWidth.toInt()}px"
+        val sheetHeightStyle = "${sheetHeight.toInt()}px"
+
+        drawingSheet?.style?.also {
+            it.left = sheetLeftStyle
+            it.top = sheetTopStyle
+            it.width = sheetWidthStyle
+            it.height = sheetHeightStyle
+        }
+
+        drawingAreas?.style?.also {
+            it.left = sheetLeftStyle
+            it.top = sheetTopStyle
+            it.width = sheetWidthStyle
+            it.height = sheetHeightStyle
+        }
     }
 
     private fun renderLayersItems(layersViews: List<LayerView<*>>, layersCurrentUid: LayerUid) {
@@ -957,6 +1007,10 @@ class BrowserView(
 
         private const val PREVIEW_WIDTH = 256
         private const val PREVIEW_HEIGHT = 192
+
+        private const val DRAWING_OFFSET_DBL = 16 * 2
+        private const val DRAWING_SHEET_WIDTH = 320.0
+        private const val DRAWING_SHEET_HEIGHT = 256.0
     }
 }
 

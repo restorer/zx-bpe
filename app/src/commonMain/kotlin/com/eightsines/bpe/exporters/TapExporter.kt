@@ -1,14 +1,14 @@
-package com.eightsines.bpe.middlware
+package com.eightsines.bpe.exporters
 
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.foundation.SciiCanvas
 
 class TapExporter(
-    val defaultBorder: Int = 0,
-    val defaultPaper: Int = 0,
-    val defaultInk: Int = 0,
-    val defaultBright: Int = 0,
-    val defaultFlash: Int = 0,
+    private val defaultBorder: Int = 0,
+    private val defaultPaper: Int = 0,
+    private val defaultInk: Int = 0,
+    private val defaultBright: Int = 0,
+    private val defaultFlash: Int = 0,
 ) {
     // https://github.com/restorer/zemux/blob/develop/test-extras-maker/tape_maker.rb
     // https://zxpress.ru/book_articles.php?id=1387

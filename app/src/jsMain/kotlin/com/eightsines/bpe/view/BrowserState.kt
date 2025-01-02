@@ -11,3 +11,9 @@ sealed interface BrowserDialog {
     data class Confirm(val tag: Any, val message: TextRes) : BrowserDialog
     data class Prompt(val tag: Any, val message: TextRes, val hint: TextDescriptor? = null, val value: String) : BrowserDialog
 }
+
+data class DrawingTransform(
+    val translateXRatio: Double = 0.0,
+    val translateYRatio: Double = 0.0,
+    val scale: Double = 1.0,
+)

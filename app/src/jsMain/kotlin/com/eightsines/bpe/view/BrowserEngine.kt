@@ -10,6 +10,7 @@ import com.eightsines.bpe.util.BagUnpackException
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.PackableBag
 import com.eightsines.bpe.util.PackableStringBag
+import com.eightsines.bpe.util.Severity
 import com.eightsines.bpe.util.UnpackableBag
 import com.eightsines.bpe.util.UnpackableStringBag
 import com.eightsines.bpe.util.requireSupportedStuffVersion
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import org.khronos.webgl.Uint8Array
 import org.w3c.dom.Document
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.Window
@@ -63,17 +65,25 @@ class BrowserEngine(
         isInitiallyLoaded = true
     }
 
-    fun execute(action: BrowserAction) = when (action) {
-        is BrowserAction.Ui -> executeUi(action)
-        is BrowserAction.DialogHide -> executeDialogHide()
-        is BrowserAction.DialogConfirmOk -> executeDialogConfirmOk(action)
-        is BrowserAction.DialogPromptOk -> executeDialogPromptOk(action)
-        is BrowserAction.PaintingNew -> executePaintingNew()
-        is BrowserAction.PaintingLoad -> executePaintingLoad(action)
-        is BrowserAction.PaintingSave -> executePaintingSave()
-        is BrowserAction.PaintingExportTap -> executePaintingExportTap()
-        is BrowserAction.PaintingExportScr -> executePaintingExportScr()
-        is BrowserAction.PaintingExportPng -> executePaintingExportPng()
+    fun execute(action: BrowserAction) {
+        val severity = if (action is BrowserAction.Ui) Severity.Trace else Severity.Note
+
+        logger.log(severity, "BrowserEngine.execute") {
+            put("action", action.toString())
+        }
+
+        when (action) {
+            is BrowserAction.Ui -> executeUi(action)
+            is BrowserAction.DialogHide -> executeDialogHide()
+            is BrowserAction.DialogConfirmOk -> executeDialogConfirmOk(action)
+            is BrowserAction.DialogPromptOk -> executeDialogPromptOk(action)
+            is BrowserAction.PaintingNew -> executePaintingNew()
+            is BrowserAction.PaintingLoad -> executePaintingLoad(action)
+            is BrowserAction.PaintingSave -> executePaintingSave()
+            is BrowserAction.PaintingExportTap -> executePaintingExportTap()
+            is BrowserAction.PaintingExportScr -> executePaintingExportScr()
+            is BrowserAction.PaintingExportPng -> executePaintingExportPng()
+        }
     }
 
     private fun executeUi(action: BrowserAction.Ui) {
@@ -92,8 +102,12 @@ class BrowserEngine(
     }
 
     private fun executeDialogPromptOk(action: BrowserAction.DialogPromptOk) {
-        if (action.tag === PROMPT_TAG_SAVE) {
-            performPaintingSaveConfirmed(action.value)
+        if (action.tag === PROMPT_TAG_SAVE ||
+            action.tag === PROMPT_TAG_EXPORT_TAP ||
+            action.tag === PROMPT_TAG_EXPORT_SCR ||
+            action.tag === PROMPT_TAG_EXPORT_PNG
+        ) {
+            performPaintingSaveOrExportConfirmed(action.tag, action.value)
         }
     }
 
@@ -186,22 +200,38 @@ class BrowserEngine(
     }
 
     private fun executePaintingSave() {
+        performShowSaveOrExportPrompt(PROMPT_TAG_SAVE)
+    }
+
+    private fun executePaintingExportTap() {
+        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertExportNotImplemented))
+    }
+
+    private fun executePaintingExportScr() {
+        performShowSaveOrExportPrompt(PROMPT_TAG_EXPORT_SCR)
+    }
+
+    private fun executePaintingExportPng() {
+        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertExportNotImplemented))
+    }
+
+    private fun performShowSaveOrExportPrompt(tag: Any) {
         _browserStateFlow.value = _browserStateFlow.value.copy(
             dialog = BrowserDialog.Prompt(
-                tag = PROMPT_TAG_SAVE,
+                tag = tag,
                 message = TextRes.PromptSaveMessage,
                 value = fileName,
             ),
         )
     }
 
-    private fun performPaintingSaveConfirmed(promptValue: String) {
+    private fun performPaintingSaveOrExportConfirmed(tag: Any, promptValue: String) {
         val newFileName = promptValue.trim()
 
         if (!FILE_NAME_REGEX.matches(newFileName)) {
             _browserStateFlow.value = _browserStateFlow.value.copy(
                 dialog = BrowserDialog.Prompt(
-                    tag = PROMPT_TAG_SAVE,
+                    tag = tag,
                     message = TextRes.PromptSaveMessage,
                     hint = TextDescriptor(TextRes.PromptSaveHint, buildMap {
                         put("len", FILE_NAME_MAX_LENGTH.toString())
@@ -214,37 +244,43 @@ class BrowserEngine(
             return
         }
 
-        logger.note("BrowserEngine.executeSave:begin")
+        logger.note("BrowserEngine.performPaintingSaveOrExportConfirmed:begin")
 
-        val bagData = PackableStringBag()
-            .also { it.put(UiEngine.Packer(), uiEngine) }
-            .toString()
+        when (tag) {
+            PROMPT_TAG_SAVE -> {
+                val bagData = PackableStringBag()
+                    .also { it.put(UiEngine.Packer(), uiEngine) }
+                    .toString()
 
-        logger.trace("BrowserEngine.executeSave:packed")
+                performPaintingSaveOrExportBlob(
+                    newFileName + FILE_EXT_BPE,
+                    Blob(arrayOf(bagData), BlobPropertyBag("application/octet-stream")),
+                )
+            }
 
-        (document.createElement("a") as HTMLAnchorElement).also {
-            it.download = newFileName + FILE_EXT_BPE
-            it.href = URL.createObjectURL(Blob(arrayOf(bagData), BlobPropertyBag("application/octet-stream")))
-            it.click()
+            PROMPT_TAG_EXPORT_TAP -> Unit
+
+            PROMPT_TAG_EXPORT_SCR -> performPaintingSaveOrExportBlob(
+                newFileName + FILE_EXT_SCR,
+                Blob(arrayOf(Uint8Array(uiEngine.exportToScr().toTypedArray())), BlobPropertyBag("application/octet-stream")),
+            )
+
+            PROMPT_TAG_EXPORT_PNG -> Unit
         }
 
         uiEngine.execute(UiAction.MenuClick)
         _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state, dialog = null)
         fileName = newFileName
 
-        logger.note("BrowserEngine.executeSave:end")
+        logger.note("BrowserEngine.performPaintingSaveOrExportConfirmed:end")
     }
 
-    private fun executePaintingExportTap() {
-        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertExportNotImplemented))
-    }
-
-    private fun executePaintingExportScr() {
-        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertExportNotImplemented))
-    }
-
-    private fun executePaintingExportPng() {
-        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertExportNotImplemented))
+    private fun performPaintingSaveOrExportBlob(fullFileName: String, blob: Blob) {
+        (document.createElement("a") as HTMLAnchorElement).also {
+            it.download = fullFileName
+            it.href = URL.createObjectURL(blob)
+            it.click()
+        }
     }
 
     private fun tryLoadFromStorage() {
@@ -314,6 +350,9 @@ class BrowserEngine(
 
         private val CONFIRM_TAG_NEW = object {}
         private val PROMPT_TAG_SAVE = object {}
+        private val PROMPT_TAG_EXPORT_TAP = object {}
+        private val PROMPT_TAG_EXPORT_SCR = object {}
+        private val PROMPT_TAG_EXPORT_PNG = object {}
     }
 
     private class Packer(private val historyStepsLimit: Int) : BagStuffPacker<BrowserEngine> {

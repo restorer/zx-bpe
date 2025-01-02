@@ -1,3 +1,4 @@
+import com.eightsines.bpe.exporters.ScrExporter
 import com.eightsines.bpe.graphics.GraphicsEngine
 import com.eightsines.bpe.graphics.Painter
 import com.eightsines.bpe.graphics.Renderer
@@ -30,6 +31,7 @@ class BpeComponent(private val window: Window) {
     private val elapsedTimeProvider by lazy { ElapsedTimeProviderImpl() }
     private val graphicsEngine by lazy { GraphicsEngine(logger = logger, painter = painter, renderer = renderer) }
     private val selectionController by lazy { SelectionController(graphicsEngine) }
+    private val scrExporter by lazy { ScrExporter() }
 
     private val paintingController by lazy {
         PaintingController(graphicsEngine = graphicsEngine, selectionController = selectionController)
@@ -42,6 +44,7 @@ class BpeComponent(private val window: Window) {
             graphicsEngine = graphicsEngine,
             selectionController = selectionController,
             paintingController = paintingController,
+            scrExporter = scrExporter,
         )
     }
 
@@ -92,6 +95,7 @@ fun ready(component: BpeComponent) {
         launch { browserEngine.browserStateFlow.collect(browserView::render) }
     }
 
+    window.addEventListener("resize", { browserView.reposition() })
     refreshLoop(component)
 }
 
