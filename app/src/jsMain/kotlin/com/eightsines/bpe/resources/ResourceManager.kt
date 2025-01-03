@@ -95,7 +95,7 @@ class ResourceManager {
 
             TextRes.ConfirmNew -> "Clear everything? This action cannot be undone."
 
-            TextRes.PromptSaveMessage -> "File name (without extension):"
+            TextRes.PromptSaveMessage -> "File name (without {ext} extension):"
             TextRes.PromptSaveHint -> "Should be between 1 and {len} characters and contains only 0-9, A-Z, a-z or {specials}"
 
             TextRes.InformerSecondary -> "XY {x} {y}"

@@ -49,7 +49,7 @@ class BrowserView(
     private val loading = document.find<HTMLElement>(".js-loading")
     private val container = document.find<HTMLElement>(".js-container")
     private val drawing = document.find<HTMLElement>(".js-drawing")
-    private val drawingSheet = document.find<HTMLCanvasElement>(".js-drawing-sheet")
+    private val drawingSheet = document.find<HTMLCanvasElement>(SELECTOR_DRAWING_SHEET)
     private val drawingAreas = document.find<HTMLCanvasElement>(".js-drawing-areas")
 
     private val paletteColor = document.find<HTMLElement>(".js-palette-color")
@@ -413,7 +413,6 @@ class BrowserView(
 
             if (sheetViewCache != sheetView) {
                 sheetViewCache = sheetView
-
                 renderer.renderSheet(it, sheetView.backgroundView.layer, sheetView.canvasView.canvas)
             }
         }
@@ -971,11 +970,12 @@ class BrowserView(
     @Suppress("NOTHING_TO_INLINE")
     private inline fun makeSpan(innerHtml: String) = "<span>$innerHtml</span>"
 
-    private companion object {
+    companion object {
         private const val CLASS_HIDDEN = "hidden"
         private const val CLASS_TOOL_DISABLED = "tool--disabled"
         private const val CLASS_TOOL_ACTIVE = "tool--active"
         private const val SUFFIX_TRANSPARENT = "transparent"
+        const val SELECTOR_DRAWING_SHEET = ".js-drawing-sheet"
 
         private const val EVENT_CLICK = "click"
         private const val EVENT_CHANGE = "change"

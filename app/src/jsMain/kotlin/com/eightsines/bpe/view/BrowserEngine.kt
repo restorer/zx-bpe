@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import org.khronos.webgl.Uint8Array
 import org.w3c.dom.Document
 import org.w3c.dom.HTMLAnchorElement
+import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.Window
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
@@ -42,6 +43,7 @@ class BrowserEngine(
     mainDispatcher: CoroutineDispatcher,
 ) {
     private val _browserStateFlow = MutableStateFlow(BrowserState(uiState = uiEngine.state))
+    private val drawingSheet = document.querySelector(BrowserView.SELECTOR_DRAWING_SHEET) as? HTMLCanvasElement
     private var isInitiallyLoaded = false
     private var fileName = DEFAULT_FILE_NAME
 
@@ -102,11 +104,7 @@ class BrowserEngine(
     }
 
     private fun executeDialogPromptOk(action: BrowserAction.DialogPromptOk) {
-        if (action.tag === PROMPT_TAG_SAVE ||
-            action.tag === PROMPT_TAG_EXPORT_TAP ||
-            action.tag === PROMPT_TAG_EXPORT_SCR ||
-            action.tag === PROMPT_TAG_EXPORT_PNG
-        ) {
+        if (action.tag is PromptTag) {
             performPaintingSaveOrExportConfirmed(action.tag, action.value)
         }
     }
@@ -200,7 +198,7 @@ class BrowserEngine(
     }
 
     private fun executePaintingSave() {
-        performShowSaveOrExportPrompt(PROMPT_TAG_SAVE)
+        performShowSaveOrExportPrompt(PromptTag.Save)
     }
 
     private fun executePaintingExportTap() {
@@ -208,31 +206,37 @@ class BrowserEngine(
     }
 
     private fun executePaintingExportScr() {
-        performShowSaveOrExportPrompt(PROMPT_TAG_EXPORT_SCR)
+        performShowSaveOrExportPrompt(PromptTag.ExportScr)
     }
 
     private fun executePaintingExportPng() {
-        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertExportNotImplemented))
+        performShowSaveOrExportPrompt(PromptTag.ExportPng)
     }
 
-    private fun performShowSaveOrExportPrompt(tag: Any) {
+    private fun performShowSaveOrExportPrompt(tag: PromptTag) {
         _browserStateFlow.value = _browserStateFlow.value.copy(
             dialog = BrowserDialog.Prompt(
                 tag = tag,
-                message = TextRes.PromptSaveMessage,
+                message = TextDescriptor(
+                    TextRes.PromptSaveMessage,
+                    buildMap { put("ext", getFileExtensionByPromptTag(tag)) },
+                ),
                 value = fileName,
             ),
         )
     }
 
-    private fun performPaintingSaveOrExportConfirmed(tag: Any, promptValue: String) {
+    private fun performPaintingSaveOrExportConfirmed(tag: PromptTag, promptValue: String) {
         val newFileName = promptValue.trim()
 
         if (!FILE_NAME_REGEX.matches(newFileName)) {
             _browserStateFlow.value = _browserStateFlow.value.copy(
                 dialog = BrowserDialog.Prompt(
                     tag = tag,
-                    message = TextRes.PromptSaveMessage,
+                    message = TextDescriptor(
+                        TextRes.PromptSaveMessage,
+                        buildMap { put("ext", getFileExtensionByPromptTag(tag)) },
+                    ),
                     hint = TextDescriptor(TextRes.PromptSaveHint, buildMap {
                         put("len", FILE_NAME_MAX_LENGTH.toString())
                         put("specials", FILE_NAME_SPECIALS)
@@ -245,9 +249,10 @@ class BrowserEngine(
         }
 
         logger.note("BrowserEngine.performPaintingSaveOrExportConfirmed:begin")
+        fileName = newFileName
 
         when (tag) {
-            PROMPT_TAG_SAVE -> {
+            PromptTag.Save -> {
                 val bagData = PackableStringBag()
                     .also { it.put(UiEngine.Packer(), uiEngine) }
                     .toString()
@@ -258,19 +263,25 @@ class BrowserEngine(
                 )
             }
 
-            PROMPT_TAG_EXPORT_TAP -> Unit
+            PromptTag.ExportTap -> Unit
 
-            PROMPT_TAG_EXPORT_SCR -> performPaintingSaveOrExportBlob(
+            PromptTag.ExportScr -> performPaintingSaveOrExportBlob(
                 newFileName + FILE_EXT_SCR,
                 Blob(arrayOf(Uint8Array(uiEngine.exportToScr().toTypedArray())), BlobPropertyBag("application/octet-stream")),
             )
 
-            PROMPT_TAG_EXPORT_PNG -> Unit
+            PromptTag.ExportPng -> drawingSheet?.toBlob({ blob: Blob? ->
+                if (blob != null) {
+                    performPaintingSaveOrExportBlob(
+                        newFileName + FILE_EXT_PNG,
+                        blob.slice(0, blob.size.toInt(), "application/octet-stream"),
+                    )
+                }
+            })
         }
 
         uiEngine.execute(UiAction.MenuClick)
         _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state, dialog = null)
-        fileName = newFileName
 
         logger.note("BrowserEngine.performPaintingSaveOrExportConfirmed:end")
     }
@@ -334,6 +345,13 @@ class BrowserEngine(
         }
     }
 
+    private fun getFileExtensionByPromptTag(tag: PromptTag) = when (tag) {
+        PromptTag.Save -> FILE_EXT_BPE
+        PromptTag.ExportTap -> FILE_EXT_TAP
+        PromptTag.ExportScr -> FILE_EXT_SCR
+        PromptTag.ExportPng -> FILE_EXT_PNG
+    }
+
     private companion object {
         private const val KEY_STATE = "state"
         private val AUTOSAVE_TIMEOUT = 1.seconds
@@ -349,10 +367,13 @@ class BrowserEngine(
         private val FILE_NAME_REGEX = Regex("^[0-9A-Za-z._\\-=!?()\\[\\]{}]{1,8}$")
 
         private val CONFIRM_TAG_NEW = object {}
-        private val PROMPT_TAG_SAVE = object {}
-        private val PROMPT_TAG_EXPORT_TAP = object {}
-        private val PROMPT_TAG_EXPORT_SCR = object {}
-        private val PROMPT_TAG_EXPORT_PNG = object {}
+    }
+
+    private enum class PromptTag {
+        Save,
+        ExportTap,
+        ExportScr,
+        ExportPng,
     }
 
     private class Packer(private val historyStepsLimit: Int) : BagStuffPacker<BrowserEngine> {
