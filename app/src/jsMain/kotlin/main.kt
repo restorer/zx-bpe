@@ -90,7 +90,7 @@ fun ready(component: BpeComponent) {
         SupervisorJob() +
                 component.mainDispatcher +
                 CoroutineExceptionHandler { _, t -> unhandledErrorView.show(t) }
-    ).launch {
+    ).apply {
         launch { browserView.actionFlow.collect(browserEngine::execute) }
         launch { browserEngine.browserStateFlow.collect(browserView::render) }
     }

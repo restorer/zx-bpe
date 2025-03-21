@@ -310,8 +310,11 @@ class BrowserView(
     fun render(state: BrowserState) {
         val uiState = state.uiState
 
-        loading?.addClass(CLASS_HIDDEN)
-        container?.removeClass(CLASS_HIDDEN)
+        if (!wasRendered) {
+            loading?.addClass(CLASS_HIDDEN)
+            container?.removeClass(CLASS_HIDDEN)
+        }
+
         reposition()
 
         paletteColor?.setToolState(uiState.paletteColor) {
