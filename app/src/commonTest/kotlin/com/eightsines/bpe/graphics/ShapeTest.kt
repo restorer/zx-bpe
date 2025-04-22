@@ -1,33 +1,71 @@
 package com.eightsines.bpe.graphics
 
-import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.core.CellType
+import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.foundation.Crate
 import com.eightsines.bpe.testing.BlockCellMother
+import com.eightsines.bpe.testing.PackableTestBag
+import com.eightsines.bpe.testing.TestWare
+import com.eightsines.bpe.testing.UnpackableTestBag
 import com.eightsines.bpe.testing.performTest
-import com.eightsines.bpe.util.PackableStringBag
-import com.eightsines.bpe.util.UnpackableStringBag
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
 class ShapeTest {
     @Test
-    fun shouldPackPoint() = performTest(
+    fun shouldPackLinkedPoints() = performTest(
         arrange = {
-            val sut = Shape.LinkedPoints(listOf(5 to 8), BlockCellMother.WhiteBright)
-            sut to PackableStringBag()
+            val sut = Shape.LinkedPoints(listOf(5 to 8, 3 to 4), BlockCellMother.WhiteBright)
+            sut to PackableTestBag()
         },
         act = { (sut, bag) ->
             bag.put(Shape, sut)
-            bag.toString()
+            bag.wares
         },
-        assert = { assertEquals("BAG1u1i1u1i1i5I08u1i2u1i7i1", it) },
+        assert = {
+            assertEquals(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(5),
+                    TestWare.IntWare(8),
+                    TestWare.IntWare(3),
+                    TestWare.IntWare(4),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                ),
+                it,
+            )
+        },
     )
 
     @Test
-    fun shouldUnpackPoint() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1i1u1i1i5I08u1i2u1i7i1") },
+    fun shouldUnpackLinkedPoints() = performTest(
+        arrange = {
+            UnpackableTestBag(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(5),
+                    TestWare.IntWare(8),
+                    TestWare.IntWare(3),
+                    TestWare.IntWare(4),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                ),
+            )
+        },
         act = {
             val sut = it.getStuff(Shape)
 
@@ -40,7 +78,7 @@ class ShapeTest {
         },
         assert = { (sut, props) ->
             assertIs<Shape.LinkedPoints<*>>(sut)
-            assertEquals(listOf(ShapeType.LinkedPoints, CellType.Block, listOf(5 to 8), BlockCellMother.WhiteBright), props)
+            assertEquals(listOf(ShapeType.LinkedPoints, CellType.Block, listOf(5 to 8, 3 to 4), BlockCellMother.WhiteBright), props)
         }
     )
 
@@ -48,18 +86,53 @@ class ShapeTest {
     fun shouldPackLine() = performTest(
         arrange = {
             val sut = Shape.Line(1, 2, 5, 8, BlockCellMother.WhiteBright)
-            sut to PackableStringBag()
+            sut to PackableTestBag()
         },
         act = { (sut, bag) ->
             bag.put(Shape, sut)
-            bag.toString()
+            bag.wares
         },
-        assert = { assertEquals("BAG1u1i2u1i1i2i5I08u1i2u1i7i1", it) },
+        assert = {
+            assertEquals(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(5),
+                    TestWare.IntWare(8),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                ),
+                it,
+            )
+        },
     )
 
     @Test
     fun shouldUnpackLine() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1i2u1i1i2i5I08u1i2u1i7i1") },
+        arrange = {
+            UnpackableTestBag(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(5),
+                    TestWare.IntWare(8),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                ),
+            )
+        },
         act = {
             val sut = it.getStuff(Shape)
 
@@ -83,18 +156,53 @@ class ShapeTest {
     fun shouldPackFillBox() = performTest(
         arrange = {
             val sut = Shape.FillBox(1, 2, 5, 8, BlockCellMother.WhiteBright)
-            sut to PackableStringBag()
+            sut to PackableTestBag()
         },
         act = { (sut, bag) ->
             bag.put(Shape, sut)
-            bag.toString()
+            bag.wares
         },
-        assert = { assertEquals("BAG1u1i3u1i1i2i5I08u1i2u1i7i1", it) },
+        assert = {
+            assertEquals(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(3),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(5),
+                    TestWare.IntWare(8),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                ),
+                it,
+            )
+        },
     )
 
     @Test
     fun shouldUnpackFillBox() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1i3u1i1i2i5I08u1i2u1i7i1") },
+        arrange = {
+            UnpackableTestBag(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(3),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(5),
+                    TestWare.IntWare(8),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                ),
+            )
+        },
         act = {
             val sut = it.getStuff(Shape)
 
@@ -118,18 +226,53 @@ class ShapeTest {
     fun shouldPackStrokeBox() = performTest(
         arrange = {
             val sut = Shape.StrokeBox(1, 2, 5, 8, BlockCellMother.WhiteBright)
-            sut to PackableStringBag()
+            sut to PackableTestBag()
         },
         act = { (sut, bag) ->
             bag.put(Shape, sut)
-            bag.toString()
+            bag.wares
         },
-        assert = { assertEquals("BAG1u1i4u1i1i2i5I08u1i2u1i7i1", it) },
+        assert = {
+            assertEquals(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(4),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(5),
+                    TestWare.IntWare(8),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                ),
+                it,
+            )
+        },
     )
 
     @Test
     fun shouldUnpackStrokeBox() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1i4u1i1i2i5I08u1i2u1i7i1") },
+        arrange = {
+            UnpackableTestBag(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(4),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(5),
+                    TestWare.IntWare(8),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                ),
+            )
+        },
         act = {
             val sut = it.getStuff(Shape)
 
@@ -163,18 +306,67 @@ class ShapeTest {
                 )
             )
 
-            sut to PackableStringBag()
+            sut to PackableTestBag()
         },
         act = { (sut, bag) ->
             bag.put(Shape, sut)
-            bag.toString()
+            bag.wares
         },
-        assert = { assertEquals("BAG1u1i5u1i1i2u1i2i2i1u1i2u1i0iFu1i2u1i7i1", it) },
+        assert = {
+            assertEquals(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(5),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(0),
+                    TestWare.IntWare(-1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                ),
+                it,
+            )
+        },
     )
 
     @Test
     fun shouldUnpackCells() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1i5u1i1i2u1i2i2i1u1i2u1i0iFu1i2u1i7i1") },
+        arrange = {
+            UnpackableTestBag(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(5),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(0),
+                    TestWare.IntWare(-1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                ),
+            )
+        },
         act = {
             val sut = it.getStuff(Shape)
 

@@ -1,8 +1,9 @@
 package com.eightsines.bpe.foundation
 
+import com.eightsines.bpe.testing.PackableTestBag
+import com.eightsines.bpe.testing.TestWare
+import com.eightsines.bpe.testing.UnpackableTestBag
 import com.eightsines.bpe.testing.performTest
-import com.eightsines.bpe.util.PackableStringBag
-import com.eightsines.bpe.util.UnpackableStringBag
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -16,18 +17,65 @@ class MutableCanvasLayerTest {
                 isVisible = true,
                 isLocked = false,
                 canvas = MutableSciiCanvas(1, 1),
-            ) to PackableStringBag()
+            ) to PackableTestBag()
         },
         act = { (sut, bag) ->
             bag.put(CanvasLayer, sut)
-            bag.toString()
+            bag.wares
         },
-        assert = { assertEquals("BAG1u2s4TESTBbu1i1i1i1u1u1i1u1iFiFiFiFiFb", it) },
+        assert = {
+            assertEquals(
+                listOf(
+                    TestWare.StuffWare(2),
+                    TestWare.StringWare("TEST"),
+                    TestWare.BooleanWare(true),
+                    TestWare.BooleanWare(false),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.BooleanWare(false),
+                ),
+                it,
+            )
+        },
     )
 
     @Test
     fun shouldUnpack() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1s4TESTBbu1i1i1i1u1u1i1u1iFiFiFiFiF") },
+        arrange = {
+            UnpackableTestBag(
+                listOf(
+                    TestWare.StuffWare(2),
+                    TestWare.StringWare("TEST"),
+                    TestWare.BooleanWare(true),
+                    TestWare.BooleanWare(false),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.BooleanWare(false),
+                ),
+            )
+        },
         act = {
             val sut = it.getStuff(MutableCanvasLayer)
 

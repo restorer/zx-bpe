@@ -3,10 +3,11 @@ package com.eightsines.bpe.foundation
 import com.eightsines.bpe.core.BlockCell
 import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.testing.BlockCellMother
+import com.eightsines.bpe.testing.PackableTestBag
 import com.eightsines.bpe.testing.SciiCellMother
+import com.eightsines.bpe.testing.TestWare
+import com.eightsines.bpe.testing.UnpackableTestBag
 import com.eightsines.bpe.testing.performTest
-import com.eightsines.bpe.util.PackableStringBag
-import com.eightsines.bpe.util.UnpackableStringBag
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -21,18 +22,69 @@ class CrateTest {
                 cells = listOf(listOf(SciiCellMother.BlockVerticalLeft, SciiCell.Transparent)),
             )
 
-            sut to PackableStringBag()
+            sut to PackableTestBag()
         },
         act = { (sut, bag) ->
             bag.put(Crate, sut)
-            bag.toString()
+            bag.wares
         },
-        assert = { assertEquals("BAG1u1i1i2i1u1i1u1n008Ai0i7i1iFu1i1u1iFiFiFiFiF", it) },
+        assert = {
+            assertEquals(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(138),
+                    TestWare.IntWare(0),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(-1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                ),
+                it,
+            )
+        },
     )
 
     @Test
     fun shouldUnpackScii() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1i1i2i1u1i1u1n008Ai0i7i1iFu1i1u1iFiFiFiFiF") },
+        arrange = {
+            UnpackableTestBag(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(138),
+                    TestWare.IntWare(0),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(-1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                ),
+            )
+        },
         act = { it.getStuff(Crate) },
         assert = {
             assertEqualsExt(
@@ -57,18 +109,57 @@ class CrateTest {
                 cells = listOf(listOf(BlockCellMother.WhiteBright, BlockCell.Transparent)),
             )
 
-            sut to PackableStringBag()
+            sut to PackableTestBag()
         },
         act = { (sut, bag) ->
             bag.put(Crate, sut)
-            bag.toString()
+            bag.wares
         },
-        assert = { assertEquals("BAG1u1i1i2i1u1i2u1i7i1u1i2u1iFiF", it) },
+        assert = {
+            assertEquals(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                ),
+                it,
+            )
+        },
     )
 
     @Test
     fun shouldUnpackBlock() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1i1i2i1u1i2u1i7i1u1i2u1iFiF") },
+        arrange = {
+            UnpackableTestBag(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                ),
+            )
+        },
         act = { it.getStuff(Crate) },
         assert = {
             assertEqualsExt(

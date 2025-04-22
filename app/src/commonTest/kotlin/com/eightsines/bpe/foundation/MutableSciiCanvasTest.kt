@@ -4,10 +4,11 @@ import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
+import com.eightsines.bpe.testing.PackableTestBag
 import com.eightsines.bpe.testing.SciiCellMother
+import com.eightsines.bpe.testing.TestWare
+import com.eightsines.bpe.testing.UnpackableTestBag
 import com.eightsines.bpe.testing.performTest
-import com.eightsines.bpe.util.PackableStringBag
-import com.eightsines.bpe.util.UnpackableStringBag
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -301,18 +302,71 @@ class MutableSciiCanvasTest {
                 it.replaceSciiCell(1, 0, SciiCellMother.RedSpace)
             }
 
-            sut to PackableStringBag()
+            sut to PackableTestBag()
         },
         act = { (sut, bag) ->
             bag.put(Canvas, sut)
-            bag.toString()
+            bag.wares
         },
-        assert = { assertEquals("BAG1u1i1i2i1u1u1i1u1n0083i7i0i1iFu1i1u1I20iFi2iFiF", it) },
+        assert = {
+            assertEquals(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(131),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(0),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(-1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(32),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                ),
+                it,
+            )
+        },
     )
 
     @Test
     fun shouldUnpack() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1i1i2i1u1u1i1u1n0083i7i0i1iFu1i1u1I20iFi2iFiF") },
+        arrange = {
+            UnpackableTestBag(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(131),
+                    TestWare.IntWare(7),
+                    TestWare.IntWare(0),
+                    TestWare.IntWare(1),
+                    TestWare.IntWare(-1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(1),
+                    TestWare.StuffWare(1),
+                    TestWare.IntWare(32),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(-1),
+                    TestWare.IntWare(-1),
+                ),
+            )
+        },
         act = {
             val sut = it.getStuff(MutableCanvas)
 

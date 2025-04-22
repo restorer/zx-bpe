@@ -2,9 +2,10 @@ package com.eightsines.bpe.foundation
 
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
+import com.eightsines.bpe.testing.PackableTestBag
+import com.eightsines.bpe.testing.TestWare
+import com.eightsines.bpe.testing.UnpackableTestBag
 import com.eightsines.bpe.testing.performTest
-import com.eightsines.bpe.util.PackableStringBag
-import com.eightsines.bpe.util.UnpackableStringBag
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -19,18 +20,41 @@ class MutableBackgroundLayerTest {
                 border = SciiColor.Black,
                 color = SciiColor.Red,
                 bright = SciiLight.Off,
-            ) to PackableStringBag()
+            ) to PackableTestBag()
         },
         act = { (sut, bag) ->
             bag.put(BackgroundLayer, sut)
-            bag.toString()
+            bag.wares
         },
-        assert = { assertEquals("BAG1u1Bbi0i2i0", it) },
+        assert = {
+            assertEquals(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.BooleanWare(true),
+                    TestWare.BooleanWare(false),
+                    TestWare.IntWare(0),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(0),
+                ),
+                it,
+            )
+        },
     )
 
     @Test
     fun shouldUnpack() = performTest(
-        arrange = { UnpackableStringBag("BAG1u1Bbi0i2i0") },
+        arrange = {
+            UnpackableTestBag(
+                listOf(
+                    TestWare.StuffWare(1),
+                    TestWare.BooleanWare(true),
+                    TestWare.BooleanWare(false),
+                    TestWare.IntWare(0),
+                    TestWare.IntWare(2),
+                    TestWare.IntWare(0),
+                ),
+            )
+        },
         act = {
             val sut = it.getStuff(MutableBackgroundLayer)
 
