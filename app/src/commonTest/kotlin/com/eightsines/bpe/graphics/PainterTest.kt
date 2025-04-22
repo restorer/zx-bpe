@@ -15,7 +15,7 @@ class PainterTest {
 
     @Test
     fun shouldGetBBoxPoint() = performTest(
-        arrange = { Painter() to Shape.Points(listOf(5 to 8), BlockCellMother.WhiteBright) },
+        arrange = { Painter() to Shape.LinkedPoints(listOf(5 to 8), BlockCellMother.WhiteBright) },
         act = { (sut, shape) -> sut.getBBox(shape) },
         assert = { assertEquals(Box.ofSize(5, 8, 1, 1), it) }
     )
@@ -77,7 +77,7 @@ class PainterTest {
 
     @Test
     fun shouldPaintPoint() = performTest(
-        arrange = { Painter() to Shape.Points(listOf(5 to 8), BlockCellMother.WhiteBright) },
+        arrange = { Painter() to Shape.LinkedPoints(listOf(5 to 8), BlockCellMother.WhiteBright) },
         act = { (sut, shape) ->
             val pencil = TestPencil<BlockCell>()
             sut.paint(shape, pencil)

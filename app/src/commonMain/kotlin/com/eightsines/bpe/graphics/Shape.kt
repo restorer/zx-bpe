@@ -14,7 +14,7 @@ import com.eightsines.bpe.util.putList
 import com.eightsines.bpe.util.requireSupportedStuffVersion
 
 enum class ShapeType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Shape<*>>) {
-    Points(1, Shape.Points.Polymorphic),
+    LinkedPoints(1, Shape.LinkedPoints.Polymorphic),
     Line(2, Shape.Line.Polymorphic),
     FillBox(3, Shape.FillBox.Polymorphic),
     StrokeBox(4, Shape.StrokeBox.Polymorphic),
@@ -47,7 +47,7 @@ sealed interface Shape<T : Cell> {
             requireSupportedStuffVersion("Shape", 1, version)
 
             return when (val type = bag.getInt()) {
-                ShapeType.Points.value -> bag.getStuff(Points.Polymorphic)
+                ShapeType.LinkedPoints.value -> bag.getStuff(LinkedPoints.Polymorphic)
                 ShapeType.Line.value -> bag.getStuff(Line.Polymorphic)
                 ShapeType.FillBox.value -> bag.getStuff(FillBox.Polymorphic)
                 ShapeType.StrokeBox.value -> bag.getStuff(StrokeBox.Polymorphic)
@@ -59,14 +59,14 @@ sealed interface Shape<T : Cell> {
         }
     }
 
-    data class Points<T : Cell>(val points: List<Pair<Int, Int>>, val cell: T) : Shape<T> {
-        override val type = ShapeType.Points
+    data class LinkedPoints<T : Cell>(val points: List<Pair<Int, Int>>, val cell: T) : Shape<T> {
+        override val type = ShapeType.LinkedPoints
         override val cellType = cell.type
 
-        internal object Polymorphic : BagStuffPacker<Points<*>>, BagStuffUnpacker<Points<*>> {
+        internal object Polymorphic : BagStuffPacker<LinkedPoints<*>>, BagStuffUnpacker<LinkedPoints<*>> {
             override val putInTheBagVersion = 1
 
-            override fun putInTheBag(bag: PackableBag, value: Points<*>) {
+            override fun putInTheBag(bag: PackableBag, value: LinkedPoints<*>) {
                 bag.putList(value.points) {
                     bag.put(it.first)
                     bag.put(it.second)
@@ -75,13 +75,13 @@ sealed interface Shape<T : Cell> {
                 bag.put(Cell, value.cell)
             }
 
-            override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Points<*> {
-                requireSupportedStuffVersion("Shape.Points", 1, version)
+            override fun getOutOfTheBag(version: Int, bag: UnpackableBag): LinkedPoints<*> {
+                requireSupportedStuffVersion("Shape.LinkedPoints", 1, version)
 
                 val points = bag.getList { bag.getInt() to bag.getInt() }
                 val cell = bag.getStuff(Cell)
 
-                return Points(
+                return LinkedPoints(
                     points = points,
                     cell = cell,
                 )

@@ -412,7 +412,7 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                         drawingX: Int,
                         drawingY: Int,
                     ) = PaintingSpec.Multiple(
-                        painter = { shapePainter(Shape.Points(it, cell)) },
+                        painter = { shapePainter(Shape.LinkedPoints(it, cell)) },
                         points = LinkedHashSet(),
                     )
                 }

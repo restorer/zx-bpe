@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
-
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
 }
@@ -28,18 +26,21 @@ kotlin {
     }
 
     sourceSets {
+        @Suppress("unused")
         val commonMain by getting {
             dependencies {
                 implementation(libs.kotlinx.coroutines)
             }
         }
 
+        @Suppress("unused")
         val commonTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
             }
         }
 
+        @Suppress("unused")
         val jsMain by getting {
             dependencies {
                 implementation(npm("uuid", libs.versions.npm.uuid.get()))

@@ -188,7 +188,7 @@ class BpeEngine(
         if (action.layerUid != currentLayer.uid) {
             val initialLayerUid = currentLayer.uid
             val newLayer = graphicsEngine.state.canvasLayersMap[action.layerUid.value] ?: graphicsEngine.state.backgroundLayer
-            val cancelStep = cancelPaintingAndFloating((newLayer as? CanvasLayer<*>)?.canvasType)
+            val cancelStep = cancelPaintingAndAnchorFloating((newLayer as? CanvasLayer<*>)?.canvasType)
 
             currentLayer = newLayer
             shouldRefresh = true
@@ -207,7 +207,7 @@ class BpeEngine(
             return
         }
 
-        val cancelStep = cancelPaintingAndFloating(selectionController.selection?.canvasType)
+        val cancelStep = cancelPaintingAndAnchorFloating(selectionController.selection?.canvasType)
 
         val actionStep = graphicsEngine.executePair(
             if (action.layerUid == LayerUid.Background) {
@@ -226,7 +226,7 @@ class BpeEngine(
             return
         }
 
-        val cancelStep = cancelPaintingAndFloating(selectionController.selection?.canvasType)
+        val cancelStep = cancelPaintingAndAnchorFloating(selectionController.selection?.canvasType)
 
         val actionStep = graphicsEngine.executePair(
             if (action.layerUid == LayerUid.Background) {
@@ -247,7 +247,7 @@ class BpeEngine(
             return
         }
 
-        val cancelStep = cancelPaintingAndFloating(selectionController.selection?.canvasType)
+        val cancelStep = cancelPaintingAndAnchorFloating(selectionController.selection?.canvasType)
 
         val actionStep = graphicsEngine.executePair(
             GraphicsAction.SetLayerMasked(layerUid = action.layerUid, isMasked = action.isMasked)
@@ -259,7 +259,7 @@ class BpeEngine(
 
     private fun executeLayersMoveUp() {
         cachedMoveUpOnTopOfLayer?.let {
-            val cancelStep = cancelPaintingAndFloating(selectionController.selection?.canvasType)
+            val cancelStep = cancelPaintingAndAnchorFloating(selectionController.selection?.canvasType)
 
             val actionStep = graphicsEngine.executePair(
                 GraphicsAction.MoveLayer(layerUid = currentLayer.uid, onTopOfLayerUid = it.uid)
@@ -272,7 +272,7 @@ class BpeEngine(
 
     private fun executeLayersMoveDown() {
         cachedMoveDownOnTopOfLayer?.let {
-            val cancelStep = cancelPaintingAndFloating(selectionController.selection?.canvasType)
+            val cancelStep = cancelPaintingAndAnchorFloating(selectionController.selection?.canvasType)
 
             val actionStep = graphicsEngine.executePair(
                 GraphicsAction.MoveLayer(layerUid = currentLayer.uid, onTopOfLayerUid = it.uid)
@@ -284,7 +284,7 @@ class BpeEngine(
     }
 
     private fun executeLayersCreate(action: BpeAction.LayersCreate) {
-        val cancelStep = cancelPaintingAndFloating(action.canvasType)
+        val cancelStep = cancelPaintingAndAnchorFloating(action.canvasType)
         val newLayerUid = LayerUid(uidFactory.createUid())
 
         val actionStep = graphicsEngine.executePair(
@@ -309,7 +309,7 @@ class BpeEngine(
         }
 
         val layerBelow = cachedLayerBelow
-        val cancelStep = cancelPaintingAndFloating((layerBelow as? CanvasLayer<*>)?.canvasType)
+        val cancelStep = cancelPaintingAndAnchorFloating((layerBelow as? CanvasLayer<*>)?.canvasType)
 
         val actionStep = graphicsEngine.executePair(GraphicsAction.DeleteLayer(currentLayer.uid))?.let {
             if (layerBelow != null) {
@@ -331,7 +331,7 @@ class BpeEngine(
 
     private fun executeLayersMerge() {
         val layerBelow = cachedLayerBelow as? CanvasLayer<*> ?: return
-        val cancelStep = cancelPaintingAndFloating(layerBelow.canvasType)
+        val cancelStep = cancelPaintingAndAnchorFloating(layerBelow.canvasType)
 
         val actionStep = graphicsEngine.executePair(
             GraphicsAction.MergeLayers(layerUid = currentLayer.uid, ontoLayerUid = layerBelow.uid),
@@ -354,7 +354,7 @@ class BpeEngine(
             return
         }
 
-        val cancelStep = cancelPaintingAndFloating(action.canvasType)
+        val cancelStep = cancelPaintingAndAnchorFloating(action.canvasType)
 
         val actionStep = graphicsEngine.executePair(
             GraphicsAction.ConvertLayer(layerUid = currentLayer.uid, canvasType = action.canvasType)
@@ -397,6 +397,9 @@ class BpeEngine(
         val clipboard = this.clipboard ?: return
 
         processSelectionResult(selectionController.paste(currentCanvasLayer, clipboard))
+
+        toolboxTool = BpeTool.Select
+        shouldRefresh = true
     }
 
     private fun executeToolboxUndo() {
@@ -518,7 +521,7 @@ class BpeEngine(
         }
     }
 
-    private fun cancelPaintingAndFloating(layerCanvasType: CanvasType?): HistoryStep {
+    private fun cancelPaintingAndAnchorFloating(layerCanvasType: CanvasType?): HistoryStep {
         cancelPainting()
         val result = selectionController.anchor(layerCanvasType)
 

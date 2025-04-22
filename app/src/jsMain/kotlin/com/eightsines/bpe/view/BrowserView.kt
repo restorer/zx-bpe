@@ -262,7 +262,17 @@ class BrowserView(
 
         menu?.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.MenuClick)) }
         menuNew?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingNew) }
-        menuLoad?.also { menuLoad -> menuLoad.addEventListener(EVENT_CHANGE, { _actionFlow.tryEmit(BrowserAction.PaintingLoad(menuLoad)) }) }
+
+        menuLoad?.also { menuLoad ->
+            menuLoad.addEventListener(
+                EVENT_CHANGE,
+                {
+                    it.stopPropagation()
+                    _actionFlow.tryEmit(BrowserAction.PaintingLoad(menuLoad))
+                },
+            )
+        }
+
         menuSave?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingSave) }
         menuExportTap?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingExportTap) }
         menuExportScr?.addClickListener { _actionFlow.tryEmit(BrowserAction.PaintingExportScr) }
@@ -870,7 +880,15 @@ class BrowserView(
     private inline fun <reified T : Node> T.appendTo(node: Node?) = apply { node?.appendChild(this) }
 
     @Suppress("NOTHING_TO_INLINE", "KotlinRedundantDiagnosticSuppress")
-    private inline fun Node.addClickListener(noinline listener: (Event) -> Unit) = addEventListener(EVENT_CLICK, listener)
+    private inline fun Node.addClickListener(crossinline listener: (Event) -> Unit) = addEventListener(
+        EVENT_CLICK,
+        {
+            it.preventDefault()
+            it.stopPropagation()
+
+            listener(it)
+        },
+    )
 
     private fun Element.replaceClassModifier(prefix: String, suffix: String) {
         val cssClasses = className.trim().split("\\s+".toRegex())

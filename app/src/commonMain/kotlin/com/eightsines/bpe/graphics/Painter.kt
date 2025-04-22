@@ -12,7 +12,7 @@ class Painter {
     }
 
     fun getBBox(shape: Shape<*>): Box = when (shape) {
-        is Shape.Points -> getBBoxPoints(shape)
+        is Shape.LinkedPoints -> getBBoxLinkedPoints(shape)
         is Shape.Line -> getBBoxBoxLike(shape)
         is Shape.FillBox -> getBBoxBoxLike(shape)
         is Shape.StrokeBox -> getBBoxBoxLike(shape)
@@ -23,7 +23,7 @@ class Painter {
 
     fun <T : Cell> paint(shape: Shape<T>, pencil: Pencil<T>) {
         when (shape) {
-            is Shape.Points -> paintPoints(shape, pencil)
+            is Shape.LinkedPoints -> paintLinkedPoints(shape, pencil)
             is Shape.Line -> paintLine(shape, pencil)
             is Shape.FillBox -> paintFillBox(shape, pencil)
             is Shape.StrokeBox -> paintStrokeBox(shape, pencil)
@@ -33,7 +33,7 @@ class Painter {
         }
     }
 
-    private fun getBBoxPoints(shape: Shape.Points<*>) = if (shape.points.isEmpty()) {
+    private fun getBBoxLinkedPoints(shape: Shape.LinkedPoints<*>) = if (shape.points.isEmpty()) {
         Box.ofSize(0, 0, 0, 0)
     } else {
         var sx = 0
@@ -58,42 +58,28 @@ class Painter {
         Box.ofCoords(sx, sy, ex, ey)
     }
 
-    private fun getBBoxBoxLike(shape: BoxLikeShape) = Box.ofCoords(shape.sx, shape.sy, shape.ex, shape.ey)
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun getBBoxBoxLike(shape: BoxLikeShape) = Box.ofCoords(shape.sx, shape.sy, shape.ex, shape.ey)
 
-    private fun <T : Cell> paintPoints(shape: Shape.Points<T>, pencil: Pencil<T>) {
+    private fun <T : Cell> paintLinkedPoints(shape: Shape.LinkedPoints<T>, pencil: Pencil<T>) {
+        var lastX: Int? = null
+        var lastY: Int? = null
+
         for (point in shape.points) {
-            pencil.put(point.first, point.second, shape.cell)
+            if (lastX == null || lastY == null || (abs(point.first - lastX) <= 1 && abs(point.second - lastY) <= 1)) {
+                pencil.put(point.first, point.second, shape.cell)
+            } else {
+                paintLineRaw(lastX, lastY, point.first, point.second, shape.cell, pencil, 1)
+            }
+
+            lastX = point.first
+            lastY = point.second
         }
     }
 
-    private fun <T : Cell> paintLine(shape: Shape.Line<T>, pencil: Pencil<T>) {
-        val sx = shape.sx
-        val ex = shape.ex
-        val sy = shape.sy
-        val ey = shape.ey
-
-        val dx = ex - sx
-        val dy = ey - sy
-
-        val absDx = abs(dx)
-        val absDy = abs(dy)
-
-        if (absDx > absDy) {
-            val mx = if (dx < 0) -1 else 1
-            val my = if (dx == 0) 0.0 else (ey - sy).toDouble() / absDx.toDouble()
-
-            for (i in 0..absDx) {
-                pencil.put(sx + i * mx, sy + (i * my).roundToInt(), shape.cell)
-            }
-        } else {
-            val mx = if (dy == 0) 0.0 else (ex - sx).toDouble() / absDy.toDouble()
-            val my = if (dy < 0) -1 else 1
-
-            for (i in 0..absDy) {
-                pencil.put(sx + (i * mx).roundToInt(), sy + i * my, shape.cell)
-            }
-        }
-    }
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun <T : Cell> paintLine(shape: Shape.Line<T>, pencil: Pencil<T>) =
+        paintLineRaw(shape.sx, shape.sy, shape.ex, shape.ey, shape.cell, pencil)
 
     private fun <T : Cell> paintFillBox(shape: Shape.FillBox<T>, pencil: Pencil<T>) {
         val sx = minOf(shape.sx, shape.ex)
@@ -230,6 +216,30 @@ class Painter {
         for (y in 0..<crate.height) {
             for (x in 0..<crate.width) {
                 pencil.put(sx + x, sy + y, crate.cells[y][x])
+            }
+        }
+    }
+
+    private fun <T : Cell> paintLineRaw(sx: Int, sy: Int, ex: Int, ey: Int, cell: T, pencil: Pencil<T>, startIndex: Int = 0) {
+        val dx = ex - sx
+        val dy = ey - sy
+
+        val absDx = abs(dx)
+        val absDy = abs(dy)
+
+        if (absDx > absDy) {
+            val mx = if (dx < 0) -1 else 1
+            val my = if (dx == 0) 0.0 else (ey - sy).toDouble() / absDx.toDouble()
+
+            for (i in startIndex..absDx) {
+                pencil.put(sx + i * mx, sy + (i * my).roundToInt(), cell)
+            }
+        } else {
+            val mx = if (dy == 0) 0.0 else (ex - sx).toDouble() / absDy.toDouble()
+            val my = if (dy < 0) -1 else 1
+
+            for (i in startIndex..absDy) {
+                pencil.put(sx + (i * mx).roundToInt(), sy + i * my, cell)
             }
         }
     }

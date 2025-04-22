@@ -15,7 +15,7 @@ class ShapeTest {
     @Test
     fun shouldPackPoint() = performTest(
         arrange = {
-            val sut = Shape.Points(listOf(5 to 8), BlockCellMother.WhiteBright)
+            val sut = Shape.LinkedPoints(listOf(5 to 8), BlockCellMother.WhiteBright)
             sut to PackableStringBag()
         },
         act = { (sut, bag) ->
@@ -34,13 +34,13 @@ class ShapeTest {
             sut to listOf(
                 sut.type,
                 sut.cellType,
-                (sut as? Shape.Points<*>)?.points,
-                (sut as? Shape.Points<*>)?.cell,
+                (sut as? Shape.LinkedPoints<*>)?.points,
+                (sut as? Shape.LinkedPoints<*>)?.cell,
             )
         },
         assert = { (sut, props) ->
-            assertIs<Shape.Points<*>>(sut)
-            assertEquals(listOf(ShapeType.Points, CellType.Block, listOf(5 to 8), BlockCellMother.WhiteBright), props)
+            assertIs<Shape.LinkedPoints<*>>(sut)
+            assertEquals(listOf(ShapeType.LinkedPoints, CellType.Block, listOf(5 to 8), BlockCellMother.WhiteBright), props)
         }
     )
 

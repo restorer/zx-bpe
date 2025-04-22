@@ -204,7 +204,21 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
             overlayActions = overlayActions,
         )
 
-        return SelectionResult(shouldRefresh = true, historyStep = deselectResult.historyStep)
+        return SelectionResult(
+            shouldRefresh = true,
+            historyStep = deselectResult.historyStep.merge(
+                HistoryStep(
+                    listOf(
+                        HistoryAction.Graphics(overlayActions.action),
+                        HistoryAction.SelectionState(selectionState),
+                    ),
+                    listOf(
+                        HistoryAction.Graphics(overlayActions.undoAction),
+                        HistoryAction.SelectionState(BpeSelectionState.None),
+                    ),
+                ),
+            ),
+        )
     }
 
     fun ongoingCancel(state: BpeSelectionState) {
