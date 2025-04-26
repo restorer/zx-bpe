@@ -6,12 +6,12 @@ import com.eightsines.bpe.testing.performTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class PackableStringBagTest {
+class PackableSimpleStringBagTest {
     // Empty
 
     @Test
     fun shouldPackEmpty() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = { it.toString() },
         assert = { assertEquals("BAG1", it) },
     )
@@ -20,7 +20,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackBooleanNull() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put(null as Boolean?)
             it.toString()
@@ -30,7 +30,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackBooleanFalse() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put(false)
             it.toString()
@@ -40,7 +40,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackBooleanTrue() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put(true)
             it.toString()
@@ -52,7 +52,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackIntNull() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put(null as Int?)
             it.toString()
@@ -62,7 +62,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackIntDigit() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put(0)
             it.put(-1)
@@ -77,7 +77,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackIntByte() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put(-128)
             it.put(-64)
@@ -91,7 +91,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackIntShort() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put(-32768)
             it.put(-16384)
@@ -105,7 +105,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackIntInt() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put(-2147483648)
             it.put(-1073741824)
@@ -121,7 +121,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackStringNull() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put(null as String?)
             it.toString()
@@ -131,7 +131,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackStringEmpty() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put("")
             it.toString()
@@ -141,7 +141,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackStringDigitLength() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put("Test")
             it.toString()
@@ -151,7 +151,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackStringByteLength() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put("TestTestTestTest")
             it.toString()
@@ -163,7 +163,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackStuffNull() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put(TestBagStuff, null)
             it.toString()
@@ -173,7 +173,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackStuff() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put(TestBagStuff, TestBagStuffMother.TestStuff)
             it.toString()
@@ -185,7 +185,7 @@ class PackableStringBagTest {
 
     @Test
     fun shouldPackMulti() = performTest(
-        arrange = { PackableStringBag() },
+        arrange = { PackableSimpleStringBag() },
         act = {
             it.put("Test")
             it.put(true)
