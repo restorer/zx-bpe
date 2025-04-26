@@ -22,7 +22,7 @@ private const val TYPE_INT8_BITS = 5
 private const val TYPE_INT16_VALUE = 0b10101
 private const val TYPE_INT16_BITS = 5
 
-private const val TYPE_INT32_VALUE = 0b11101
+private const val TYPE_INT32_VALUE = 0b11110
 private const val TYPE_INT32_BITS = 5
 
 private const val TYPE_STUFF4_VALUE = 0b01
@@ -34,7 +34,7 @@ private const val TYPE_STUFF8_BITS = 5
 private const val TYPE_STUFF16_VALUE = 0b10111
 private const val TYPE_STUFF16_BITS = 5
 
-private const val TYPE_STUFF32_VALUE = 0b11110
+private const val TYPE_STUFF32_VALUE = 0b11111
 private const val TYPE_STUFF32_BITS = 5
 
 private const val TYPE_STRING4_VALUE = 0b11000
@@ -175,7 +175,11 @@ internal class BitstreamBase64Reader(private val input: String, startIndex: Int)
         var result = 0
 
         while (true) {
-            val currentBits = minOf(bits, BITS_PER_CHAR)
+            val currentBits = if (bufferBits >= bits) {
+                bits
+            } else {
+                BITS_PER_CHAR
+            }
 
             if (bufferBits >= currentBits) {
                 val shiftBits = bufferBits - currentBits
@@ -421,6 +425,7 @@ internal class UnpackableBase64StringBag(input: String) : UnpackableBag {
 
     private inline fun <T> readNullable(reader: () -> T): T? {
         return if (bitstreamReader.peek(TYPE_NULL_BITS) == TYPE_NULL_VALUE) {
+            bitstreamReader.consume(TYPE_NULL_BITS)
             null
         } else {
             reader()
