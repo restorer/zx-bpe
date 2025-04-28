@@ -3,6 +3,7 @@
 import os
 import sys
 
+
 WEBROOT = '.'
 
 
@@ -33,6 +34,7 @@ def main() -> int:
 
     print('Success: service.js is refreshed')
     return 0
+
 
 if __name__ == '__main__':
     sys.exit(main())

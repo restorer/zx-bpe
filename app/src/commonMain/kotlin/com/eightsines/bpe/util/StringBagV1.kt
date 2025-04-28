@@ -3,19 +3,18 @@ package com.eightsines.bpe.util
 private const val TYPE_NULL = '_'
 private const val TYPE_BOOLEAN_FALSE = 'b'
 private const val TYPE_BOOLEAN_TRUE = 'B'
-private const val TYPE_INT_1 = 'i'
-private const val TYPE_INT_2 = 'I'
-private const val TYPE_INT_3 = 'n'
-private const val TYPE_INT_4 = 'N'
-private const val TYPE_STRING_1 = 's'
-private const val TYPE_STRING_2 = 'S'
-private const val TYPE_STRING_3 = 't'
-private const val TYPE_STRING_4 = 'T'
-private const val TYPE_STUFF_1 = 'u'
-private const val TYPE_STUFF_2 = 'U'
-private const val TYPE_STUFF_3 = 'f'
-private const val TYPE_STUFF_4 = 'F'
-private val TO_HEX = charArrayOf('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F')
+private const val TYPE_INT_4 = 'i'
+private const val TYPE_INT_8 = 'I'
+private const val TYPE_INT_16 = 'n'
+private const val TYPE_INT_32 = 'N'
+private const val TYPE_STRING_4 = 's'
+private const val TYPE_STRING_8 = 'S'
+private const val TYPE_STRING_16 = 't'
+private const val TYPE_STRING_32 = 'T'
+private const val TYPE_STUFF_4 = 'u'
+private const val TYPE_STUFF_8 = 'U'
+private const val TYPE_STUFF_16 = 'f'
+private const val TYPE_STUFF_32 = 'F'
 
 private val FROM_HEX = buildMap {
     put('0', 0)
@@ -36,74 +35,7 @@ private val FROM_HEX = buildMap {
     put('F', 15)
 }
 
-internal class PackableSimpleStringBag : PackableBag {
-    private val buffer = StringBuilder(BAG_SIG_V1)
-
-    override fun put(value: Boolean?) = writeNonNull(value) {
-        buffer.append(if (it) TYPE_BOOLEAN_TRUE else TYPE_BOOLEAN_FALSE)
-    }
-
-    override fun put(value: Int?) = writeNonNull(value) {
-        writeNumber(TYPE_INT_1, TYPE_INT_2, TYPE_INT_3, TYPE_INT_4, it)
-    }
-
-    override fun put(value: String?) = writeNonNull(value) {
-        writeNumber(TYPE_STRING_1, TYPE_STRING_2, TYPE_STRING_3, TYPE_STRING_4, it.length)
-        buffer.append(it)
-    }
-
-    override fun <T> put(packer: BagStuffPacker<out T>, value: T?) = writeNonNull(value) {
-        writeNumber(TYPE_STUFF_1, TYPE_STUFF_2, TYPE_STUFF_3, TYPE_STUFF_4, packer.putInTheBagVersion)
-
-        @Suppress("UNCHECKED_CAST")
-        (packer as BagStuffPacker<T>).putInTheBag(this, it)
-    }
-
-    override fun toString() = buffer.toString()
-
-    private inline fun <T> writeNonNull(value: T?, writer: (T) -> Unit) {
-        if (value == null) {
-            buffer.append(TYPE_NULL)
-        } else {
-            writer(value)
-        }
-    }
-
-    private fun writeNumber(type1: Char, type2: Char, type3: Char, type4: Char, value: Int) = when (value) {
-        in -8..7 -> {
-            buffer.append(type1)
-            buffer.append(TO_HEX[value and 15])
-        }
-
-        in Byte.MIN_VALUE..Byte.MAX_VALUE -> {
-            buffer.append(type2)
-            buffer.append(TO_HEX[(value shr 4) and 15])
-            buffer.append(TO_HEX[value and 15])
-        }
-
-        in Short.MIN_VALUE..Short.MAX_VALUE -> {
-            buffer.append(type3)
-            buffer.append(TO_HEX[(value shr 12) and 15])
-            buffer.append(TO_HEX[(value shr 8) and 15])
-            buffer.append(TO_HEX[(value shr 4) and 15])
-            buffer.append(TO_HEX[value and 15])
-        }
-
-        else -> {
-            buffer.append(type4)
-            buffer.append(TO_HEX[(value shr 28) and 15])
-            buffer.append(TO_HEX[(value shr 24) and 15])
-            buffer.append(TO_HEX[(value shr 20) and 15])
-            buffer.append(TO_HEX[(value shr 16) and 15])
-            buffer.append(TO_HEX[(value shr 12) and 15])
-            buffer.append(TO_HEX[(value shr 8) and 15])
-            buffer.append(TO_HEX[(value shr 4) and 15])
-            buffer.append(TO_HEX[value and 15])
-        }
-    }
-}
-
-internal class UnpackableSimpleStringBag(private val input: String) : UnpackableBag {
+internal class UnpackableStringBagV1(private val input: String) : UnpackableBag {
     private val endIndex = input.length - 1
     private var lastIndex: Int = BAG_SIG_V1.length - 1
 
@@ -129,10 +61,10 @@ internal class UnpackableSimpleStringBag(private val input: String) : Unpackable
         else -> throw BagUnpackException("Unexpected type=$type while reading Boolean at index=$lastIndex")
     }
 
-    private fun readInt(type: Char) = readNumber("Int", TYPE_INT_1, TYPE_INT_2, TYPE_INT_3, TYPE_INT_4, type)
+    private fun readInt(type: Char) = readNumber("Int", TYPE_INT_4, TYPE_INT_8, TYPE_INT_16, TYPE_INT_32, type)
 
     private fun readString(type: Char): String {
-        val length = readNumber("Int", TYPE_STRING_1, TYPE_STRING_2, TYPE_STRING_3, TYPE_STRING_4, type)
+        val length = readNumber("Int", TYPE_STRING_4, TYPE_STRING_8, TYPE_STRING_16, TYPE_STRING_32, type)
 
         return when {
             length == 0 -> ""
@@ -146,7 +78,7 @@ internal class UnpackableSimpleStringBag(private val input: String) : Unpackable
     }
 
     private fun <T> readStuff(type: Char, unpacker: BagStuffUnpacker<T>): T {
-        val version = readNumber("Stuff", TYPE_STUFF_1, TYPE_STUFF_2, TYPE_STUFF_3, TYPE_STUFF_4, type)
+        val version = readNumber("Stuff", TYPE_STUFF_4, TYPE_STUFF_8, TYPE_STUFF_16, TYPE_STUFF_32, type)
         return unpacker.getOutOfTheBag(version, this)
     }
 

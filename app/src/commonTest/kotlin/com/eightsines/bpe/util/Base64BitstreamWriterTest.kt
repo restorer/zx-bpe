@@ -4,17 +4,17 @@ import com.eightsines.bpe.testing.performTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class BitstreamBase64WriterTest {
+class Base64BitstreamWriterTest {
     @Test
     fun shouldWriteNoBits() = performTest(
-        arrange = { BitstreamBase64Writer("[]") },
+        arrange = { Base64BitstreamWriter("[]") },
         act = { it.toString() },
         assert = { assertEquals("[]", it) },
     )
 
     @Test
     fun shouldWrite0Bits() = performTest(
-        arrange = { BitstreamBase64Writer("[]") },
+        arrange = { Base64BitstreamWriter("[]") },
         act = {
             it.write(1, 0)
             it.toString()
@@ -24,7 +24,7 @@ class BitstreamBase64WriterTest {
 
     @Test
     fun shouldWrite1BitZero() = performTest(
-        arrange = { BitstreamBase64Writer("[]") },
+        arrange = { Base64BitstreamWriter("[]") },
         act = {
             it.write(0, 1)
             it.toString()
@@ -34,7 +34,7 @@ class BitstreamBase64WriterTest {
 
     @Test
     fun shouldWrite1BitOne() = performTest(
-        arrange = { BitstreamBase64Writer("[]") },
+        arrange = { Base64BitstreamWriter("[]") },
         act = {
             it.write(1, 1)
             it.toString()
@@ -44,7 +44,7 @@ class BitstreamBase64WriterTest {
 
     @Test
     fun shouldWrite1BitMasked() = performTest(
-        arrange = { BitstreamBase64Writer("[]") },
+        arrange = { Base64BitstreamWriter("[]") },
         act = {
             it.write(3, 1)
             it.toString()
@@ -54,7 +54,7 @@ class BitstreamBase64WriterTest {
 
     @Test
     fun shouldWrite4BitsMasked() = performTest(
-        arrange = { BitstreamBase64Writer("[]") },
+        arrange = { Base64BitstreamWriter("[]") },
         act = {
             it.write(53, 4)
             it.toString()
@@ -64,7 +64,7 @@ class BitstreamBase64WriterTest {
 
     @Test
     fun shouldWrite6Bits() = performTest(
-        arrange = { BitstreamBase64Writer("[]") },
+        arrange = { Base64BitstreamWriter("[]") },
         act = {
             it.write(42, 6)
             it.toString()
@@ -74,7 +74,7 @@ class BitstreamBase64WriterTest {
 
     @Test
     fun shouldWrite10Bits() = performTest(
-        arrange = { BitstreamBase64Writer("[]") },
+        arrange = { Base64BitstreamWriter("[]") },
         act = {
             it.write(953, 10)
             it.toString()
@@ -84,7 +84,7 @@ class BitstreamBase64WriterTest {
 
     @Test
     fun shouldWrite14Bits() = performTest(
-        arrange = { BitstreamBase64Writer("[]") },
+        arrange = { Base64BitstreamWriter("[]") },
         act = {
             it.write(4953, 14)
             it.toString()
@@ -94,7 +94,7 @@ class BitstreamBase64WriterTest {
 
     @Test
     fun shouldWrite24Bits() = performTest(
-        arrange = { BitstreamBase64Writer("[]") },
+        arrange = { Base64BitstreamWriter("[]") },
         act = {
             it.write(5071214, 24)
             it.toString()
@@ -104,7 +104,7 @@ class BitstreamBase64WriterTest {
 
     @Test
     fun shouldWriteSequential() = performTest(
-        arrange = { BitstreamBase64Writer("[]") },
+        arrange = { Base64BitstreamWriter("[]") },
         act = {
             it.write(4, 4)
             it.write(6, 3)
@@ -118,7 +118,7 @@ class BitstreamBase64WriterTest {
 
     @Test
     fun shouldNotModifyStateOnInspection() = performTest(
-        arrange = { BitstreamBase64Writer("[]") },
+        arrange = { Base64BitstreamWriter("[]") },
         act = {
             it.write(1, 1)
             it.toString() + it.toString()
