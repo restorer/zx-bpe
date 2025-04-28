@@ -62,16 +62,91 @@ data class SciiCell(
     override val isTransparent: Boolean
         get() = this == Transparent
 
-    fun merge(onto: SciiCell) = if (character == SciiChar.Transparent && onto.character == SciiChar.Transparent) {
-        Transparent
-    } else {
-        SciiCell(
-            character = character.merge(onto.character),
-            ink = ink.merge(onto.ink),
-            paper = paper.merge(onto.paper),
-            bright = bright.merge(onto.bright),
-            flash = flash.merge(onto.flash),
-        )
+    fun merge(onto: SciiCell): SciiCell {
+        val charValue = character.value
+        val ontoCharValue = onto.character.value
+
+        return when {
+            charValue == SciiChar.VALUE_TRANSPARENT && ontoCharValue == SciiChar.VALUE_TRANSPARENT -> Transparent
+
+            charValue in SciiChar.BLOCK_VALUE_FIRST..SciiChar.BLOCK_VALUE_LAST &&
+                    ontoCharValue in SciiChar.BLOCK_VALUE_FIRST..SciiChar.BLOCK_VALUE_LAST -> {
+
+                val ontoInk = onto.ink
+                val ontoPaper = onto.paper
+
+                val trColor = if ((charValue and SciiChar.BLOCK_BIT_TR) != 0) ink else paper
+                val tlColor = if ((charValue and SciiChar.BLOCK_BIT_TL) != 0) ink else paper
+                val brColor = if ((charValue and SciiChar.BLOCK_BIT_BR) != 0) ink else paper
+                val blColor = if ((charValue and SciiChar.BLOCK_BIT_BL) != 0) ink else paper
+
+                val ontoTrColor = if ((ontoCharValue and SciiChar.BLOCK_BIT_TR) != 0) ontoInk else ontoPaper
+                val ontoTlColor = if ((ontoCharValue and SciiChar.BLOCK_BIT_TL) != 0) ontoInk else ontoPaper
+                val ontoBrColor = if ((ontoCharValue and SciiChar.BLOCK_BIT_BR) != 0) ontoInk else ontoPaper
+                val ontoBlColor = if ((ontoCharValue and SciiChar.BLOCK_BIT_BL) != 0) ontoInk else ontoPaper
+
+                val mergedTrColor = trColor.merge(ontoTrColor)
+                val mergedTlColor = tlColor.merge(ontoTlColor)
+                val mergedBrColor = brColor.merge(ontoBrColor)
+                val mergedBlColor = blColor.merge(ontoBlColor)
+
+                val mergedColorsMap = mutableMapOf<SciiColor, Int>()
+                mergedColorsMap[mergedTrColor] = (mergedColorsMap[mergedTrColor] ?: 0) + 1
+                mergedColorsMap[mergedTlColor] = (mergedColorsMap[mergedTlColor] ?: 0) + 1
+                mergedColorsMap[mergedBrColor] = (mergedColorsMap[mergedBrColor] ?: 0) + 1
+                mergedColorsMap[mergedBlColor] = (mergedColorsMap[mergedBlColor] ?: 0) + 1
+
+                when (mergedColorsMap.size) {
+                    1 -> {
+                        if (mergedTrColor == SciiColor.Transparent) {
+                            Transparent
+                        } else {
+                            SciiCell(
+                                character = SciiChar.BlockSpace,
+                                ink = mergedTrColor,
+                                paper = mergedTrColor,
+                                bright = bright.merge(onto.bright),
+                                flash = flash.merge(onto.flash),
+                            )
+                        }
+                    }
+
+                    2 -> {
+                        val (mergedInk, mergedPaper) = mergedColorsMap.keys.toList()
+
+                        val mergedValue = SciiChar.BLOCK_VALUE_FIRST +
+                                (if (mergedTrColor == mergedInk) SciiChar.BLOCK_BIT_TR else 0) +
+                                (if (mergedTlColor == mergedInk) SciiChar.BLOCK_BIT_TL else 0) +
+                                (if (mergedBrColor == mergedInk) SciiChar.BLOCK_BIT_BR else 0) +
+                                (if (mergedBlColor == mergedInk) SciiChar.BLOCK_BIT_BL else 0)
+
+                        SciiCell(
+                            character = SciiChar(mergedValue),
+                            ink = mergedInk,
+                            paper = mergedPaper,
+                            bright = bright.merge(onto.bright),
+                            flash = flash.merge(onto.flash),
+                        )
+                    }
+
+                    else -> SciiCell(
+                        character = character.merge(onto.character),
+                        ink = ink.merge(onto.ink),
+                        paper = paper.merge(onto.paper),
+                        bright = bright.merge(onto.bright),
+                        flash = flash.merge(onto.flash),
+                    )
+                }
+            }
+
+            else -> SciiCell(
+                character = character.merge(onto.character),
+                ink = ink.merge(onto.ink),
+                paper = paper.merge(onto.paper),
+                bright = bright.merge(onto.bright),
+                flash = flash.merge(onto.flash),
+            )
+        }
     }
 
     companion object : BagStuffUnpacker<SciiCell> {

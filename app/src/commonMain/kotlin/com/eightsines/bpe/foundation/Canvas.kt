@@ -3,12 +3,10 @@ package com.eightsines.bpe.foundation
 import com.eightsines.bpe.core.BlockCell
 import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.CellType
-import com.eightsines.bpe.core.HBlockMergeCell
 import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
-import com.eightsines.bpe.core.VBlockMergeCell
 import com.eightsines.bpe.util.BagStuffPacker
 import com.eightsines.bpe.util.PackableBag
 
@@ -181,27 +179,17 @@ abstract class HBlockCanvas(
         val topCell = cells[drawingY][sciiX]
         val bottomCell = cells[drawingY + 1][sciiX]
 
-        return HBlockMergeCell.makeSciiCell(
-            topColor = topCell.color,
-            bottomColor = bottomCell.color,
-            bright = topCell.bright.merge(bottomCell.bright),
-        )
-    }
-
-    fun getMergeCell(sciiX: Int, sciiY: Int): HBlockMergeCell {
-        if (sciiX < 0 || sciiY < 0 || sciiX >= sciiWidth || sciiY >= sciiHeight) {
-            return HBlockMergeCell.Transparent
+        return if (topCell.color == SciiColor.Transparent && bottomCell.color == SciiColor.Transparent) {
+            SciiCell.Transparent
+        } else {
+            SciiCell(
+                character = SciiChar.BlockHorizontalTop,
+                ink = topCell.color,
+                paper = bottomCell.color,
+                bright = topCell.bright.merge(bottomCell.bright),
+                flash = SciiLight.Transparent,
+            )
         }
-
-        val drawingY = sciiY * 2
-        val topCell = cells[drawingY][sciiX]
-        val bottomCell = cells[drawingY + 1][sciiX]
-
-        return HBlockMergeCell(
-            topColor = topCell.color,
-            bottomColor = bottomCell.color,
-            bright = topCell.bright.merge(bottomCell.bright),
-        )
     }
 
     internal object Polymorphic : BagStuffPacker<HBlockCanvas> {
@@ -247,27 +235,17 @@ abstract class VBlockCanvas(
         val leftCell = cells[sciiY][drawingX]
         val rightCell = cells[sciiY][drawingX + 1]
 
-        return VBlockMergeCell.makeSciiCell(
-            leftColor = leftCell.color,
-            rightColor = rightCell.color,
-            bright = leftCell.bright.merge(rightCell.bright),
-        )
-    }
-
-    fun getMergeCell(sciiX: Int, sciiY: Int): VBlockMergeCell {
-        if (sciiX < 0 || sciiY < 0 || sciiX >= sciiWidth || sciiY >= sciiHeight) {
-            return VBlockMergeCell.Transparent
+        return if (leftCell.color == SciiColor.Transparent && rightCell.color == SciiColor.Transparent) {
+            SciiCell.Transparent
+        } else {
+            SciiCell(
+                character = SciiChar.BlockVerticalLeft,
+                ink = leftCell.color,
+                paper = rightCell.color,
+                bright = leftCell.bright.merge(rightCell.bright),
+                flash = SciiLight.Transparent,
+            )
         }
-
-        val drawingX = sciiX * 2
-        val leftCell = cells[sciiY][drawingX]
-        val rightCell = cells[sciiY][drawingX + 1]
-
-        return VBlockMergeCell(
-            leftColor = leftCell.color,
-            rightColor = rightCell.color,
-            bright = leftCell.bright.merge(rightCell.bright),
-        )
     }
 
     internal object Polymorphic : BagStuffPacker<VBlockCanvas> {

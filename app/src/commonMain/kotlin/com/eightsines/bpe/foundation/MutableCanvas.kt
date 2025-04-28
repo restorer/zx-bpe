@@ -2,11 +2,9 @@ package com.eightsines.bpe.foundation
 
 import com.eightsines.bpe.core.BlockCell
 import com.eightsines.bpe.core.Cell
-import com.eightsines.bpe.core.HBlockMergeCell
 import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
-import com.eightsines.bpe.core.VBlockMergeCell
 import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.UnknownPolymorphicTypeBagUnpackException
 import com.eightsines.bpe.util.UnpackableBag
@@ -49,14 +47,6 @@ interface CanvasMutator<T : Cell> {
 }
 
 interface MutableBlockCanvas : MutableCanvas<BlockCell>
-
-interface HBlockCanvasMutator : CanvasMutator<BlockCell> {
-    fun replaceMergeCell(sciiX: Int, sciiY: Int, cell: HBlockMergeCell)
-}
-
-interface VBlockCanvasMutator : CanvasMutator<BlockCell> {
-    fun replaceMergeCell(sciiX: Int, sciiY: Int, cell: VBlockMergeCell)
-}
 
 class MutableSciiCanvas(
     sciiWidth: Int,
@@ -150,16 +140,14 @@ class MutableHBlockCanvas(
         source = this,
     )
 
-    override fun mutate(block: (mutator: CanvasMutator<BlockCell>) -> Unit) = mutateHBlock(block)
-
-    fun mutateHBlock(block: (mutator: HBlockCanvasMutator) -> Unit) {
+    override fun mutate(block: (mutator: CanvasMutator<BlockCell>) -> Unit) {
         ++mutations
         block(Mutator(this))
     }
 
     override fun toString() = "HBlockCanvas(drawingWidth=$drawingWidth, drawingHeight=$drawingHeight, mutations=$mutations)"
 
-    class Mutator(private val canvas: MutableHBlockCanvas) : HBlockCanvasMutator {
+    class Mutator(private val canvas: MutableHBlockCanvas) : CanvasMutator<BlockCell> {
         override fun clear() {
             canvas.cells.forEach { it.fill(BlockCell.Transparent) }
         }
@@ -210,22 +198,6 @@ class MutableHBlockCanvas(
             } else {
                 canvas.cells[drawingY][sciiX] = BlockCell(topColor, cell.bright)
                 canvas.cells[drawingY + 1][sciiX] = BlockCell(bottomColor, cell.bright)
-            }
-        }
-
-        override fun replaceMergeCell(sciiX: Int, sciiY: Int, cell: HBlockMergeCell) {
-            if (sciiX < 0 || sciiY < 0 || sciiX >= canvas.sciiWidth || sciiY >= canvas.sciiHeight) {
-                return
-            }
-
-            val drawingY = sciiY * 2
-
-            if (cell.topColor == SciiColor.Transparent && cell.bottomColor == SciiColor.Transparent) {
-                canvas.cells[drawingY][sciiX] = BlockCell.Transparent
-                canvas.cells[drawingY + 1][sciiX] = BlockCell.Transparent
-            } else {
-                canvas.cells[drawingY][sciiX] = BlockCell(color = cell.topColor, bright = cell.bright)
-                canvas.cells[drawingY + 1][sciiX] = BlockCell(color = cell.bottomColor, bright = cell.bright)
             }
         }
 
@@ -288,16 +260,14 @@ class MutableVBlockCanvas(
         source = this,
     )
 
-    override fun mutate(block: (mutator: CanvasMutator<BlockCell>) -> Unit) = mutateVBlock(block)
-
-    fun mutateVBlock(block: (mutator: VBlockCanvasMutator) -> Unit) {
+    override fun mutate(block: (mutator: CanvasMutator<BlockCell>) -> Unit) {
         ++mutations
         block(Mutator(this))
     }
 
     override fun toString() = "VBlockCanvas(drawingWidth=$drawingWidth, drawingHeight=$drawingHeight, mutations=$mutations)"
 
-    private class Mutator(private val canvas: MutableVBlockCanvas) : VBlockCanvasMutator {
+    private class Mutator(private val canvas: MutableVBlockCanvas) : CanvasMutator<BlockCell> {
         override fun clear() {
             canvas.cells.forEach { it.fill(BlockCell.Transparent) }
         }
@@ -348,22 +318,6 @@ class MutableVBlockCanvas(
             } else {
                 canvas.cells[sciiY][drawingX] = BlockCell(leftColor, cell.bright)
                 canvas.cells[sciiY][drawingX + 1] = BlockCell(rightColor, cell.bright)
-            }
-        }
-
-        override fun replaceMergeCell(sciiX: Int, sciiY: Int, cell: VBlockMergeCell) {
-            if (sciiX < 0 || sciiY < 0 || sciiX >= canvas.sciiWidth || sciiY >= canvas.sciiHeight) {
-                return
-            }
-
-            val drawingX = sciiX * 2
-
-            if (cell.leftColor == SciiColor.Transparent && cell.rightColor == SciiColor.Transparent) {
-                canvas.cells[sciiY][drawingX] = BlockCell.Transparent
-                canvas.cells[sciiY][drawingX + 1] = BlockCell.Transparent
-            } else {
-                canvas.cells[sciiY][drawingX] = BlockCell(color = cell.leftColor, bright = cell.bright)
-                canvas.cells[sciiY][drawingX + 1] = BlockCell(color = cell.rightColor, bright = cell.bright)
             }
         }
 

@@ -4,7 +4,6 @@ import com.eightsines.bpe.core.BlockCell
 import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
-import com.eightsines.bpe.core.VBlockMergeCell
 import com.eightsines.bpe.testing.BlockCellMother
 import com.eightsines.bpe.testing.PackableTestBag
 import com.eightsines.bpe.testing.SciiCellMother
@@ -118,49 +117,6 @@ class MutableVBlockCanvasTest {
         },
         act = { it.getSciiCell(0, 0) },
         assert = { assertEquals(SciiCellMother.BlockVerticalLeft, it) },
-    )
-
-    @Test
-    fun shouldGetNonInitialMergeCell() = performTest(
-        arrange = {
-            MutableVBlockCanvas(1, 1).also { sut ->
-                sut.mutate {
-                    it.mergeDrawingCell(0, 0, BlockCellMother.Black)
-                    it.mergeDrawingCell(1, 0, BlockCellMother.WhiteBright)
-                }
-            }
-        },
-        act = { it.getMergeCell(0, 0) },
-        assert = {
-            assertEquals(
-                VBlockMergeCell(leftColor = SciiColor.Black, rightColor = SciiColor.White, bright = SciiLight.On),
-                it,
-            )
-        },
-    )
-
-    @Test
-    fun shouldNotGetMergeCellOutsize() = performTest(
-        arrange = {
-            MutableVBlockCanvas(1, 1).also { sut ->
-                sut.mutate {
-                    it.mergeDrawingCell(0, 0, BlockCellMother.WhiteBright)
-                    it.mergeDrawingCell(1, 0, BlockCellMother.Black)
-                }
-            }
-        },
-        act = {
-            listOf(
-                it.getMergeCell(-1, -1),
-                it.getMergeCell(1, 1),
-            )
-        },
-        assert = {
-            assertEquals(
-                listOf(VBlockMergeCell.Transparent, VBlockMergeCell.Transparent),
-                it,
-            )
-        },
     )
 
     // Mutable

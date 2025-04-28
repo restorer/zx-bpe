@@ -1,7 +1,6 @@
 package com.eightsines.bpe.foundation
 
 import com.eightsines.bpe.core.BlockCell
-import com.eightsines.bpe.core.HBlockMergeCell
 import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
@@ -118,49 +117,6 @@ class MutableHBlockCanvasTest {
         },
         act = { it.getSciiCell(0, 0) },
         assert = { assertEquals(SciiCellMother.BlockHorizontalTop, it) },
-    )
-
-    @Test
-    fun shouldGetNonInitialMergeCell() = performTest(
-        arrange = {
-            MutableHBlockCanvas(1, 1).also { sut ->
-                sut.mutate {
-                    it.mergeDrawingCell(0, 0, BlockCellMother.WhiteBright)
-                    it.mergeDrawingCell(0, 1, BlockCellMother.Black)
-                }
-            }
-        },
-        act = { it.getMergeCell(0, 0) },
-        assert = {
-            assertEquals(
-                HBlockMergeCell(topColor = SciiColor.White, bottomColor = SciiColor.Black, bright = SciiLight.On),
-                it,
-            )
-        },
-    )
-
-    @Test
-    fun shouldNotGetMergeCellOutsize() = performTest(
-        arrange = {
-            MutableHBlockCanvas(1, 1).also { sut ->
-                sut.mutate {
-                    it.mergeDrawingCell(0, 0, BlockCellMother.WhiteBright)
-                    it.mergeDrawingCell(0, 1, BlockCellMother.Black)
-                }
-            }
-        },
-        act = {
-            listOf(
-                it.getMergeCell(-1, -1),
-                it.getMergeCell(1, 1),
-            )
-        },
-        assert = {
-            assertEquals(
-                listOf(HBlockMergeCell.Transparent, HBlockMergeCell.Transparent),
-                it,
-            )
-        },
     )
 
     // Mutable

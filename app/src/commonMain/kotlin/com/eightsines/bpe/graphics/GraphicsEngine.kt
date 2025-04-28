@@ -7,16 +7,12 @@ import com.eightsines.bpe.core.SciiLight
 import com.eightsines.bpe.foundation.BackgroundLayer
 import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.Crate
-import com.eightsines.bpe.foundation.HBlockCanvas
 import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.foundation.MutableBackgroundLayer
 import com.eightsines.bpe.foundation.MutableCanvas
 import com.eightsines.bpe.foundation.MutableCanvasLayer
-import com.eightsines.bpe.foundation.MutableHBlockCanvas
 import com.eightsines.bpe.foundation.MutableSciiCanvas
-import com.eightsines.bpe.foundation.MutableVBlockCanvas
 import com.eightsines.bpe.foundation.SciiCanvas
-import com.eightsines.bpe.foundation.VBlockCanvas
 import com.eightsines.bpe.util.BagStuffPacker
 import com.eightsines.bpe.util.BagStuffUnpacker
 import com.eightsines.bpe.util.Logger
@@ -456,23 +452,9 @@ class GraphicsEngine(
         val mergeWidth = minOf(canvas.sciiWidth, mergeCanvas.sciiWidth)
         val mergeHeight = minOf(canvas.sciiHeight, mergeCanvas.sciiHeight)
 
-        when {
-            canvas is HBlockCanvas && mergeCanvas is MutableHBlockCanvas -> mergeCanvas.mutateHBlock { mutator ->
-                walkInBox(mergeWidth, mergeHeight) { x, y ->
-                    mutator.replaceMergeCell(x, y, canvas.getMergeCell(x, y).merge(mergeCanvas.getMergeCell(x, y)))
-                }
-            }
-
-            canvas is VBlockCanvas && mergeCanvas is MutableVBlockCanvas -> mergeCanvas.mutateVBlock { mutator ->
-                walkInBox(mergeWidth, mergeHeight) { x, y ->
-                    mutator.replaceMergeCell(x, y, canvas.getMergeCell(x, y).merge(mergeCanvas.getMergeCell(x, y)))
-                }
-            }
-
-            else -> mergeCanvas.mutate { mutator ->
-                walkInBox(mergeWidth, mergeHeight) { x, y ->
-                    mutator.replaceSciiCell(x, y, canvas.getSciiCell(x, y).merge(mergeCanvas.getSciiCell(x, y)))
-                }
+        mergeCanvas.mutate { mutator ->
+            walkInBox(mergeWidth, mergeHeight) { x, y ->
+                mutator.replaceSciiCell(x, y, canvas.getSciiCell(x, y).merge(mergeCanvas.getSciiCell(x, y)))
             }
         }
 
