@@ -163,7 +163,7 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
                 drawingY = drawingY.coerceIn(0, currentAreaSpec.drawingEY)
                 val newCursorSpec = drawingToCursorSpec(currentAreaSpec, drawingX, drawingY)
 
-                if (cursorSpec?.area != newCursorSpec.area) {
+                if (cursorSpec?.primaryArea != newCursorSpec.primaryArea) {
                     cursorSpec = newCursorSpec
                     bpeEngine.execute(BpeAction.CanvasMove(drawingX, drawingY))
                 }
@@ -476,18 +476,36 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
     }
 
     private fun drawingToCursorSpec(areaSpec: AreaSpec, drawingX: Int, drawingY: Int) = CursorSpec(
-        area = drawingToArea(areaSpec, drawingX, drawingY),
+        primaryArea = drawingToArea(areaSpec, UiAreaType.PrimaryCursor, drawingX, drawingY),
+        secondaryArea = if (areaSpec.sciiXMultiplier != 1.0 || areaSpec.sciiYMultiplier != 1.0) {
+            UiArea(
+                UiSpec.BORDER_SIZE + (drawingX * areaSpec.sciiXMultiplier).toInt() * UiSpec.SCII_CELL_SIZE,
+                UiSpec.BORDER_SIZE + (drawingY * areaSpec.sciiYMultiplier).toInt() * UiSpec.SCII_CELL_SIZE,
+                UiSpec.SCII_CELL_SIZE,
+                UiSpec.SCII_CELL_SIZE,
+                UiAreaType.SecondaryCursor,
+            )
+        } else {
+            null
+        },
         informerSciiX = drawingX * areaSpec.sciiXMultiplier,
         informerSciiY = drawingY * areaSpec.sciiYMultiplier,
     )
 
-    private fun drawingToArea(areaSpec: AreaSpec, drawingX: Int, drawingY: Int, drawingWidth: Int = 1, drawingHeight: Int = 1) =
-        UiArea(
-            UiSpec.BORDER_SIZE + drawingX * areaSpec.cellWidth,
-            UiSpec.BORDER_SIZE + drawingY * areaSpec.cellHeight,
-            drawingWidth * areaSpec.cellWidth,
-            drawingHeight * areaSpec.cellHeight,
-        )
+    private fun drawingToArea(
+        areaSpec: AreaSpec,
+        areaType: UiAreaType,
+        drawingX: Int,
+        drawingY: Int,
+        drawingWidth: Int = 1,
+        drawingHeight: Int = 1,
+    ) = UiArea(
+        UiSpec.BORDER_SIZE + drawingX * areaSpec.cellWidth,
+        UiSpec.BORDER_SIZE + drawingY * areaSpec.cellHeight,
+        drawingWidth * areaSpec.cellWidth,
+        drawingHeight * areaSpec.cellHeight,
+        areaType,
+    )
 
     @Suppress("NOTHING_TO_INLINE")
     private inline fun isDrawingInside(drawingX: Int, drawingY: Int) =
@@ -555,17 +573,21 @@ class UiEngine(private val logger: Logger, private val bpeEngine: BpeEngine) {
 
         return UiState(
             sheet = UiSheetView(bpeState.background, bpeState.canvas),
-            cursorArea = cursorSpec?.area,
 
-            selectionArea = bpeState.selection?.let {
-                drawingToArea(
-                    computeAreaSpec(it.canvasType),
-                    it.drawingBox.lx,
-                    it.drawingBox.ly,
-                    it.drawingBox.width,
-                    it.drawingBox.height,
-                )
-            },
+            areas = listOfNotNull(
+                bpeState.selection?.let {
+                    drawingToArea(
+                        computeAreaSpec(it.canvasType),
+                        UiAreaType.Selection,
+                        it.drawingBox.lx,
+                        it.drawingBox.ly,
+                        it.drawingBox.width,
+                        it.drawingBox.height,
+                    )
+                },
+                cursorSpec?.secondaryArea,
+                cursorSpec?.primaryArea,
+            ),
 
             paletteColor = when {
                 bpeState.palettePaper != null -> UiToolState.Hidden
@@ -766,4 +788,4 @@ private data class AreaSpec(
     val sciiYMultiplier: Double,
 )
 
-private data class CursorSpec(val area: UiArea, val informerSciiX: Double, val informerSciiY: Double)
+private data class CursorSpec(val primaryArea: UiArea, val secondaryArea: UiArea?, val informerSciiX: Double, val informerSciiY: Double)

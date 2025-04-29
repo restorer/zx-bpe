@@ -1,19 +1,18 @@
 package com.eightsines.bpe.presentation
 
-import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
+import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.middlware.BpePaintingMode
 import com.eightsines.bpe.middlware.BpeShape
 import com.eightsines.bpe.middlware.LayerView
-import com.eightsines.bpe.resources.TextRes
 import com.eightsines.bpe.resources.TextDescriptor
+import com.eightsines.bpe.resources.TextRes
 
 data class UiState(
     val sheet: UiSheetView,
-    val cursorArea: UiArea?,
-    val selectionArea: UiArea?,
+    val areas: List<UiArea>,
 
     val paletteColor: UiToolState<SciiColor>,
     val paletteInk: UiToolState<SciiColor>,
@@ -57,7 +56,13 @@ data class UiState(
     val historySteps: Int,
 )
 
-data class UiArea(val pointerX: Int, val pointerY: Int, val pointerWidth: Int, val pointerHeight: Int)
+enum class UiAreaType {
+    Selection,
+    SecondaryCursor,
+    PrimaryCursor,
+}
+
+data class UiArea(val pointerX: Int, val pointerY: Int, val pointerWidth: Int, val pointerHeight: Int, val type: UiAreaType)
 
 sealed interface UiToolState<out T> {
     val isInteractable: Boolean
@@ -68,17 +73,17 @@ sealed interface UiToolState<out T> {
 
     data class Disabled<T>(val value: T, val title: TextRes? = null) : UiToolState<T> {
         override val isInteractable = false
-        override fun toString() = "Disabled(${if (value == Unit) "" else value.toString() })"
+        override fun toString() = "Disabled(${if (value == Unit) "" else value.toString()})"
     }
 
     data class Visible<T>(val value: T, val title: TextRes? = null) : UiToolState<T> {
         override val isInteractable = true
-        override fun toString() = "Visible(${if (value == Unit) "" else value.toString() })"
+        override fun toString() = "Visible(${if (value == Unit) "" else value.toString()})"
     }
 
     data class Active<T>(val value: T, val title: TextRes? = null) : UiToolState<T> {
         override val isInteractable = true
-        override fun toString() = "Active(${if (value == Unit) "" else value.toString() })"
+        override fun toString() = "Active(${if (value == Unit) "" else value.toString()})"
     }
 }
 

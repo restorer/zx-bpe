@@ -143,8 +143,7 @@ class BrowserView(
 
     private var layersItemsCache = mutableMapOf<LayerView<*>, CachedLayerItem>()
     private var sheetViewCache: UiSheetView? = null
-    private var selectionAreaCache: UiArea? = null
-    private var cursorAreaCache: UiArea? = null
+    private var areasCache: List<UiArea> = emptyList()
 
     private var wasRendered = false
     private var lastRefreshTimeMs = 0L
@@ -431,14 +430,11 @@ class BrowserView(
         }
 
         drawingAreas?.let {
-            val selectionArea = uiState.selectionArea
-            val cursorArea = uiState.cursorArea
+            val areas = uiState.areas
 
-            if (selectionAreaCache != selectionArea || cursorAreaCache != cursorArea) {
-                selectionAreaCache = selectionArea
-                cursorAreaCache = cursorArea
-
-                renderer.renderAreas(it, selectionArea, cursorArea)
+            if (areasCache != areas) {
+                areasCache = areas
+                renderer.renderAreas(it, areas)
             }
         }
 
@@ -510,7 +506,7 @@ class BrowserView(
             sheetViewCache?.let { renderer.renderSheet(sheet, it.backgroundView.layer, it.canvasView.canvas) }
         }
 
-        drawingAreas?.let { renderer.renderAreas(it, selectionAreaCache, cursorAreaCache) }
+        drawingAreas?.let { renderer.renderAreas(it, areasCache) }
         lastRefreshTimeMs = elapsedTimeMs
     }
 

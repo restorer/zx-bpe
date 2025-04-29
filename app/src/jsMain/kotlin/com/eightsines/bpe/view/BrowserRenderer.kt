@@ -13,6 +13,7 @@ import com.eightsines.bpe.foundation.QBlockCanvas
 import com.eightsines.bpe.foundation.SciiCanvas
 import com.eightsines.bpe.foundation.VBlockCanvas
 import com.eightsines.bpe.presentation.UiArea
+import com.eightsines.bpe.presentation.UiAreaType
 import com.eightsines.bpe.presentation.UiSpec
 import com.eightsines.bpe.util.ElapsedTimeProvider
 import com.eightsines.bpe.util.Material
@@ -61,12 +62,13 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         renderSciiCanvas(htmlContext, canvas, BORDER_SIZE, BORDER_SIZE)
     }
 
-    fun renderAreas(htmlCanvas: HTMLCanvasElement, selectionArea: UiArea?, cursorArea: UiArea?) {
+    fun renderAreas(htmlCanvas: HTMLCanvasElement, areas: List<UiArea>) {
         val htmlContext = htmlCanvas.getContext("2d", GET_CONTEXT_OPTIONS) as CanvasRenderingContext2D
         htmlContext.clearRect(0.0, 0.0, FULL_WIDTH, FULL_HEIGHT)
 
-        selectionArea?.let { renderSingleArea(htmlContext, it, AREA_COLORS_SELECTION) }
-        cursorArea?.let { renderSingleArea(htmlContext, it, AREA_COLORS_CURSOR) }
+        for (area in areas) {
+            AREA_COLORS[area.type]?.let { renderSingleArea(htmlContext, area, it) }
+        }
     }
 
     private fun renderSingleArea(htmlContext: CanvasRenderingContext2D, area: UiArea, colors: List<String>) {
@@ -249,6 +251,7 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
             var pixelsIndex = ((y + row) * UiSpec.PICTURE_WIDTH + x) * 4
             var charsIndex = (charY + row) * SpecScii.WIDTH + charX
 
+            @Suppress("Unused")
             for (col in 0..<UiSpec.SCII_CELL_SIZE) {
                 val color = if (charsData[charsIndex] == 1) inkColor else paperColor
 
@@ -308,6 +311,11 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
     }
 
     companion object {
+        private val COLOR_HEX_SHORT_REGEX = Regex("^#([0-9A-Fa-f])([0-9A-Fa-f])([0-9A-Fa-f])$")
+        private val COLOR_HEX_LONG_REGEX = Regex("^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})$")
+        private val COLOR_RGB_REGEX = Regex("^rgb\\(([0-9.]+),([0-9.]+),([0-9.]+)\\)$")
+        private val COLOR_RGBA_REGEX = Regex("^rgba\\(([0-9.]+),([0-9.]+),([0-9]+),[0-9.]+\\)$")
+
         private const val PICTURE_WIDTH = UiSpec.PICTURE_WIDTH.toDouble()
         private const val PICTURE_HEIGHT = UiSpec.PICTURE_HEIGHT.toDouble()
         private const val BORDER_SIZE = UiSpec.BORDER_SIZE.toDouble()
@@ -343,8 +351,12 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         private val TRANSPARENT_COLORS_SCREEN = listOf(Material.Gray700, Material.Gray500)
         private val TRANSPARENT_COLORS_BORDER = listOf(Material.Gray800, Material.Gray600)
 
-        private val AREA_COLORS_CURSOR = listOf(Material.BlueGray900, Material.BlueGray50)
-        private val AREA_COLORS_SELECTION = listOf(Material.Amber900, Material.Amber50)
+        private val AREA_COLORS = buildMap {
+            put(UiAreaType.Selection, listOf(Material.Amber900, Material.Amber50))
+            put(UiAreaType.SecondaryCursor, listOf(rgba(Material.BlueGray800, 0.5), rgba(Material.BlueGray100, 0.5)))
+            put(UiAreaType.PrimaryCursor, listOf(Material.BlueGray900, Material.BlueGray50))
+        }
+
         private const val AREA_DASH_XS = 2
         private const val AREA_DASH_MD = 4
 
@@ -353,5 +365,49 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
 
         private val GET_CONTEXT_OPTIONS: dynamic = object {}
             .also { it.asDynamic()["willReadFrequently"] = true }
+
+        private fun rgba(color: String, a: Double): String {
+            val matchShort = COLOR_HEX_SHORT_REGEX.matchEntire(color)
+
+            if (matchShort != null) {
+                val r = matchShort.groupValues[1].toInt(16)
+                val g = matchShort.groupValues[2].toInt(16)
+                val b = matchShort.groupValues[3].toInt(16)
+
+                return "rgba(${r + 16 * r},${g + 16 * g},${b + 16 * b},$a)"
+            }
+
+            val matchLong = COLOR_HEX_LONG_REGEX.matchEntire(color)
+
+            if (matchLong != null) {
+                val r = matchLong.groupValues[1].toInt(16)
+                val g = matchLong.groupValues[2].toInt(16)
+                val b = matchLong.groupValues[3].toInt(16)
+
+                return "rgba($r,$g,$b,$a)"
+            }
+
+            val matchRgb = COLOR_RGB_REGEX.matchEntire(color)
+
+            if (matchRgb != null) {
+                val r = matchRgb.groupValues[1].toDouble()
+                val g = matchRgb.groupValues[2].toDouble()
+                val b = matchRgb.groupValues[3].toDouble()
+
+                return "rgba($r,$g,$b,$a)"
+            }
+
+            val matchRgba = COLOR_RGBA_REGEX.matchEntire(color)
+
+            if (matchRgba != null) {
+                val r = matchRgba.groupValues[1].toDouble()
+                val g = matchRgba.groupValues[2].toDouble()
+                val b = matchRgba.groupValues[3].toDouble()
+
+                return "rgba($r,$g,$b,$a)"
+            }
+
+            return color
+        }
     }
 }
