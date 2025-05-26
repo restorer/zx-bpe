@@ -15,4 +15,10 @@ dependencyResolutionManagement {
     }
 }
 
-include(":app")
+include(
+    ":features:app",
+    ":features:bag-impl",
+    ":features:bag-processor",
+    ":features:bag-public",
+    ":features:testkit-public",
+)

@@ -1,14 +1,22 @@
 [versions]
 
-kotlin = "2.0.20"
-kotlinx-coroutines = "1.9.0"
-npm-uuid = "9.0.1"
+kotlin = "2.1.21" # https://kotlinlang.org/docs/releases.html#release-details
+kotlinCompileTestingKsp = "1.6.0" # https://github.com/tschuchortdev/kotlin-compile-testing
+kotlinpoet = "2.2.0" # https://github.com/square/kotlinpoet/releases
+kotlinx-coroutines = "1.10.2" # https://github.com/Kotlin/kotlinx.coroutines/releases
+ksp = "2.1.21-2.0.1" # https://github.com/google/ksp/releases
+npm-uuid = "11.1.0" # https://www.npmjs.com/package/uuid
 
 [libraries]
 
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlinCompileTestingKsp = { module = "com.github.tschuchortdev:kotlin-compile-testing-ksp", version.ref = "kotlinCompileTestingKsp" }
+kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
+kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+ksp-symbolProcessingApi = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 
 [plugins]
 
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
