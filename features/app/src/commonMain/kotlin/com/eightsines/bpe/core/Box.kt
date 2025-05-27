@@ -9,7 +9,7 @@ import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
 
 @BagStuff
-class Box private constructor(
+class Box internal constructor(
     @BagStuffWare(index = 1) val lx: Int,
     @BagStuffWare(index = 2) val ly: Int,
     @BagStuffWare(index = 3) val width: Int,

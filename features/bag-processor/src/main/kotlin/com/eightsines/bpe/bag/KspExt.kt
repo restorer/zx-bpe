@@ -1,9 +1,9 @@
 package com.eightsines.bpe.bag
 
 import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeReference
 
 val KSAnnotation.annotationQualifiedName: String?
@@ -14,24 +14,18 @@ inline fun <reified T> KSAnnotation.getArgumentValue(name: String) =
         ?: defaultArguments.firstOrNull { it.name?.asString() == name }?.value as? T
 
 val KSTypeReference.typeQualifiedName: String?
+    get() = resolve().typeQualifiedName
+
+val KSType.typeQualifiedName: String?
     get() {
-        val resolvedType = resolve()
-        val qualifiedName = resolvedType.declaration.qualifiedName?.asString()
+        val qualifiedName = declaration.qualifiedName?.asString()
 
         return when {
             qualifiedName == null -> null
-            resolvedType.isMarkedNullable -> "${qualifiedName}?"
+            isMarkedNullable -> "${qualifiedName}?"
             else -> qualifiedName
         }
     }
-
-inline fun <reified T : KSAnnotated> Resolver.walkAnnotations(annotationQualifiedName: String, block: (T, KSAnnotation) -> Unit) {
-    for (declaration in getSymbolsWithAnnotation(annotationQualifiedName).filterIsInstance<T>()) {
-        for (annotation in declaration.annotations.filter { it.annotationQualifiedName == annotationQualifiedName }) {
-            block(declaration, annotation)
-        }
-    }
-}
 
 fun Resolver.getFunctionDeclarationByName(currentPackageName: String, functionName: String): KSFunctionDeclaration? {
     var declaration = getFunctionDeclarationsByName(getKSNameFromString(functionName)).firstOrNull()

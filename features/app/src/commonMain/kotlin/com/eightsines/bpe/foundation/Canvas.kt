@@ -7,11 +7,11 @@ import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
-import com.eightsines.bpe.bag.BagEnum
+import com.eightsines.bpe.bag.BagSinglefield
 import com.eightsines.bpe.bag.BagStuffPacker
 import com.eightsines.bpe.bag.PackableBag
 
-@BagEnum(value = "value", creator = "CanvasType.of")
+@BagSinglefield(field = "value", creator = "CanvasType.of")
 sealed class CanvasType {
     abstract val value: Int
     abstract val cellType: CellType
