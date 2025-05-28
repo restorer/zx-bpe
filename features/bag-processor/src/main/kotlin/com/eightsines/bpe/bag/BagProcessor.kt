@@ -19,13 +19,13 @@ class BagProcessor(private val logger: KSPLogger, private val codeGenerator: Cod
     private val stuffGenerator = BagStuffGenerator(logger, codeGenerator)
     private val singlefieldParser = BagSinglefieldParser(logger)
 
-    private val allDescriptors = mutableMapOf<String, BagDescriptor>()
+    private val allDescriptors = mutableMapOf<TypeDescriptor, BagDescriptor>()
     private val stuffDescriptors = mutableSetOf<BagDescriptor.Stuff>()
     private val alreadyGeneratedStuffs = mutableSetOf<BagDescriptor.Stuff>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         for (descriptor in stuffParser.parseAll(resolver)) {
-            allDescriptors[descriptor.classQualifiedName] = descriptor
+            allDescriptors[descriptor.classDescriptor.asRawTypeDescriptor()] = descriptor
             stuffDescriptors.add(descriptor)
         }
 
@@ -42,19 +42,21 @@ class BagProcessor(private val logger: KSPLogger, private val codeGenerator: Cod
         return emptyList()
     }
 
-    private fun resolveDescriptor(resolver: Resolver, typeQualifiedName: String): BagDescriptor? {
-        allDescriptors[typeQualifiedName]?.let { return@resolveDescriptor it }
+    private fun resolveDescriptor(resolver: Resolver, typeDescriptor: TypeDescriptor): BagDescriptor? {
+        val typeDescriptor = typeDescriptor.rawTypeDescriptor as? TypeDescriptor.Type ?: return null
 
-        BagDescriptor.Primitive.of(typeQualifiedName)?.let {
-            allDescriptors[typeQualifiedName] = it
-            return@resolveDescriptor it
+        allDescriptors[typeDescriptor]?.let { return it }
+
+        BagDescriptor.Primitive.of(typeDescriptor)?.let {
+            allDescriptors[typeDescriptor] = it
+            return it
         }
 
-        resolver.getClassDeclarationByName(typeQualifiedName)
+        resolver.getClassDeclarationByName(typeDescriptor.nameDescriptor.qualifiedName)
             ?.let { singlefieldParser.parse(resolver, it) }
             ?.let {
-                allDescriptors[typeQualifiedName] = it
-                return@resolveDescriptor it
+                allDescriptors[typeDescriptor] = it
+                return it
             }
 
         return null

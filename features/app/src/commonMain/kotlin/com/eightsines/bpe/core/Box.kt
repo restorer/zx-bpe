@@ -2,11 +2,6 @@ package com.eightsines.bpe.core
 
 import com.eightsines.bpe.bag.BagStuff
 import com.eightsines.bpe.bag.BagStuffWare
-import com.eightsines.bpe.bag.BagStuffPacker
-import com.eightsines.bpe.bag.BagStuffUnpacker
-import com.eightsines.bpe.bag.PackableBag
-import com.eightsines.bpe.bag.UnpackableBag
-import com.eightsines.bpe.bag.requireSupportedStuffVersion
 
 @BagStuff
 class Box internal constructor(
@@ -47,7 +42,7 @@ class Box internal constructor(
         return result
     }
 
-    companion object : BagStuffPacker<Box>, BagStuffUnpacker<Box> {
+    companion object {
         fun ofSize(x: Int, y: Int, width: Int, height: Int) = Box(x, y, width, height)
 
         fun ofCoords(sx: Int, sy: Int, ex: Int, ey: Int): Box {
@@ -55,26 +50,6 @@ class Box internal constructor(
             val ly = minOf(sy, ey)
             val width = maxOf(sx, ex) - lx + 1
             val height = maxOf(sy, ey) - ly + 1
-
-            return Box(lx, ly, width, height)
-        }
-
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: Box) {
-            bag.put(value.lx)
-            bag.put(value.ly)
-            bag.put(value.width)
-            bag.put(value.height)
-        }
-
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Box {
-            requireSupportedStuffVersion("Box", 1, version)
-
-            val lx = bag.getInt()
-            val ly = bag.getInt()
-            val width = bag.getInt()
-            val height = bag.getInt()
 
             return Box(lx, ly, width, height)
         }

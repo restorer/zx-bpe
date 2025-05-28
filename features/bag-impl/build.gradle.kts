@@ -20,19 +20,13 @@ kotlin {
     }
 
     sourceSets {
-        @Suppress("unused")
-        val commonMain by getting {
-            dependencies {
-                implementation(projects.features.bagPublic)
-            }
+        commonMain.dependencies {
+            implementation(projects.features.bagPublic)
         }
 
-        @Suppress("unused")
-        val commonTest by getting {
-            dependencies {
-                implementation(libs.kotlin.test)
-                implementation(projects.features.testkitPublic)
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(projects.features.testkitPublic)
         }
     }
 }

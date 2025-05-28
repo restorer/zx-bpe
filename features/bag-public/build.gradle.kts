@@ -15,7 +15,6 @@ kotlin {
 
     sourceSets {
         @Suppress("unused")
-        val commonMain by getting {
-        }
+        val commonMain by getting
     }
 }

@@ -7,7 +7,7 @@ from PIL import Image
 
 def main() -> int:
     image_path = os.path.dirname(__file__) + '/specscii__8x8.png'
-    result_path = os.path.dirname(__file__) + '/../app/src/commonMain/kotlin/com/eightsines/bpe/util/SpecScii.kt'
+    result_path = os.path.dirname(__file__) + '/../features/app/src/commonMain/kotlin/com/eightsines/bpe/util/SpecScii.kt'
 
     image = Image.open(image_path)
     pixels = image.load()

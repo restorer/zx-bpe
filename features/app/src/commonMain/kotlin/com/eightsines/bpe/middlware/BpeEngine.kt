@@ -752,7 +752,7 @@ class BpeEngine(
                 }
             }
 
-            bag.put(MutablePalette, value.palette)
+            bag.put(MutablePaletteStuff, value.palette)
             bag.put(value.toolboxTool.value)
             bag.put(value.toolboxPaintShape.value)
             bag.put(value.toolboxEraseShape.value)
@@ -798,7 +798,7 @@ class BpeEngine(
         }
 
         private fun unpackStuff(bag: UnpackableBag): UnpackerStuff {
-            val palette = bag.getStuff(MutablePalette)
+            val palette = bag.getStuff(MutablePaletteStuff)
             val toolboxTool = requireNoIllegalArgumentException { BpeTool.of(bag.getInt()) }
             val toolboxPaintShape = requireNoIllegalArgumentException { BpeShape.of(bag.getInt()) }
             val toolboxEraseShape = requireNoIllegalArgumentException { BpeShape.of(bag.getInt()) }

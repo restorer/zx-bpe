@@ -1,5 +1,14 @@
 package com.eightsines.bpe.graphics
 
+import com.eightsines.bpe.bag.BagStuff
+import com.eightsines.bpe.bag.BagStuffPacker
+import com.eightsines.bpe.bag.BagStuffUnpacker
+import com.eightsines.bpe.bag.BagStuffWare
+import com.eightsines.bpe.bag.PackableBag
+import com.eightsines.bpe.bag.UnknownPolymorphicTypeBagUnpackException
+import com.eightsines.bpe.bag.UnpackableBag
+import com.eightsines.bpe.bag.requireNoIllegalArgumentException
+import com.eightsines.bpe.bag.requireSupportedStuffVersion
 import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.core.SciiColor
@@ -7,18 +16,12 @@ import com.eightsines.bpe.core.SciiLight
 import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.foundation.Crate
+import com.eightsines.bpe.foundation.Crate_Stuff
 import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.foundation.MutableCanvasLayer
-import com.eightsines.bpe.bag.BagStuffPacker
-import com.eightsines.bpe.bag.BagStuffUnpacker
-import com.eightsines.bpe.bag.PackableBag
-import com.eightsines.bpe.bag.UnknownPolymorphicTypeBagUnpackException
-import com.eightsines.bpe.bag.UnpackableBag
-import com.eightsines.bpe.bag.requireNoIllegalArgumentException
-import com.eightsines.bpe.bag.requireSupportedStuffVersion
 
 enum class GraphicsActionType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out GraphicsAction>) {
-    SetBackgroundBorder(1, GraphicsAction.SetBackgroundBorder.Polymorphic),
+    SetBackgroundBorder(1, GraphicsAction_SetBackgroundBorder_Stuff),
     SetBackgroundColor(2, GraphicsAction.SetBackgroundColor.Polymorphic),
     SetBackgroundBright(3, GraphicsAction.SetBackgroundBright.Polymorphic),
     SetBackgroundVisible(4, GraphicsAction.SetBackgroundVisible.Polymorphic),
@@ -43,7 +46,10 @@ enum class GraphicsActionType(val value: Int, internal val polymorphicPacker: Ba
 sealed interface GraphicsAction {
     val type: GraphicsActionType
 
-    data class SetBackgroundBorder(val color: SciiColor) : GraphicsAction {
+    @BagStuff
+    data class SetBackgroundBorder(
+        @BagStuffWare(1) val color: SciiColor,
+    ) : GraphicsAction {
         override val type = GraphicsActionType.SetBackgroundBorder
 
         internal object Polymorphic : BagStuffPacker<SetBackgroundBorder>, BagStuffUnpacker<SetBackgroundBorder> {
@@ -362,7 +368,7 @@ sealed interface GraphicsAction {
                 bag.put(value.layerUid.value)
                 bag.put(value.x)
                 bag.put(value.y)
-                bag.put(Crate, value.crate)
+                bag.put(Crate_Stuff, value.crate)
             }
 
             override fun getOutOfTheBag(version: Int, bag: UnpackableBag): ReplaceCells {
@@ -371,7 +377,7 @@ sealed interface GraphicsAction {
                 val layerUid = LayerUid(bag.getString())
                 val x = bag.getInt()
                 val y = bag.getInt()
-                val crate: Crate<SciiCell> = bag.getStuff(Crate)
+                val crate: Crate<SciiCell> = bag.getStuff(Crate_Stuff)
 
                 return ReplaceCells(layerUid, x, y, crate)
             }
@@ -487,6 +493,7 @@ sealed interface GraphicsAction {
     }
 }
 
+@BagStuff(staffPacker = "GraphicsActionPair.Companion", staffUnpacker = "GraphicsActionPair")
 data class GraphicsActionPair(val action: GraphicsAction, val undoAction: GraphicsAction) {
     companion object : BagStuffPacker<GraphicsActionPair>, BagStuffUnpacker<GraphicsActionPair> {
         override val putInTheBagVersion = 1

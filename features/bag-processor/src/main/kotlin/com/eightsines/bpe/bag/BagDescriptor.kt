@@ -5,54 +5,51 @@ import com.google.devtools.ksp.symbol.KSNode
 
 sealed interface BagDescriptor {
     data class Primitive(
-        val typeQualifiedName: String,
+        val typeDescriptor: TypeDescriptor,
         val unpackMethod: String,
     ) : BagDescriptor {
         companion object {
             private val DESCRIPTORS = buildMap {
-                Primitive("kotlin.Boolean", "getBoolean").also { put(it.typeQualifiedName, it) }
-                Primitive("kotlin.Int", "getInt").also { put(it.typeQualifiedName, it) }
-                Primitive("kotlin.String", "getString").also { put(it.typeQualifiedName, it) }
+                Primitive(TypeDescriptor.Type(NameDescriptor("kotlin", "Boolean"), false), "getBoolean").also { put(it.typeDescriptor, it) }
+                Primitive(TypeDescriptor.Type(NameDescriptor("kotlin", "Int"), false), "getInt").also { put(it.typeDescriptor, it) }
+                Primitive(TypeDescriptor.Type(NameDescriptor("kotlin", "String"), false), "getString").also { put(it.typeDescriptor, it) }
 
-                Primitive("kotlin.Boolean?", "getBooleanOrNull").also { put(it.typeQualifiedName, it) }
-                Primitive("kotlin.Int?", "getIntOrNull").also { put(it.typeQualifiedName, it) }
-                Primitive("kotlin.String?", "getStringOrNull").also { put(it.typeQualifiedName, it) }
+                Primitive(TypeDescriptor.Type(NameDescriptor("kotlin", "Boolean"), true), "getBooleanOrNull").also { put(it.typeDescriptor, it) }
+                Primitive(TypeDescriptor.Type(NameDescriptor("kotlin", "Int"), true), "getIntOrNull").also { put(it.typeDescriptor, it) }
+                Primitive(TypeDescriptor.Type(NameDescriptor("kotlin", "String"), true), "getStringOrNull").also { put(it.typeDescriptor, it) }
             }
 
-            fun of(typeQualifiedName: String): Primitive? = DESCRIPTORS[typeQualifiedName]
+            fun of(typeDescriptor: TypeDescriptor): Primitive? = DESCRIPTORS[typeDescriptor]
         }
     }
 
     data class Singlefield(
-        val classQualifiedName: String,
+        val classDescriptor: DeclarationDescriptor,
         val fieldName: String,
-        val creatorQualifiedName: String,
+        val creatorNameDescriptor: NameDescriptor,
         val shouldCheckCreatorException: Boolean,
-        val bagPrimitiveDescriptor: Primitive,
+        val primitiveDescriptor: Primitive,
     ) : BagDescriptor
 
     data class Stuff(
-        val classQualifiedName: String,
-        val classPackageName: String,
-        val classSimpleName: String,
-        val numClassTypeParameters: Int,
-        val sourceSymbol: KSNode,
-        val sourceFile: KSFile,
-        val packerQualifiedName: String,
-        val unpackerQualifiedName: String,
+        val classDescriptor: DeclarationDescriptor,
+        val staffPackerDescriptor: NameDescriptor,
+        val staffUnpackerDescriptor: NameDescriptor,
         val wares: List<BagStuffWareDescriptor>,
         val generatedSimpleName: String?,
         val shouldGeneratePacker: Boolean,
         val shouldGenerateUnpacker: Boolean,
+        val sourceSymbol: KSNode,
+        val sourceFile: KSFile,
     ) : BagDescriptor
 }
 
 data class BagStuffWareDescriptor(
-    val parameterName: String,
-    val sourceSymbol: KSNode,
+    val fieldName: String,
     val index: Int,
     val version: Int,
-    val typeQualifiedName: String,
-    val packerQualifiedName: String?,
-    val unpackerQualifiedName: String?,
+    val typeDescriptor: TypeDescriptor,
+    val fieldPackerDescriptor: FunctionDescriptor?,
+    val fieldUnpackerDescriptor: FunctionDescriptor?,
+    val sourceSymbol: KSNode,
 )

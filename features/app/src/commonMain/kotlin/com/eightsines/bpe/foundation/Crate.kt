@@ -1,12 +1,9 @@
 package com.eightsines.bpe.foundation
 
 import com.eightsines.bpe.bag.BagStuff
-import com.eightsines.bpe.bag.BagStuffPacker
-import com.eightsines.bpe.bag.BagStuffUnpacker
 import com.eightsines.bpe.bag.BagStuffWare
 import com.eightsines.bpe.bag.PackableBag
 import com.eightsines.bpe.bag.UnpackableBag
-import com.eightsines.bpe.bag.requireNoIllegalArgumentException
 import com.eightsines.bpe.core.Box
 import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.SciiCell
@@ -58,7 +55,7 @@ data class Crate<T : Cell>(
         }
     }
 
-    companion object : BagStuffPacker<Crate<*>>, BagStuffUnpacker<Crate<*>> {
+    companion object {
         fun fromCanvasScii(
             canvas: Canvas<*>,
             sciiX: Int,
@@ -94,29 +91,13 @@ data class Crate<T : Cell>(
             drawingHeight = box.height,
         )
 
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: Crate<*>) {
-            bag.put(value.canvasType.value)
-            bag.put(value.width)
-            bag.put(value.height)
-            value.cells.forEach { line -> line.forEach { bag.put(Cell, it) } }
-        }
-
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Crate<*> {
-            val canvasType = requireNoIllegalArgumentException { CanvasType.of(bag.getInt()) }
-            val width = bag.getInt()
-            val height = bag.getInt()
-            val cells = (0..<height).map { (0..<width).map { bag.getStuff(Cell) } }
-
-            return Crate(canvasType, width, height, cells)
-        }
-
-        fun putCellsInTheBag(bag: PackableBag, cells: List<List<Cell>>) {
+        @Suppress("NOTHING_TO_INLINE")
+        internal inline fun putCellsInTheBag(bag: PackableBag, cells: List<List<Cell>>) {
             cells.forEach { line -> line.forEach { bag.put(Cell, it) } }
         }
 
-        fun getCellsOutOfTheBag(bag: UnpackableBag, width: Int, height: Int): List<List<Cell>> =
+        @Suppress("NOTHING_TO_INLINE")
+        internal inline fun getCellsOutOfTheBag(bag: UnpackableBag, width: Int, height: Int): List<List<Cell>> =
             (0..<height).map { (0..<width).map { bag.getStuff(Cell) } }
     }
 }

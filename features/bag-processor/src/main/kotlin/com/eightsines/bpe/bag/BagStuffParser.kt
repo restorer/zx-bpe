@@ -8,17 +8,16 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 
 class BagStuffParser(private val logger: KSPLogger) {
     fun parseAll(resolver: Resolver): List<BagDescriptor.Stuff> = buildList {
-        for (declaration in resolver.getSymbolsWithAnnotation(STUFF_ANNOTATION_QUALIFIED_NAME).filterIsInstance<KSClassDeclaration>()) {
+        for (declaration in resolver.getSymbolsWithAnnotation(STUFF_ANNOTATION_NAME_DESCRIPTOR.qualifiedName).filterIsInstance<KSClassDeclaration>()) {
             parse(resolver, declaration)?.let { add(it) }
         }
     }
 
     private fun parse(resolver: Resolver, classDeclaration: KSClassDeclaration): BagDescriptor.Stuff? {
-        val classQualifiedName = classDeclaration.qualifiedName?.asString() ?: return null
-        val annotation = classDeclaration.annotations.firstOrNull { it.annotationQualifiedName == STUFF_ANNOTATION_QUALIFIED_NAME }
+        val annotation = classDeclaration.annotations.firstOrNull { it.nameDescriptor == STUFF_ANNOTATION_NAME_DESCRIPTOR }
 
         return if (annotation != null) {
-            parseStuff(resolver, classDeclaration, classQualifiedName, annotation)
+            parseStuff(resolver, classDeclaration, classDeclaration.declarationDescriptor, annotation)
         } else {
             null
         }
@@ -27,206 +26,186 @@ class BagStuffParser(private val logger: KSPLogger) {
     private fun parseStuff(
         resolver: Resolver,
         classDeclaration: KSClassDeclaration,
-        classQualifiedName: String,
+        classDescriptor: DeclarationDescriptor,
         annotation: KSAnnotation,
     ): BagDescriptor.Stuff? {
         val currentPackageName = classDeclaration.packageName.asString()
 
-        val packerName = annotation.getArgumentValue<String>(STUFF_ARGUMENT_PACKER_NAME)
-        val unpackerName = annotation.getArgumentValue<String>(STUFF_ARGUMENT_UNPACKER_NAME)
+        val staffPackerName = annotation.getArgumentValue<String>(STUFF_ARGUMENT_STAFF_PACKER_NAME)
+        val staffUnpackerName = annotation.getArgumentValue<String>(STUFF_ARGUMENT_STAFF_UNPACKER_NAME)
+        val suffixName = annotation.getArgumentValue<String>(STUFF_ARGUMENT_SUFFIX_NAME) ?: STUFF_ARGUMENT_SUFFIX_DEFAULT
 
-        val generatedSimpleName = if (packerName.isNullOrEmpty() || unpackerName.isNullOrEmpty()) {
-            classDeclaration.simpleName.asString() + GENERATED_STUFF_SUFFIX
+        val generatedSimpleName = classDescriptor.nameDescriptor.simpleName.replace(".", "_") + "_$suffixName"
+
+        val staffPackerDescriptor = if (staffPackerName.isNullOrEmpty()) {
+            NameDescriptor(currentPackageName, generatedSimpleName)
         } else {
-            null
-        }
+            val descriptor = resolver.getClassDescriptorByName(currentPackageName, staffPackerName)
 
-        val packerQualifiedName = if (packerName.isNullOrEmpty()) {
-            "$currentPackageName.$generatedSimpleName"
-        } else {
-            val qualifiedName = resolver.getFunctionDeclarationByName(currentPackageName, packerName)
-                ?.qualifiedName
-                ?.asString()
-
-            if (qualifiedName == null) {
-                logger.error("@$STUFF_ANNOTATION_SIMPLE_NAME of \"$classQualifiedName\": unable to find packer-function \"$packerName\"", classDeclaration)
+            if (descriptor == null) {
+                logger.error("@$STUFF_ANNOTATION_NAME of \"$classDescriptor\": unable to find staff packer class \"$staffPackerName\"", classDeclaration)
                 return null
             }
 
-            qualifiedName
+            descriptor.nameDescriptor
         }
 
-        val unpackerQualifiedName = if (unpackerName.isNullOrEmpty()) {
-            "$currentPackageName.$generatedSimpleName"
+        val unpackerNameDescriptor = if (staffUnpackerName.isNullOrEmpty()) {
+            NameDescriptor(currentPackageName, generatedSimpleName)
         } else {
-            val qualifiedName = resolver.getFunctionDeclarationByName(currentPackageName, unpackerName)
-                ?.qualifiedName
-                ?.asString()
+            val descriptor = resolver.getClassDescriptorByName(currentPackageName, staffUnpackerName)
 
-            if (qualifiedName == null) {
-                logger.error("@$STUFF_ANNOTATION_SIMPLE_NAME of \"$classQualifiedName\": unable to find unpacker-function \"$unpackerName\"", classDeclaration)
+            if (descriptor == null) {
+                logger.error("@$STUFF_ANNOTATION_NAME of \"$classDescriptor\": unable to find staff unpacker class \"$staffUnpackerName\"", classDeclaration)
                 return null
             }
 
-            qualifiedName
+            descriptor.nameDescriptor
         }
 
         val wares = classDeclaration.primaryConstructor
             ?.parameters
             ?.flatMap { parameter ->
                 parameter.annotations
-                    .filter { it.annotationQualifiedName == WARE_ANNOTATION_QUALIFIED_NAME }
+                    .filter { it.nameDescriptor == WARE_ANNOTATION_NAME_DESCRIPTOR }
                     .mapNotNull {
-                        parseWare(resolver, classQualifiedName, currentPackageName, parameter, it)
+                        parseWare(resolver, classDescriptor, currentPackageName, parameter, it)
                     }
             }
             ?.sortedBy { it.index }
 
-        if (wares.isNullOrEmpty()) {
-            logger.error(
-                "@$STUFF_ANNOTATION_SIMPLE_NAME of \"$classQualifiedName\": no fields annotated with @$WARE_ANNOTATION_SIMPLE_NAME found",
-                classDeclaration,
-            )
-
-            return null
-        }
-
-        if (wares[0].index != 1) {
-            logger.error(
-                "@$STUFF_ANNOTATION_SIMPLE_NAME of \"$classQualifiedName\": indexes of @$WARE_ANNOTATION_SIMPLE_NAME must starts with 1",
-                classDeclaration,
-            )
-
-            return null
-        }
-
-        for (i in 1..<wares.size) {
-            if (wares[i - 1].index == wares[i].index) {
+        if (!wares.isNullOrEmpty()) {
+            if (wares[0].index != 1) {
                 logger.error(
-                    "@$WARE_ANNOTATION_SIMPLE_NAME of \"${wares[i].parameterName}\": indexes must be unique",
-                    wares[i].sourceSymbol,
+                    "@$STUFF_ANNOTATION_NAME of \"$classDescriptor\": indexes of @$WARE_ANNOTATION_NAME must starts with 1",
+                    classDeclaration,
                 )
 
                 return null
             }
 
-            if (wares[i - 1].index + 1 != wares[i].index) {
-                logger.error(
-                    "@$WARE_ANNOTATION_SIMPLE_NAME of \"${wares[i].parameterName}\": indexes must be consecutive",
-                    wares[i].sourceSymbol,
-                )
+            for (i in 1..<wares.size) {
+                if (wares[i - 1].index == wares[i].index) {
+                    logger.error(
+                        "@$WARE_ANNOTATION_NAME of \"${wares[i].fieldName}\": indexes must be unique",
+                        wares[i].sourceSymbol,
+                    )
 
-                return null
+                    return null
+                }
+
+                if (wares[i - 1].index + 1 != wares[i].index) {
+                    logger.error(
+                        "@$WARE_ANNOTATION_NAME of \"${wares[i].fieldName}\": indexes must be consecutive",
+                        wares[i].sourceSymbol,
+                    )
+
+                    return null
+                }
             }
+        } else if (staffPackerName.isNullOrEmpty() || staffUnpackerName.isNullOrEmpty()) {
+            logger.error(
+                "@$STUFF_ANNOTATION_NAME of \"$classDescriptor\": no fields annotated with @$WARE_ANNOTATION_NAME found",
+                classDeclaration,
+            )
+
+            return null
         }
 
         return BagDescriptor.Stuff(
-            classQualifiedName = classQualifiedName,
-            classPackageName = currentPackageName,
-            classSimpleName = classDeclaration.simpleName.asString(),
-            numClassTypeParameters = classDeclaration.typeParameters.size,
+            classDescriptor = classDescriptor,
+            staffPackerDescriptor = staffPackerDescriptor,
+            staffUnpackerDescriptor = unpackerNameDescriptor,
+            wares = wares ?: emptyList(),
+            generatedSimpleName = if (staffPackerName.isNullOrEmpty() || staffUnpackerName.isNullOrEmpty()) generatedSimpleName else null,
+            shouldGeneratePacker = staffPackerName.isNullOrEmpty(),
+            shouldGenerateUnpacker = staffUnpackerName.isNullOrEmpty(),
             sourceSymbol = classDeclaration,
             sourceFile = requireNotNull(classDeclaration.containingFile),
-            packerQualifiedName = packerQualifiedName,
-            unpackerQualifiedName = unpackerQualifiedName,
-            wares = wares,
-            generatedSimpleName = generatedSimpleName,
-            shouldGeneratePacker = packerName.isNullOrEmpty(),
-            shouldGenerateUnpacker = unpackerName.isNullOrEmpty(),
         )
     }
 
     private fun parseWare(
         resolver: Resolver,
-        classQualifiedName: String,
+        classDescriptor: DeclarationDescriptor,
         currentPackageName: String,
         parameterDeclaration: KSValueParameter,
         annotation: KSAnnotation,
     ): BagStuffWareDescriptor? {
-        val parameterName = requireNotNull(parameterDeclaration.name).asString()
+        val fieldName = requireNotNull(parameterDeclaration.name).asString()
 
         val index = annotation.getArgumentValue<Int>(WARE_ARGUMENT_INDEX_NAME) ?: return null
         val version = annotation.getArgumentValue<Int>(WARE_ARGUMENT_VERSION_NAME) ?: WARE_ARGUMENT_VERSION_DEFAULT
-        val packerName = annotation.getArgumentValue<String>(WARE_ARGUMENT_PACKER_NAME)
-        val unpackerName = annotation.getArgumentValue<String>(WARE_ARGUMENT_UNPACKER_NAME)
+        val fieldPackerName = annotation.getArgumentValue<String>(WARE_ARGUMENT_FIELD_PACKER_NAME)
+        val fieldUnpackerName = annotation.getArgumentValue<String>(WARE_ARGUMENT_FIELD_UNPACKER_NAME)
 
-        val packerQualifiedName = if (packerName.isNullOrEmpty()) {
+        val fieldPackerDescriptor = if (fieldPackerName.isNullOrEmpty()) {
             null
         } else {
-            val qualifiedName = resolver.getFunctionDeclarationByName(currentPackageName, packerName)
-                ?.qualifiedName
-                ?.asString()
+            val descriptor = resolver.getFunctionDescriptorByName(currentPackageName, fieldPackerName)
 
-            if (qualifiedName == null) {
+            if (descriptor == null) {
                 logger.error(
-                    "@BagStuff of \"$classQualifiedName\", parameter \"$parameterName\": unable to find packer-function \"$packerName\"",
+                    "@BagStuff of \"$classDescriptor\", parameter \"$fieldName\": unable to find field packer function \"$fieldPackerName\"",
                     parameterDeclaration,
                 )
 
                 return null
             }
 
-            qualifiedName
+            descriptor
         }
 
-        val unpackerQualifiedName = if (unpackerName.isNullOrEmpty()) {
+        val fieldUnpackerDescriptor = if (fieldUnpackerName.isNullOrEmpty()) {
             null
         } else {
-            val qualifiedName = resolver.getFunctionDeclarationByName(currentPackageName, unpackerName)
-                ?.qualifiedName
-                ?.asString()
+            val descriptor = resolver.getFunctionDescriptorByName(currentPackageName, fieldUnpackerName)
 
-            if (qualifiedName == null) {
+            if (descriptor == null) {
                 logger.error(
-                    "@BagStuff of \"$classQualifiedName\", parameter \"$parameterName\": unable to find unpacker-function \"$unpackerName\"",
+                    "@BagStuff of \"$classDescriptor\", parameter \"$fieldName\": unable to find field unpacker function \"$fieldUnpackerName\"",
                     parameterDeclaration,
                 )
 
                 return null
             }
 
-            qualifiedName
+            descriptor
         }
 
-        val parameterType = parameterDeclaration.type.resolve()
-        val typeQualifiedName = parameterType.typeQualifiedName
-
-        if (typeQualifiedName == null) {
-            logger.error(
-                "@BagStuff of \"$classQualifiedName\", parameter \"$parameterName\": unable resolve type",
-                parameterDeclaration,
-            )
-
-            return null
+        if (fieldName == "crate") {
+            logger.warn(">>> $fieldName :: ${parameterDeclaration.type.resolve().annotations}")
         }
 
         return BagStuffWareDescriptor(
-            parameterName = parameterName,
-            sourceSymbol = parameterDeclaration,
+            fieldName = fieldName,
             index = index,
             version = version,
-            typeQualifiedName = typeQualifiedName,
-            packerQualifiedName = packerQualifiedName,
-            unpackerQualifiedName = unpackerQualifiedName,
+            typeDescriptor = parameterDeclaration.type.typeDescriptor,
+            fieldPackerDescriptor = fieldPackerDescriptor,
+            fieldUnpackerDescriptor = fieldUnpackerDescriptor,
+            sourceSymbol = parameterDeclaration,
         )
     }
 
     private companion object {
-        private val STUFF_ANNOTATION_SIMPLE_NAME = requireNotNull(BagStuff::class.simpleName)
-        private val STUFF_ANNOTATION_QUALIFIED_NAME = requireNotNull(BagStuff::class.qualifiedName)
+        private val STUFF_ANNOTATION_NAME = requireNotNull(BagStuff::class.simpleName)
+        private val STUFF_ANNOTATION_NAME_DESCRIPTOR = BagStuff::class.nameDescriptor
 
-        private val WARE_ANNOTATION_SIMPLE_NAME = requireNotNull(BagStuffWare::class.simpleName)
-        private val WARE_ANNOTATION_QUALIFIED_NAME = requireNotNull(BagStuffWare::class.qualifiedName)
+        private val WARE_ANNOTATION_NAME = requireNotNull(BagStuffWare::class.simpleName)
+        private val WARE_ANNOTATION_NAME_DESCRIPTOR = BagStuffWare::class.nameDescriptor
 
-        private const val STUFF_ARGUMENT_PACKER_NAME = "packer"
-        private const val STUFF_ARGUMENT_UNPACKER_NAME = "unpacker"
+        private const val STUFF_ARGUMENT_STAFF_PACKER_NAME = "staffPacker"
+        private const val STUFF_ARGUMENT_STAFF_UNPACKER_NAME = "staffUnpacker"
+
+        private const val STUFF_ARGUMENT_SUFFIX_NAME = "suffix"
+        private const val STUFF_ARGUMENT_SUFFIX_DEFAULT = "Stuff" // defaultArguments is not working for JS
 
         private const val WARE_ARGUMENT_INDEX_NAME = "index"
+        private const val WARE_ARGUMENT_FIELD_PACKER_NAME = "fieldPacker"
+        private const val WARE_ARGUMENT_FIELD_UNPACKER_NAME = "fieldUnpacker"
+
         private const val WARE_ARGUMENT_VERSION_NAME = "version"
         private const val WARE_ARGUMENT_VERSION_DEFAULT = 1 // defaultArguments is not working for JS
-        private const val WARE_ARGUMENT_PACKER_NAME = "packer"
-        private const val WARE_ARGUMENT_UNPACKER_NAME = "unpacker"
-
-        private const val GENERATED_STUFF_SUFFIX = "Stuff"
     }
 }

@@ -2,15 +2,12 @@ package com.eightsines.bpe.bag
 
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
-import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.STAR
-import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.buildCodeBlock
@@ -18,29 +15,26 @@ import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
 import com.squareup.kotlinpoet.ksp.writeTo
 
 class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator: CodeGenerator) {
-    fun generate(descriptor: BagDescriptor.Stuff, descriptorResolver: (String) -> BagDescriptor?): Boolean {
+    fun generate(descriptor: BagDescriptor.Stuff, descriptorResolver: (TypeDescriptor) -> BagDescriptor?): Boolean {
         if ((!descriptor.shouldGeneratePacker && !descriptor.shouldGenerateUnpacker) || descriptor.generatedSimpleName == null) {
             return true
         }
 
-        val classTypeName: TypeName = if (descriptor.numClassTypeParameters > 0) {
-            ClassName(descriptor.classPackageName, descriptor.classSimpleName)
-                .parameterizedBy(List(descriptor.numClassTypeParameters) { STAR })
-        } else {
-            ClassName(descriptor.classPackageName, descriptor.classSimpleName)
-        }
-
         val stuffBuilder = TypeSpec.objectBuilder(descriptor.generatedSimpleName).addOriginatingKSFile(descriptor.sourceFile)
 
-        if (descriptor.shouldGeneratePacker && !generatePacker(descriptor, classTypeName, stuffBuilder, descriptorResolver)) {
+        if (descriptor.shouldGeneratePacker &&
+            !generatePacker(descriptor, descriptor.classDescriptor, stuffBuilder, descriptorResolver)
+        ) {
             return false
         }
 
-        if (descriptor.shouldGenerateUnpacker && !generateUnpacker(descriptor, classTypeName, stuffBuilder, descriptorResolver)) {
+        if (descriptor.shouldGenerateUnpacker &&
+            !generateUnpacker(descriptor, descriptor.classDescriptor, stuffBuilder, descriptorResolver)
+        ) {
             return false
         }
 
-        FileSpec.builder(descriptor.classPackageName, descriptor.generatedSimpleName)
+        FileSpec.builder(descriptor.classDescriptor.nameDescriptor.packageName, descriptor.generatedSimpleName)
             .addType(stuffBuilder.build())
             .build()
             .writeTo(codeGenerator, aggregating = true)
@@ -50,10 +44,11 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
 
     private fun generatePacker(
         descriptor: BagDescriptor.Stuff,
-        classTypeName: TypeName,
+        classDescriptor: DeclarationDescriptor,
         stuffBuilder: TypeSpec.Builder,
-        descriptorResolver: (String) -> BagDescriptor?,
+        descriptorResolver: (TypeDescriptor) -> BagDescriptor?,
     ): Boolean {
+        val classTypeName = classDescriptor.pouetTypeName
         stuffBuilder.addSuperinterface(BagStuffPacker::class.asClassName().parameterizedBy(classTypeName))
 
         stuffBuilder.addProperty(
@@ -81,29 +76,28 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
     private fun generateWarePacker(
         funBuilder: FunSpec.Builder,
         ware: BagStuffWareDescriptor,
-        descriptorResolver: (String) -> BagDescriptor?,
+        descriptorResolver: (TypeDescriptor) -> BagDescriptor?,
     ): Boolean {
-        if (ware.packerQualifiedName != null) {
-            // TODO: докидывать параметры по названиям в функции-пакере
-            funBuilder.addStatement("${ware.packerQualifiedName}(bag, value.%N)", ware.parameterName)
+        if (ware.fieldPackerDescriptor != null) {
+            funBuilder.addStatement("%M(bag, value.%N)", ware.fieldPackerDescriptor.pouetMemberName, ware.fieldName)
             return true
         }
 
-        val wareDescriptor = descriptorResolver(ware.typeQualifiedName)
+        val wareDescriptor = descriptorResolver(ware.typeDescriptor)
 
         if (wareDescriptor == null) {
-            logger.error("Unable to resolve packer for field \"${ware.parameterName}\" of type \"${ware.typeQualifiedName}\"", ware.sourceSymbol)
+            logger.error("Unable to resolve packer for field \"${ware.fieldName}\" of type \"${ware.typeDescriptor}\"", ware.sourceSymbol)
             return false
         }
 
         when (wareDescriptor) {
-            is BagDescriptor.Primitive -> funBuilder.addStatement("bag.put(value.%N)", ware.parameterName)
-            is BagDescriptor.Singlefield -> funBuilder.addStatement("bag.put(value.%N.%N)", ware.parameterName, wareDescriptor.fieldName)
+            is BagDescriptor.Primitive -> funBuilder.addStatement("bag.put(value.%N)", ware.fieldName)
+            is BagDescriptor.Singlefield -> funBuilder.addStatement("bag.put(value.%N.%N)", ware.fieldName, wareDescriptor.fieldName)
 
             is BagDescriptor.Stuff -> funBuilder.addStatement(
                 "bag.put(%T, value.%N)",
-                ClassName.bestGuess(wareDescriptor.packerQualifiedName),
-                ware.parameterName,
+                wareDescriptor.staffPackerDescriptor.pouetClassName,
+                ware.fieldName,
             )
         }
 
@@ -112,10 +106,11 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
 
     private fun generateUnpacker(
         descriptor: BagDescriptor.Stuff,
-        classTypeName: TypeName,
+        classDescriptor: DeclarationDescriptor,
         stuffBuilder: TypeSpec.Builder,
-        descriptorResolver: (String) -> BagDescriptor?,
+        descriptorResolver: (TypeDescriptor) -> BagDescriptor?,
     ): Boolean {
+        val classTypeName = classDescriptor.pouetTypeName
         stuffBuilder.addSuperinterface(BagStuffUnpacker::class.asClassName().parameterizedBy(classTypeName))
 
         val funBuilder = FunSpec.builder("getOutOfTheBag")
@@ -125,8 +120,9 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
             .returns(classTypeName)
 
         funBuilder.addStatement(
-            "com.eightsines.bpe.bag.requireSupportedStuffVersion(%S, %L, version)",
-            descriptor.classSimpleName,
+            "%M(%S, %L, version)",
+            MemberName("com.eightsines.bpe.bag", "requireSupportedStuffVersion"),
+            descriptor.classDescriptor.nameDescriptor.simpleName,
             descriptor.wares.maxOf { it.version },
         )
 
@@ -138,11 +134,11 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
 
         funBuilder.addCode(
             buildCodeBlock {
-                add("return %L(\n", (classTypeName as? ParameterizedTypeName)?.rawType ?: classTypeName)
+                add("return %M(\n", classDescriptor.nameDescriptor.pouetMemberName)
                 indent()
 
                 for (ware in descriptor.wares) {
-                    addStatement("%N = %N,", ware.parameterName, ware.parameterName)
+                    addStatement("%N = %N,", ware.fieldName, ware.fieldName)
                 }
 
                 unindent()
@@ -157,44 +153,58 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
     private fun generateWareUnpacker(
         funBuilder: FunSpec.Builder,
         ware: BagStuffWareDescriptor,
-        descriptorResolver: (String) -> BagDescriptor?,
+        descriptorResolver: (TypeDescriptor) -> BagDescriptor?,
     ): Boolean {
-        if (ware.unpackerQualifiedName != null) {
-            // TODO: докидывать параметры по названиям в функции-анпакере
-            funBuilder.addStatement("val %N = ${ware.unpackerQualifiedName}(bag)", ware.parameterName)
+        if (ware.fieldUnpackerDescriptor != null) {
+            funBuilder.addCode(
+                buildCodeBlock {
+                    add("val %N = %M(\n", ware.fieldName, ware.fieldUnpackerDescriptor.pouetMemberName)
+                    indent()
+
+                    for (parameter in ware.fieldUnpackerDescriptor.parameters) {
+                        addStatement("%N = %N,", parameter.name, parameter.name)
+                    }
+
+                    unindent()
+                    add(")\n")
+                }
+            )
+
             return true
         }
 
-        val wareDescriptor = descriptorResolver(ware.typeQualifiedName)
+        val wareDescriptor = descriptorResolver(ware.typeDescriptor)
 
         if (wareDescriptor == null) {
-            logger.error("Unable to resolve unpacker for field \"${ware.parameterName}\" of type \"${ware.typeQualifiedName}\"", ware.sourceSymbol)
+            logger.error("Unable to resolve unpacker for field \"${ware.fieldName}\" of type \"${ware.typeDescriptor}\"", ware.sourceSymbol)
             return false
         }
 
         when (wareDescriptor) {
-            is BagDescriptor.Primitive -> funBuilder.addStatement("val %N = bag.%N()", ware.parameterName, wareDescriptor.unpackMethod)
+            is BagDescriptor.Primitive -> funBuilder.addStatement("val %N = bag.%N()", ware.fieldName, wareDescriptor.unpackMethod)
 
             is BagDescriptor.Singlefield -> if (wareDescriptor.shouldCheckCreatorException) {
                 funBuilder.addStatement(
-                    "val %N = com.eightsines.bpe.bag.requireNoIllegalArgumentException { %L(bag.%N()) }",
-                    ware.parameterName,
-                    wareDescriptor.creatorQualifiedName,
-                    wareDescriptor.bagPrimitiveDescriptor.unpackMethod
+                    "val %N = %M { %M(bag.%N()) }",
+                    ware.fieldName,
+                    MemberName("com.eightsines.bpe.bag", "requireNoIllegalArgumentException"),
+                    wareDescriptor.creatorNameDescriptor.pouetMemberName,
+                    wareDescriptor.primitiveDescriptor.unpackMethod
                 )
             } else {
                 funBuilder.addStatement(
-                    "val %N = %L(bag.%N())",
-                    ware.parameterName,
-                    wareDescriptor.creatorQualifiedName,
-                    wareDescriptor.bagPrimitiveDescriptor.unpackMethod
+                    "val %N = %M(bag.%N())",
+                    ware.fieldName,
+                    wareDescriptor.creatorNameDescriptor.pouetMemberName,
+                    wareDescriptor.primitiveDescriptor.unpackMethod
                 )
             }
 
             is BagDescriptor.Stuff -> funBuilder.addStatement(
-                "val %N = bag.getStuff(%T)",
-                ware.parameterName,
-                ClassName.bestGuess(wareDescriptor.unpackerQualifiedName),
+                "val %N: %T = bag.getStuff(%T)",
+                ware.fieldName,
+                ware.typeDescriptor.pouetTypeName,
+                wareDescriptor.staffUnpackerDescriptor.pouetClassName,
             )
         }
 

@@ -12,6 +12,7 @@ import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.bag.getList
 import com.eightsines.bpe.bag.putList
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
+import com.eightsines.bpe.foundation.CrateStuff
 
 enum class ShapeType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Shape<*>>) {
     LinkedPoints(1, Shape.LinkedPoints.Polymorphic),
@@ -276,7 +277,7 @@ sealed interface Shape<T : Cell> {
             override fun putInTheBag(bag: PackableBag, value: Cells<*>) {
                 bag.put(value.x)
                 bag.put(value.y)
-                bag.put(Crate, value.crate)
+                bag.put(CrateStuff, value.crate)
             }
 
             override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Cells<*> {
@@ -284,7 +285,7 @@ sealed interface Shape<T : Cell> {
 
                 val x = bag.getInt()
                 val y = bag.getInt()
-                val crate: Crate<*> = bag.getStuff(Crate)
+                val crate: Crate<*> = bag.getStuff(CrateStuff)
 
                 return Cells(x, y, crate)
             }

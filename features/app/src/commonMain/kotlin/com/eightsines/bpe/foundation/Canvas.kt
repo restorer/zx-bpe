@@ -1,5 +1,8 @@
 package com.eightsines.bpe.foundation
 
+import com.eightsines.bpe.bag.BagSinglefield
+import com.eightsines.bpe.bag.BagStuffPacker
+import com.eightsines.bpe.bag.PackableBag
 import com.eightsines.bpe.core.BlockCell
 import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.CellType
@@ -7,9 +10,6 @@ import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
-import com.eightsines.bpe.bag.BagSinglefield
-import com.eightsines.bpe.bag.BagStuffPacker
-import com.eightsines.bpe.bag.PackableBag
 
 @BagSinglefield(field = "value", creator = "CanvasType.of")
 sealed class CanvasType {

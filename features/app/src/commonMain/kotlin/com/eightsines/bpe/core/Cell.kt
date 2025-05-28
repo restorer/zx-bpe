@@ -1,7 +1,9 @@
 package com.eightsines.bpe.core
 
+import com.eightsines.bpe.bag.BagStuff
 import com.eightsines.bpe.bag.BagStuffPacker
 import com.eightsines.bpe.bag.BagStuffUnpacker
+import com.eightsines.bpe.bag.BagStuffWare
 import com.eightsines.bpe.bag.BagUnpackException
 import com.eightsines.bpe.bag.PackableBag
 import com.eightsines.bpe.bag.UnknownPolymorphicTypeBagUnpackException
@@ -9,8 +11,8 @@ import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
 
 enum class CellType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Cell>) {
-    Scii(1, SciiCell.Polymorphic),
-    Block(2, BlockCell.Polymorphic);
+    Scii(1, SciiCellPolymorphicStuff),
+    Block(2, BlockCellPolymorphicStuff);
 
     companion object {
         fun of(value: Int) = when (value) {
@@ -42,20 +44,21 @@ sealed interface Cell {
             requireSupportedStuffVersion("Cell", 1, version)
 
             return when (val type = bag.getInt()) {
-                CellType.Scii.value -> bag.getStuff(SciiCell.Polymorphic)
-                CellType.Block.value -> bag.getStuff(BlockCell.Polymorphic)
+                CellType.Scii.value -> bag.getStuff(SciiCellPolymorphicStuff)
+                CellType.Block.value -> bag.getStuff(BlockCellPolymorphicStuff)
                 else -> throw UnknownPolymorphicTypeBagUnpackException("Cell", type)
             }
         }
     }
 }
 
+@BagStuff(suffix = "PolymorphicStuff")
 data class SciiCell(
-    val character: SciiChar,
-    val ink: SciiColor,
-    val paper: SciiColor,
-    val bright: SciiLight,
-    val flash: SciiLight,
+    @BagStuffWare(1) val character: SciiChar,
+    @BagStuffWare(2) val ink: SciiColor,
+    @BagStuffWare(3) val paper: SciiColor,
+    @BagStuffWare(4) val bright: SciiLight,
+    @BagStuffWare(5) val flash: SciiLight,
 ) : Cell {
     override val type = CellType.Scii
 
@@ -168,33 +171,13 @@ data class SciiCell(
             return cell
         }
     }
-
-    internal object Polymorphic : BagStuffPacker<SciiCell>, BagStuffUnpacker<SciiCell> {
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: SciiCell) {
-            bag.put(value.character.value)
-            bag.put(value.ink.value)
-            bag.put(value.paper.value)
-            bag.put(value.bright.value)
-            bag.put(value.flash.value)
-        }
-
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): SciiCell {
-            requireSupportedStuffVersion("SciiCell", 1, version)
-
-            return SciiCell(
-                character = SciiChar(bag.getInt()),
-                ink = SciiColor(bag.getInt()),
-                paper = SciiColor(bag.getInt()),
-                bright = SciiLight(bag.getInt()),
-                flash = SciiLight(bag.getInt()),
-            )
-        }
-    }
 }
 
-data class BlockCell(val color: SciiColor, val bright: SciiLight) : Cell {
+@BagStuff(suffix = "PolymorphicStuff")
+data class BlockCell(
+    @BagStuffWare(1) val color: SciiColor,
+    @BagStuffWare(2) val bright: SciiLight,
+) : Cell {
     override val type = CellType.Block
 
     override val isTransparent: Boolean
@@ -216,24 +199,6 @@ data class BlockCell(val color: SciiColor, val bright: SciiLight) : Cell {
             }
 
             return cell
-        }
-    }
-
-    internal object Polymorphic : BagStuffPacker<BlockCell>, BagStuffUnpacker<BlockCell> {
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: BlockCell) {
-            bag.put(value.color.value)
-            bag.put(value.bright.value)
-        }
-
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): BlockCell {
-            requireSupportedStuffVersion("BlockCell", 1, version)
-
-            return BlockCell(
-                color = SciiColor(bag.getInt()),
-                bright = SciiLight(bag.getInt()),
-            )
         }
     }
 }

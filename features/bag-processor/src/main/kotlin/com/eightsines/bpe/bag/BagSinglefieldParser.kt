@@ -8,15 +8,15 @@ import com.google.devtools.ksp.symbol.Modifier
 
 class BagSinglefieldParser(private val logger: KSPLogger) {
     fun parse(resolver: Resolver, classDeclaration: KSClassDeclaration): BagDescriptor.Singlefield? {
-        val classQualifiedName = classDeclaration.qualifiedName?.asString() ?: return null
+        val classDescriptor = classDeclaration.declarationDescriptor
 
         return if (classDeclaration.modifiers.contains(Modifier.VALUE)) {
-            parseValueClass(classDeclaration, classQualifiedName)
+            parseValueClass(classDeclaration, classDescriptor)
         } else {
-            val annotation = classDeclaration.annotations.firstOrNull { it.annotationQualifiedName == ANNOTATION_QUALIFIED_NAME }
+            val annotation = classDeclaration.annotations.firstOrNull { it.nameDescriptor == ANNOTATION_NAME_DESCRIPTOR }
 
             if (annotation != null) {
-                parseSinglefield(resolver, classDeclaration, classQualifiedName, annotation)
+                parseSinglefield(resolver, classDeclaration, classDescriptor, annotation)
             } else {
                 null
             }
@@ -25,7 +25,7 @@ class BagSinglefieldParser(private val logger: KSPLogger) {
 
     private fun parseValueClass(
         classDeclaration: KSClassDeclaration,
-        classQualifiedName: String,
+        classDescriptor: DeclarationDescriptor,
     ): BagDescriptor.Singlefield? {
         val constructorParameters = classDeclaration.primaryConstructor?.parameters ?: return null
 
@@ -34,77 +34,68 @@ class BagSinglefieldParser(private val logger: KSPLogger) {
         }
 
         val constructorParameterName = constructorParameters[0].name?.asString() ?: return null
-        val constructorParameterTypeQualifiedName = constructorParameters[0].type.typeQualifiedName ?: return null
-        val bagPrimitiveDescriptor = BagDescriptor.Primitive.of(constructorParameterTypeQualifiedName) ?: return null
+        val bagPrimitiveDescriptor = BagDescriptor.Primitive.of(constructorParameters[0].type.typeDescriptor) ?: return null
 
         return BagDescriptor.Singlefield(
-            classQualifiedName = classQualifiedName,
+            classDescriptor = classDescriptor,
             fieldName = constructorParameterName,
-            creatorQualifiedName = classQualifiedName,
+            creatorNameDescriptor = classDescriptor.nameDescriptor,
             shouldCheckCreatorException = false,
-            bagPrimitiveDescriptor = bagPrimitiveDescriptor,
+            primitiveDescriptor = bagPrimitiveDescriptor,
         )
     }
 
     private fun parseSinglefield(
         resolver: Resolver,
         classDeclaration: KSClassDeclaration,
-        classQualifiedName: String,
+        classDescriptor: DeclarationDescriptor,
         annotation: KSAnnotation,
     ): BagDescriptor.Singlefield? {
         val fieldName = annotation.getArgumentValue<String>(ARGUMENT_FIELD_NAME) ?: return null
         val creatorName = annotation.getArgumentValue<String>(ARGUMENT_CREATOR_NAME) ?: return null
 
-        val fieldTypeQualifiedName = classDeclaration.getAllProperties()
+        val fieldTypeDescriptor = classDeclaration.getAllProperties()
             .firstOrNull { it.simpleName.asString() == fieldName }
             ?.type
-            ?.typeQualifiedName
+            ?.typeDescriptor
 
-        if (fieldTypeQualifiedName == null) {
-            logger.error("@$ANNOTATION_SIMPLE_NAME of \"$classQualifiedName\": has no field \"$fieldName\"", classDeclaration)
+        if (fieldTypeDescriptor == null) {
+            logger.error("@$ANNOTATION_NAME of \"$classDescriptor\": has no field \"$fieldName\"", classDeclaration)
             return null
         }
 
-        val bagPrimitiveDescriptor = BagDescriptor.Primitive.of(fieldTypeQualifiedName)
+        val primitiveDescriptor = BagDescriptor.Primitive.of(fieldTypeDescriptor)
 
-        if (bagPrimitiveDescriptor == null) {
+        if (primitiveDescriptor == null) {
             logger.error(
-                "@$ANNOTATION_SIMPLE_NAME of \"$classQualifiedName\": unsupported primitive type \"$fieldTypeQualifiedName\" of field \"$fieldName\"",
+                "@$ANNOTATION_NAME of \"$classDescriptor\": unsupported primitive type \"$fieldTypeDescriptor\" of field \"$fieldName\"",
                 classDeclaration,
             )
 
             return null
         }
 
-        val creatorDeclaration = resolver.getFunctionDeclarationByName(classDeclaration.packageName.asString(), creatorName)
-        val creatorQualifiedName = creatorDeclaration?.qualifiedName?.asString()
+        val creatorDescriptor = resolver.getFunctionDescriptorByName(classDeclaration.packageName.asString(), creatorName)
 
-        if (creatorQualifiedName == null) {
-            logger.error("@$ANNOTATION_SIMPLE_NAME of \"$classQualifiedName\": unable to find creator \"$creatorName\"", classDeclaration)
+        if (creatorDescriptor == null) {
+            logger.error("@$ANNOTATION_NAME of \"$classDescriptor\": unable to find creator \"$creatorName\"", classDeclaration)
             return null
         }
 
-        val creatorParameters = creatorDeclaration.parameters
+        val creatorParameters = creatorDescriptor.parameters
 
         if (creatorParameters.size != 1) {
             logger.error(
-                "@$ANNOTATION_SIMPLE_NAME of \"$classQualifiedName\": creator \"$creatorName\" must have exactly 1 parameter (but has ${creatorParameters.size})",
+                "@$ANNOTATION_NAME of \"$classDescriptor\": creator \"$creatorName\" must have exactly 1 parameter (but has ${creatorParameters.size})",
                 classDeclaration,
             )
 
             return null
         }
 
-        val creatorParameterTypeQualifiedName = creatorParameters[0].type.typeQualifiedName
-
-        if (creatorParameterTypeQualifiedName == null) {
-            logger.error("@$ANNOTATION_SIMPLE_NAME of \"$classQualifiedName\": unable to resolve parameter tyoe of creator \"$creatorName\"", classDeclaration)
-            return null
-        }
-
-        if (fieldTypeQualifiedName != creatorParameterTypeQualifiedName) {
+        if (fieldTypeDescriptor != creatorParameters[0].typeDescriptor) {
             logger.error(
-                "@$ANNOTATION_SIMPLE_NAME of \"$classQualifiedName\": field (\"$fieldName\") type \"$fieldTypeQualifiedName\" is different from creator (\"$creatorName\") parameter type \"$creatorParameterTypeQualifiedName\"",
+                "@$ANNOTATION_NAME of \"$classDescriptor\": field (\"$fieldName\") type \"$fieldTypeDescriptor\" is different from creator (\"$creatorName\") parameter type \"${creatorParameters[0].typeDescriptor}\"",
                 classDeclaration,
             )
 
@@ -112,17 +103,17 @@ class BagSinglefieldParser(private val logger: KSPLogger) {
         }
 
         return BagDescriptor.Singlefield(
-            classQualifiedName = classQualifiedName,
+            classDescriptor = classDescriptor,
             fieldName = fieldName,
-            creatorQualifiedName = creatorQualifiedName,
+            creatorNameDescriptor = creatorDescriptor.nameDescriptor,
             shouldCheckCreatorException = true,
-            bagPrimitiveDescriptor = bagPrimitiveDescriptor,
+            primitiveDescriptor = primitiveDescriptor,
         )
     }
 
     private companion object {
-        private val ANNOTATION_SIMPLE_NAME = requireNotNull(BagSinglefield::class.simpleName)
-        private val ANNOTATION_QUALIFIED_NAME = requireNotNull(BagSinglefield::class.qualifiedName)
+        private val ANNOTATION_NAME = requireNotNull(BagSinglefield::class.simpleName)
+        private val ANNOTATION_NAME_DESCRIPTOR = BagSinglefield::class.nameDescriptor
 
         private const val ARGUMENT_FIELD_NAME = "field"
         private const val ARGUMENT_CREATOR_NAME = "creator"
