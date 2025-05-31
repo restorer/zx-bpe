@@ -1,5 +1,8 @@
 package com.eightsines.bpe.foundation
 
+import com.eightsines.bpe.bag.BagSinglefield
+
+@BagSinglefield(field = "value", creator = "of")
 enum class TransformType(val value: Int) {
     FlipHorizontal(1),
     FlipVertical(2),

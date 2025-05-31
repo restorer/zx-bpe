@@ -1,7 +1,9 @@
 package com.eightsines.bpe.foundation
 
 import com.eightsines.bpe.bag.BagSinglefield
+import com.eightsines.bpe.bag.BagStuff
 import com.eightsines.bpe.bag.BagStuffPacker
+import com.eightsines.bpe.bag.BagStuffWare
 import com.eightsines.bpe.bag.PackableBag
 import com.eightsines.bpe.core.BlockCell
 import com.eightsines.bpe.core.Cell
@@ -11,7 +13,7 @@ import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
 
-@BagSinglefield(field = "value", creator = "CanvasType.of")
+@BagSinglefield(field = "value", creator = "of")
 sealed class CanvasType {
     abstract val value: Int
     abstract val cellType: CellType
@@ -24,7 +26,7 @@ sealed class CanvasType {
         override val value = 1
         override val cellType = CellType.Scii
         override val transparentCell = SciiCell.Transparent
-        override val polymorphicPacker = SciiCanvas.Polymorphic
+        override val polymorphicPacker = SciiCanvas_PolymorphicStuff
 
         override fun toSciiPosition(drawingX: Int, drawingY: Int) = drawingX to drawingY
     }
@@ -33,7 +35,7 @@ sealed class CanvasType {
         override val value = 2
         override val cellType = CellType.Block
         override val transparentCell = BlockCell.Transparent
-        override val polymorphicPacker = HBlockCanvas.Polymorphic
+        override val polymorphicPacker = HBlockCanvas_PolymorphicStuff
 
         override fun toSciiPosition(drawingX: Int, drawingY: Int) = drawingX to (drawingY / 2)
     }
@@ -42,7 +44,7 @@ sealed class CanvasType {
         override val value = 3
         override val cellType = CellType.Block
         override val transparentCell = BlockCell.Transparent
-        override val polymorphicPacker = VBlockCanvas.Polymorphic
+        override val polymorphicPacker = VBlockCanvas_PolymorphicStuff
 
         override fun toSciiPosition(drawingX: Int, drawingY: Int) = (drawingX / 2) to drawingY
     }
@@ -51,7 +53,7 @@ sealed class CanvasType {
         override val value = 4
         override val cellType = CellType.Block
         override val transparentCell = BlockCell.Transparent
-        override val polymorphicPacker = QBlockCanvas.Polymorphic
+        override val polymorphicPacker = QBlockCanvas_PolymorphicStuff
 
         override fun toSciiPosition(drawingX: Int, drawingY: Int) = (drawingX / 2) to (drawingY / 2)
     }
@@ -84,6 +86,7 @@ sealed class CanvasType {
     }
 }
 
+@BagStuff(packer = "Canvas", unpacker = "_")
 interface Canvas<T : Cell> {
     val type: CanvasType
 
@@ -113,6 +116,8 @@ interface Canvas<T : Cell> {
 
 interface BlockCanvas : Canvas<BlockCell>
 
+@BagStuff(unpacker = "_", isPolymorphic = true)
+@BagStuffWare(1, field = "cells", packer = "putCellsInTheBag")
 abstract class SciiCanvas(override val sciiWidth: Int, override val sciiHeight: Int) : Canvas<SciiCell> {
     override val type = CanvasType.Scii
 
@@ -138,10 +143,8 @@ abstract class SciiCanvas(override val sciiWidth: Int, override val sciiHeight: 
             cells[sciiY][sciiX]
         }
 
-    internal object Polymorphic : BagStuffPacker<SciiCanvas> {
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: SciiCanvas) {
+    internal companion object {
+        fun putCellsInTheBag(bag: PackableBag, value: SciiCanvas) {
             for (line in value.cells) {
                 for (cell in line) {
                     bag.put(Cell, cell)
@@ -151,6 +154,8 @@ abstract class SciiCanvas(override val sciiWidth: Int, override val sciiHeight: 
     }
 }
 
+@BagStuff(unpacker = "_", isPolymorphic = true)
+@BagStuffWare(1, field = "cells", packer = "putCellsInTheBag")
 abstract class HBlockCanvas(
     override val sciiWidth: Int,
     override val sciiHeight: Int,
@@ -194,10 +199,8 @@ abstract class HBlockCanvas(
         }
     }
 
-    internal object Polymorphic : BagStuffPacker<HBlockCanvas> {
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: HBlockCanvas) {
+    internal companion object {
+        fun putCellsInTheBag(bag: PackableBag, value: HBlockCanvas) {
             for (line in value.cells) {
                 for (cell in line) {
                     bag.put(Cell, cell)
@@ -207,6 +210,8 @@ abstract class HBlockCanvas(
     }
 }
 
+@BagStuff(unpacker = "_", isPolymorphic = true)
+@BagStuffWare(1, field = "cells", packer = "putCellsInTheBag")
 abstract class VBlockCanvas(
     override val sciiWidth: Int,
     override val sciiHeight: Int,
@@ -250,10 +255,8 @@ abstract class VBlockCanvas(
         }
     }
 
-    internal object Polymorphic : BagStuffPacker<VBlockCanvas> {
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: VBlockCanvas) {
+    internal companion object {
+        fun putCellsInTheBag(bag: PackableBag, value: VBlockCanvas) {
             for (line in value.cells) {
                 for (cell in line) {
                     bag.put(Cell, cell)
@@ -263,6 +266,9 @@ abstract class VBlockCanvas(
     }
 }
 
+@BagStuff(unpacker = "_", isPolymorphic = true)
+@BagStuffWare(1, field = "pixels", packer = "putPixelsInTheBag")
+@BagStuffWare(2, field = "attrs", packer = "putAttrsInTheBag")
 abstract class QBlockCanvas(
     override val sciiWidth: Int,
     override val sciiHeight: Int,
@@ -329,16 +335,16 @@ abstract class QBlockCanvas(
         }
     }
 
-    internal object Polymorphic : BagStuffPacker<QBlockCanvas> {
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: QBlockCanvas) {
+    internal companion object {
+        fun putPixelsInTheBag(bag: PackableBag, value: QBlockCanvas) {
             for (line in value.pixels) {
                 for (pixel in line) {
                     bag.put(pixel)
                 }
             }
+        }
 
+        fun putAttrsInTheBag(bag: PackableBag, value: QBlockCanvas) {
             for (line in value.attrs) {
                 for (attr in line) {
                     bag.put(Cell, attr)

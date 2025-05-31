@@ -78,27 +78,49 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
         ware: BagStuffWareDescriptor,
         descriptorResolver: (TypeDescriptor) -> BagDescriptor?,
     ): Boolean {
-        if (ware.fieldPackerDescriptor != null) {
-            funBuilder.addStatement("%M(bag, value.%N)", ware.fieldPackerDescriptor.pouetMemberName, ware.fieldName)
+        if (ware.packerDescriptor != null) {
+            funBuilder.addCode(
+                buildCodeBlock {
+                    add("%M(\n", ware.packerDescriptor.pouetMemberName)
+                    indent()
+
+                    for (parameter in ware.packerDescriptor.parameters) {
+                        if (parameter.name == "bag" || parameter.name == "value") {
+                            addStatement("%N = %N,", parameter.name, parameter.name)
+                        } else {
+                            addStatement("%N = `value`.%N,", parameter.name, parameter.name)
+                        }
+                    }
+
+                    unindent()
+                    add(")\n")
+                }
+            )
+
             return true
         }
 
-        val wareDescriptor = descriptorResolver(ware.typeDescriptor)
+        val descriptor = descriptorResolver(ware.typeDescriptor)
 
-        if (wareDescriptor == null) {
-            logger.error("Unable to resolve packer for field \"${ware.fieldName}\" of type \"${ware.typeDescriptor}\"", ware.sourceSymbol)
+        if (descriptor == null) {
+            logger.error("Unable to resolve packer for field \"${ware.sourceClassDescriptor}::${ware.fieldName}\" of type \"${ware.typeDescriptor}\"", ware.sourceSymbol)
             return false
         }
 
-        when (wareDescriptor) {
-            is BagDescriptor.Primitive -> funBuilder.addStatement("bag.put(value.%N)", ware.fieldName)
-            is BagDescriptor.Singlefield -> funBuilder.addStatement("bag.put(value.%N.%N)", ware.fieldName, wareDescriptor.fieldName)
+        when (descriptor) {
+            is BagDescriptor.Primitive -> funBuilder.addStatement("bag.put(`value`.%N)", ware.fieldName)
+            is BagDescriptor.Singlefield -> funBuilder.addStatement("bag.put(`value`.%N.%N)", ware.fieldName, descriptor.fieldName)
 
-            is BagDescriptor.Stuff -> funBuilder.addStatement(
-                "bag.put(%T, value.%N)",
-                wareDescriptor.staffPackerDescriptor.pouetClassName,
-                ware.fieldName,
-            )
+            is BagDescriptor.Stuff -> if (descriptor.packerDescriptor == null) {
+                logger.error("Packer is missing for field \"${ware.sourceClassDescriptor}::${ware.fieldName}\" of type \"${ware.typeDescriptor}\"", ware.sourceSymbol)
+                return false
+            } else {
+                funBuilder.addStatement(
+                    "bag.put(%T, `value`.%N)",
+                    descriptor.packerDescriptor.pouetClassName,
+                    ware.fieldName,
+                )
+            }
         }
 
         return true
@@ -155,13 +177,13 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
         ware: BagStuffWareDescriptor,
         descriptorResolver: (TypeDescriptor) -> BagDescriptor?,
     ): Boolean {
-        if (ware.fieldUnpackerDescriptor != null) {
+        if (ware.unpackerDescriptor != null) {
             funBuilder.addCode(
                 buildCodeBlock {
-                    add("val %N = %M(\n", ware.fieldName, ware.fieldUnpackerDescriptor.pouetMemberName)
+                    add("val %N = %M(\n", ware.fieldName, ware.unpackerDescriptor.pouetMemberName)
                     indent()
 
-                    for (parameter in ware.fieldUnpackerDescriptor.parameters) {
+                    for (parameter in ware.unpackerDescriptor.parameters) {
                         addStatement("%N = %N,", parameter.name, parameter.name)
                     }
 
@@ -176,7 +198,7 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
         val wareDescriptor = descriptorResolver(ware.typeDescriptor)
 
         if (wareDescriptor == null) {
-            logger.error("Unable to resolve unpacker for field \"${ware.fieldName}\" of type \"${ware.typeDescriptor}\"", ware.sourceSymbol)
+            logger.error("Unable to resolve unpacker for field \"${ware.sourceClassDescriptor}::${ware.fieldName}\" of type \"${ware.typeDescriptor}\"", ware.sourceSymbol)
             return false
         }
 
@@ -188,24 +210,29 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
                     "val %N = %M { %M(bag.%N()) }",
                     ware.fieldName,
                     MemberName("com.eightsines.bpe.bag", "requireNoIllegalArgumentException"),
-                    wareDescriptor.creatorNameDescriptor.pouetMemberName,
+                    wareDescriptor.creatorDescriptor.pouetMemberName,
                     wareDescriptor.primitiveDescriptor.unpackMethod
                 )
             } else {
                 funBuilder.addStatement(
                     "val %N = %M(bag.%N())",
                     ware.fieldName,
-                    wareDescriptor.creatorNameDescriptor.pouetMemberName,
+                    wareDescriptor.creatorDescriptor.pouetMemberName,
                     wareDescriptor.primitiveDescriptor.unpackMethod
                 )
             }
 
-            is BagDescriptor.Stuff -> funBuilder.addStatement(
-                "val %N: %T = bag.getStuff(%T)",
-                ware.fieldName,
-                ware.typeDescriptor.pouetTypeName,
-                wareDescriptor.staffUnpackerDescriptor.pouetClassName,
-            )
+            is BagDescriptor.Stuff -> if (wareDescriptor.unpackerDescriptor == null) {
+                logger.error("Unpacker is missing for field \"${ware.sourceClassDescriptor}::${ware.fieldName}\" of type \"${ware.typeDescriptor}\"", ware.sourceSymbol)
+                return false
+            } else {
+                funBuilder.addStatement(
+                    "val %N: %T = bag.getStuff(%T)",
+                    ware.fieldName,
+                    ware.typeDescriptor.pouetTypeName,
+                    wareDescriptor.unpackerDescriptor.pouetClassName,
+                )
+            }
         }
 
         return true

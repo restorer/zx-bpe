@@ -26,15 +26,15 @@ sealed interface BagDescriptor {
     data class Singlefield(
         val classDescriptor: DeclarationDescriptor,
         val fieldName: String,
-        val creatorNameDescriptor: NameDescriptor,
+        val creatorDescriptor: FunctionDescriptor,
         val shouldCheckCreatorException: Boolean,
         val primitiveDescriptor: Primitive,
     ) : BagDescriptor
 
     data class Stuff(
         val classDescriptor: DeclarationDescriptor,
-        val staffPackerDescriptor: NameDescriptor,
-        val staffUnpackerDescriptor: NameDescriptor,
+        val packerDescriptor: NameDescriptor?,
+        val unpackerDescriptor: NameDescriptor?,
         val wares: List<BagStuffWareDescriptor>,
         val generatedSimpleName: String?,
         val shouldGeneratePacker: Boolean,
@@ -49,7 +49,8 @@ data class BagStuffWareDescriptor(
     val index: Int,
     val version: Int,
     val typeDescriptor: TypeDescriptor,
-    val fieldPackerDescriptor: FunctionDescriptor?,
-    val fieldUnpackerDescriptor: FunctionDescriptor?,
+    val packerDescriptor: FunctionDescriptor?,
+    val unpackerDescriptor: FunctionDescriptor?,
+    val sourceClassDescriptor: DeclarationDescriptor,
     val sourceSymbol: KSNode,
 )

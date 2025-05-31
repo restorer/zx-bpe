@@ -20,7 +20,7 @@ class MutableCanvasLayerTest {
             ) to PackableTestBag()
         },
         act = { (sut, bag) ->
-            bag.put(CanvasLayer, sut)
+            bag.put(CanvasLayer_Stuff, sut)
             bag.wares
         },
         assert = {

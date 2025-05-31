@@ -23,7 +23,7 @@ class MutableBackgroundLayerTest {
             ) to PackableTestBag()
         },
         act = { (sut, bag) ->
-            bag.put(BackgroundLayer, sut)
+            bag.put(BackgroundLayer_Stuff, sut)
             bag.wares
         },
         assert = {

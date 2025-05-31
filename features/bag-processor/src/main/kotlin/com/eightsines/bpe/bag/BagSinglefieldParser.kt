@@ -39,7 +39,11 @@ class BagSinglefieldParser(private val logger: KSPLogger) {
         return BagDescriptor.Singlefield(
             classDescriptor = classDescriptor,
             fieldName = constructorParameterName,
-            creatorNameDescriptor = classDescriptor.nameDescriptor,
+            creatorDescriptor = FunctionDescriptor(
+                nameDescriptor = classDescriptor.nameDescriptor,
+                returnTypeDescriptor = classDescriptor.asRawTypeDescriptor(),
+                parameters = listOf(FunctionParameterDescriptor(constructorParameterName, constructorParameters[0].type.typeDescriptor)),
+            ),
             shouldCheckCreatorException = false,
             primitiveDescriptor = bagPrimitiveDescriptor,
         )
@@ -76,6 +80,7 @@ class BagSinglefieldParser(private val logger: KSPLogger) {
         }
 
         val creatorDescriptor = resolver.getFunctionDescriptorByName(classDeclaration.packageName.asString(), creatorName)
+            ?: resolver.getFunctionDescriptorByName(classDeclaration.packageName.asString(), "${classDescriptor.nameDescriptor.simpleName}.$creatorName")
 
         if (creatorDescriptor == null) {
             logger.error("@$ANNOTATION_NAME of \"$classDescriptor\": unable to find creator \"$creatorName\"", classDeclaration)
@@ -105,7 +110,7 @@ class BagSinglefieldParser(private val logger: KSPLogger) {
         return BagDescriptor.Singlefield(
             classDescriptor = classDescriptor,
             fieldName = fieldName,
-            creatorNameDescriptor = creatorDescriptor.nameDescriptor,
+            creatorDescriptor = creatorDescriptor,
             shouldCheckCreatorException = true,
             primitiveDescriptor = primitiveDescriptor,
         )

@@ -21,6 +21,9 @@ import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.bag.getList
 import com.eightsines.bpe.bag.putList
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
+import com.eightsines.bpe.foundation.BackgroundLayer_Stuff
+import com.eightsines.bpe.foundation.CanvasLayer_Stuff
+import com.eightsines.bpe.foundation.MutableBackgroundLayer_Stuff
 
 class GraphicsEngine(
     private val logger: Logger,
@@ -572,8 +575,8 @@ class GraphicsEngine(
         override val putInTheBagVersion = 1
 
         override fun putInTheBag(bag: PackableBag, value: GraphicsEngine) {
-            bag.put(BackgroundLayer, value.backgroundLayer)
-            bag.putList(value.canvasLayers) { bag.put(CanvasLayer, it) }
+            bag.put(BackgroundLayer_Stuff, value.backgroundLayer)
+            bag.putList(value.canvasLayers) { bag.put(CanvasLayer_Stuff, it) }
         }
     }
 
@@ -581,7 +584,7 @@ class GraphicsEngine(
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): GraphicsEngine {
             requireSupportedStuffVersion("GraphicsEngine", 1, version)
 
-            val backgroundLayer = bag.getStuff(MutableBackgroundLayer)
+            val backgroundLayer = bag.getStuff(MutableBackgroundLayer_Stuff)
             val canvasLayers = bag.getList { bag.getStuff(MutableCanvasLayer) }
 
             // Unpacked successfully, can mutate safely

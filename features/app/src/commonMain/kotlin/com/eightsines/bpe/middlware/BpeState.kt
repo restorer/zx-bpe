@@ -16,7 +16,7 @@ import com.eightsines.bpe.core.SciiLight
 import com.eightsines.bpe.foundation.BackgroundLayer
 import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.foundation.Crate
-import com.eightsines.bpe.foundation.CrateStuff
+import com.eightsines.bpe.foundation.Crate_Stuff
 import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.foundation.SciiCanvas
 import com.eightsines.bpe.foundation.Selection
@@ -100,10 +100,11 @@ enum class BpeTool(val value: Int) {
 
 enum class BpeSelectionStateType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out BpeSelectionState>?) {
     None(1, null),
-    Selected(2, BpeSelectionStateSelectedPolymorphicStuff),
-    Floating(3, BpeSelectionStateFloatingPolymorphicStuff),
+    Selected(2, BpeSelectionState_Selected_PolymorphicStuff),
+    Floating(3, BpeSelectionState_Floating_PolymorphicStuff),
 }
 
+@BagStuff(packer = "BpeSelectionState", unpacker = "BpeSelectionState")
 sealed interface BpeSelectionState {
     val type: BpeSelectionStateType
 
@@ -111,14 +112,14 @@ sealed interface BpeSelectionState {
         override val type = BpeSelectionStateType.None
     }
 
-    @BagStuff(suffix = "PolymorphicStuff")
+    @BagStuff(isPolymorphic = true)
     data class Selected(
         @BagStuffWare(1) val selection: Selection,
     ) : BpeSelectionState {
         override val type = BpeSelectionStateType.Selected
     }
 
-    @BagStuff(suffix = "PolymorphicStuff")
+    @BagStuff(isPolymorphic = true)
     data class Floating(
         @BagStuffWare(1) val selection: Selection,
         @BagStuffWare(2) val layerUid: LayerUid,
@@ -141,35 +142,20 @@ sealed interface BpeSelectionState {
 
             return when (val type = bag.getInt()) {
                 BpeSelectionStateType.None.value -> None
-                BpeSelectionStateType.Selected.value -> bag.getStuff(BpeSelectionStateSelectedPolymorphicStuff)
-                BpeSelectionStateType.Floating.value -> bag.getStuff(BpeSelectionStateFloatingPolymorphicStuff)
+                BpeSelectionStateType.Selected.value -> bag.getStuff(BpeSelectionState_Selected_PolymorphicStuff)
+                BpeSelectionStateType.Floating.value -> bag.getStuff(BpeSelectionState_Floating_PolymorphicStuff)
                 else -> throw UnknownPolymorphicTypeBagUnpackException("BpeSelectionState", type)
             }
         }
     }
 }
 
-data class BpeClipboard(val drawingX: Int, val drawingY: Int, val crate: Crate<*>) {
-    companion object : BagStuffPacker<BpeClipboard>, BagStuffUnpacker<BpeClipboard> {
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: BpeClipboard) {
-            bag.put(value.drawingX)
-            bag.put(value.drawingY)
-            bag.put(CrateStuff, value.crate)
-        }
-
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): BpeClipboard {
-            requireSupportedStuffVersion("BpeClipboard", 1, version)
-
-            val drawingX = bag.getInt()
-            val drawingY = bag.getInt()
-            val crate: Crate<Cell> = bag.getStuff(CrateStuff)
-
-            return BpeClipboard(drawingX, drawingY, crate)
-        }
-    }
-}
+@BagStuff
+data class BpeClipboard(
+    @BagStuffWare(1) val drawingX: Int,
+    @BagStuffWare(2) val drawingY: Int,
+    @BagStuffWare(3) val crate: Crate<*>,
+)
 
 enum class BpePaintingMode(val value: Int) {
     Edge(1),

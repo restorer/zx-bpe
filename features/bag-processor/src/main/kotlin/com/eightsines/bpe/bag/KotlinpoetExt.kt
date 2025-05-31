@@ -31,4 +31,15 @@ val TypeDescriptor.pouetTypeName: TypeName
     }
 
 val FunctionDescriptor.pouetMemberName: MemberName
-    get() = MemberName(nameDescriptor.packageName, nameDescriptor.simpleName)
+    get(): MemberName {
+        val parts = nameDescriptor.simpleName.split('.')
+
+        return if (parts.size < 2) {
+            MemberName(nameDescriptor.packageName, nameDescriptor.simpleName)
+        } else {
+            MemberName(
+                ClassName(nameDescriptor.packageName, parts.dropLast(1).joinToString(".")),
+                parts.last(),
+            )
+        }
+    }

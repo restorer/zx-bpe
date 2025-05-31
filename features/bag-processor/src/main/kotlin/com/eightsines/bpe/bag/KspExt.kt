@@ -6,6 +6,7 @@ import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.KSTypeReference
 import kotlin.reflect.KClass
 
@@ -120,11 +121,15 @@ val KSTypeReference.typeDescriptor: TypeDescriptor
     get() = resolve().typeDescriptor
 
 val KSType.typeDescriptor: TypeDescriptor
-    get() = TypeDescriptor.Type(
-        declaration.nameDescriptor,
-        isMarkedNullable,
-        arguments.map { it.type?.typeDescriptor ?: TypeDescriptor.Star },
-    )
+    get() = if (declaration is KSTypeParameter) {
+        TypeDescriptor.Star
+    } else {
+        TypeDescriptor.Type(
+            declaration.nameDescriptor,
+            isMarkedNullable,
+            arguments.map { it.type?.typeDescriptor ?: TypeDescriptor.Star },
+        )
+    }
 
 fun Resolver.getClassDescriptorByName(currentPackageName: String, className: String): DeclarationDescriptor? {
     getClassDeclarationByName(className)?.let { return it.declarationDescriptor }
@@ -134,9 +139,13 @@ fun Resolver.getClassDescriptorByName(currentPackageName: String, className: Str
 
 fun Resolver.getFunctionDescriptorByName(currentPackageName: String, functionName: String): FunctionDescriptor? {
     val declaration = getFunctionDeclarationByName(currentPackageName, functionName) ?: return null
+    val packageName = declaration.packageName.asString().ifEmpty { currentPackageName }
 
     return FunctionDescriptor(
-        NameDescriptor(declaration.packageName.asString().ifEmpty { currentPackageName }, functionName),
+        NameDescriptor(
+            packageName,
+            requireNotNull(declaration.qualifiedName).asString().substring(packageName.length + 1),
+        ),
         declaration.returnType?.typeDescriptor,
         declaration.parameters.map {
             FunctionParameterDescriptor(it.name?.asString() ?: "", it.type.typeDescriptor)

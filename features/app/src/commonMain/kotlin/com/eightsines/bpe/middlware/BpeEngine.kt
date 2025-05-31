@@ -752,14 +752,14 @@ class BpeEngine(
                 }
             }
 
-            bag.put(MutablePaletteStuff, value.palette)
+            bag.put(MutablePalette_Stuff, value.palette)
             bag.put(value.toolboxTool.value)
             bag.put(value.toolboxPaintShape.value)
             bag.put(value.toolboxEraseShape.value)
             bag.put(value.currentLayer.uid.value)
             bag.putList(history) { bag.put(HistoryStep, it) }
             bag.put(historyPosition)
-            bag.put(BpeClipboard, value.clipboard)
+            bag.put(BpeClipboard_Stuff, value.clipboard)
 
             // Put GraphicsEngine at the end, to be able to recover from unpack error in Unpacker
             bag.put(GraphicsEngine.Packer, value.graphicsEngine)
@@ -798,14 +798,14 @@ class BpeEngine(
         }
 
         private fun unpackStuff(bag: UnpackableBag): UnpackerStuff {
-            val palette = bag.getStuff(MutablePaletteStuff)
+            val palette = bag.getStuff(MutablePalette_Stuff)
             val toolboxTool = requireNoIllegalArgumentException { BpeTool.of(bag.getInt()) }
             val toolboxPaintShape = requireNoIllegalArgumentException { BpeShape.of(bag.getInt()) }
             val toolboxEraseShape = requireNoIllegalArgumentException { BpeShape.of(bag.getInt()) }
             val currentLayerUid = LayerUid(bag.getString())
             val history = bag.getList { bag.getStuff(HistoryStep) }
             val historyPosition = bag.getInt()
-            val clipboard = bag.getStuffOrNull(BpeClipboard)
+            val clipboard = bag.getStuffOrNull(BpeClipboard_Stuff)
 
             return UnpackerStuff(
                 palette = palette,

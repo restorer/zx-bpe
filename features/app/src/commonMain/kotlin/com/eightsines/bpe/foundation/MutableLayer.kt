@@ -1,20 +1,23 @@
 package com.eightsines.bpe.foundation
 
+import com.eightsines.bpe.bag.BagStuff
 import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
 import com.eightsines.bpe.bag.BagStuffUnpacker
+import com.eightsines.bpe.bag.BagStuffWare
 import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
 
 interface MutableLayer : Layer
 
+@BagStuff(packer = "_")
 class MutableBackgroundLayer(
-    override var isVisible: Boolean = true,
-    override var isLocked: Boolean = false,
-    override var border: SciiColor,
-    override var color: SciiColor,
-    override var bright: SciiLight,
+    @BagStuffWare(1) override var isVisible: Boolean = true,
+    @BagStuffWare(2) override var isLocked: Boolean = false,
+    @BagStuffWare(3) override var border: SciiColor,
+    @BagStuffWare(4) override var color: SciiColor,
+    @BagStuffWare(5) override var bright: SciiLight,
 ) : BackgroundLayer, MutableLayer {
     override fun copyMutable() = MutableBackgroundLayer(
         isVisible = isVisible,
@@ -25,20 +28,6 @@ class MutableBackgroundLayer(
     )
 
     override fun toString() = "BackgroundLayer(isVisible=$isVisible, isLocked=$isLocked, border=$border, color=$color, bright=$bright)"
-
-    companion object : BagStuffUnpacker<MutableBackgroundLayer> {
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): MutableBackgroundLayer {
-            requireSupportedStuffVersion("MutableBackgroundLayer", 1, version)
-
-            return MutableBackgroundLayer(
-                isVisible = bag.getBoolean(),
-                isLocked = bag.getBoolean(),
-                border = SciiColor(bag.getInt()),
-                color = SciiColor(bag.getInt()),
-                bright = SciiLight(bag.getInt()),
-            )
-        }
-    }
 }
 
 class MutableCanvasLayer<T : Cell>(

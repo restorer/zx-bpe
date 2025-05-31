@@ -25,7 +25,7 @@ class CrateTest {
             sut to PackableTestBag()
         },
         act = { (sut, bag) ->
-            bag.put(CrateStuff, sut)
+            bag.put(Crate_Stuff, sut)
             bag.wares
         },
         assert = {
@@ -85,7 +85,7 @@ class CrateTest {
                 ),
             )
         },
-        act = { it.getStuff(CrateStuff) },
+        act = { it.getStuff(Crate_Stuff) },
         assert = {
             assertEqualsExt(
                 Crate(
@@ -112,7 +112,7 @@ class CrateTest {
             sut to PackableTestBag()
         },
         act = { (sut, bag) ->
-            bag.put(CrateStuff, sut)
+            bag.put(Crate_Stuff, sut)
             bag.wares
         },
         assert = {
@@ -160,7 +160,7 @@ class CrateTest {
                 ),
             )
         },
-        act = { it.getStuff(CrateStuff) },
+        act = { it.getStuff(Crate_Stuff) },
         assert = {
             assertEqualsExt(
                 Crate(

@@ -11,8 +11,8 @@ import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
 
 enum class CellType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Cell>) {
-    Scii(1, SciiCellPolymorphicStuff),
-    Block(2, BlockCellPolymorphicStuff);
+    Scii(1, SciiCell_PolymorphicStuff),
+    Block(2, BlockCell_PolymorphicStuff);
 
     companion object {
         fun of(value: Int) = when (value) {
@@ -23,6 +23,7 @@ enum class CellType(val value: Int, internal val polymorphicPacker: BagStuffPack
     }
 }
 
+@BagStuff(packer = "Cell", unpacker = "Cell")
 sealed interface Cell {
     val type: CellType
     val isTransparent: Boolean
@@ -44,15 +45,15 @@ sealed interface Cell {
             requireSupportedStuffVersion("Cell", 1, version)
 
             return when (val type = bag.getInt()) {
-                CellType.Scii.value -> bag.getStuff(SciiCellPolymorphicStuff)
-                CellType.Block.value -> bag.getStuff(BlockCellPolymorphicStuff)
+                CellType.Scii.value -> bag.getStuff(SciiCell_PolymorphicStuff)
+                CellType.Block.value -> bag.getStuff(BlockCell_PolymorphicStuff)
                 else -> throw UnknownPolymorphicTypeBagUnpackException("Cell", type)
             }
         }
     }
 }
 
-@BagStuff(suffix = "PolymorphicStuff")
+@BagStuff(isPolymorphic = true)
 data class SciiCell(
     @BagStuffWare(1) val character: SciiChar,
     @BagStuffWare(2) val ink: SciiColor,
@@ -173,7 +174,7 @@ data class SciiCell(
     }
 }
 
-@BagStuff(suffix = "PolymorphicStuff")
+@BagStuff(isPolymorphic = true)
 data class BlockCell(
     @BagStuffWare(1) val color: SciiColor,
     @BagStuffWare(2) val bright: SciiLight,

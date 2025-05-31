@@ -1,12 +1,12 @@
 package com.eightsines.bpe.foundation
 
+import com.eightsines.bpe.bag.BagStuff
+import com.eightsines.bpe.bag.BagStuffWare
 import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.SciiCell
 import com.eightsines.bpe.core.SciiChar
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
-import com.eightsines.bpe.bag.BagStuffPacker
-import com.eightsines.bpe.bag.PackableBag
 
 interface Layer {
     val uid: LayerUid
@@ -16,12 +16,20 @@ interface Layer {
     fun copyMutable(): Layer
 }
 
+@BagStuff(unpacker = "_")
+@BagStuffWare(1, field = "isVisible")
+@BagStuffWare(2, field = "isLocked")
 interface BackgroundLayer : Layer {
     override val uid: LayerUid
         get() = LayerUid.Background
 
+    @BagStuffWare(3)
     val border: SciiColor
+
+    @BagStuffWare(4)
     val color: SciiColor
+
+    @BagStuffWare(5)
     val bright: SciiLight
 
     val sciiCell: SciiCell
@@ -34,42 +42,22 @@ interface BackgroundLayer : Layer {
         )
 
     override fun copyMutable(): MutableBackgroundLayer
-
-    companion object : BagStuffPacker<BackgroundLayer> {
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: BackgroundLayer) {
-            bag.put(value.isVisible)
-            bag.put(value.isLocked)
-            bag.put(value.border.value)
-            bag.put(value.color.value)
-            bag.put(value.bright.value)
-        }
-    }
 }
 
+@BagStuff(unpacker = "MutableCanvasLayer")
+@BagStuffWare(1, field = "uid")
+@BagStuffWare(2, field = "isVisible")
+@BagStuffWare(3, field = "isLocked")
 interface CanvasLayer<T : Cell> : Layer {
+    @BagStuffWare(5, version = 2)
     val isMasked: Boolean
 
+    @BagStuffWare(4)
     val canvas: Canvas<T>
+
     val canvasType: CanvasType
 
     override fun copyMutable(): MutableCanvasLayer<T>
 
     fun isOpaque(drawingX: Int, drawingY: Int): Boolean
-
-    companion object : BagStuffPacker<CanvasLayer<*>> {
-        override val putInTheBagVersion = 2
-
-        override fun putInTheBag(bag: PackableBag, value: CanvasLayer<*>) {
-            // v1
-            bag.put(value.uid.value)
-            bag.put(value.isVisible)
-            bag.put(value.isLocked)
-            bag.put(Canvas, value.canvas)
-
-            // v2
-            bag.put(value.isMasked)
-        }
-    }
 }

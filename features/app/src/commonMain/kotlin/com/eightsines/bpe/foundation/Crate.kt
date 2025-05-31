@@ -13,7 +13,7 @@ data class Crate<T : Cell>(
     @BagStuffWare(1) val canvasType: CanvasType,
     @BagStuffWare(2) val width: Int,
     @BagStuffWare(3) val height: Int,
-    @BagStuffWare(4, "Crate.putCellsInTheBag", "Crate.getCellsOutOfTheBag") val cells: List<List<T>>,
+    @BagStuffWare(4, packer = "putCellsInTheBag", unpacker = "getCellsOutOfTheBag") val cells: List<List<T>>,
 ) {
     override fun toString() = "Crate(canvasType=$canvasType, width=$width, height=$height)"
 
