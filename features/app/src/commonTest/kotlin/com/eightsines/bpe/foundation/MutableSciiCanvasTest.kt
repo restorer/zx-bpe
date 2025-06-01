@@ -305,7 +305,7 @@ class MutableSciiCanvasTest {
             sut to PackableTestBag()
         },
         act = { (sut, bag) ->
-            bag.put(Canvas, sut)
+            bag.put(Canvas_Stuff, sut)
             bag.wares
         },
         assert = {

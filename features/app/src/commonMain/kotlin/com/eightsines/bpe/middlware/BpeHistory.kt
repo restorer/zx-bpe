@@ -21,71 +21,34 @@ data class HistoryStep(val actions: List<HistoryAction>, val undoActions: List<H
         override val putInTheBagVersion = 1
 
         override fun putInTheBag(bag: PackableBag, value: HistoryStep) {
-            bag.putList(value.actions) { bag.put(HistoryAction, it) }
-            bag.putList(value.undoActions) { bag.put(HistoryAction, it) }
+            bag.putList(value.actions) { bag.put(HistoryAction_Stuff, it) }
+            bag.putList(value.undoActions) { bag.put(HistoryAction_Stuff, it) }
         }
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): HistoryStep {
             requireSupportedStuffVersion("HistoryStep", 1, version)
 
-            val actions = bag.getList { bag.getStuff(HistoryAction) }
-            val undoActions = bag.getList { bag.getStuff(HistoryAction) }
+            val actions = bag.getList { bag.getStuff(HistoryAction_Stuff) }
+            val undoActions = bag.getList { bag.getStuff(HistoryAction_Stuff) }
 
             return HistoryStep(actions, undoActions)
         }
     }
 }
 
-enum class HistoryActionType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out HistoryAction>) {
-    CurrentLayer(1, HistoryAction_CurrentLayer_PolymorphicStuff),
-    SelectionState(2, HistoryAction_SelectionState_PolymorphicStuff),
-    Graphics(3, HistoryAction_Graphics_PolymorphicStuff),
-    SelectionTransform(4, HistoryAction_SelectionTransform_PolymorphicStuff),
-}
-
+@BagStuff(isPolymorphic = true)
 sealed interface HistoryAction {
-    val type: HistoryActionType
+    @BagStuff(polymorphicOf = HistoryAction::class, polymorphicId = 1)
+    data class CurrentLayer(@BagStuffWare(1) val layerUid: LayerUid) : HistoryAction
 
-    @BagStuff(isPolymorphic = true)
-    data class CurrentLayer(@BagStuffWare(1) val layerUid: LayerUid) : HistoryAction {
-        override val type = HistoryActionType.CurrentLayer
-    }
+    @BagStuff(polymorphicOf = HistoryAction::class, polymorphicId = 2)
+    data class SelectionState(@BagStuffWare(1) val selectionState: BpeSelectionState) : HistoryAction
 
-    @BagStuff(isPolymorphic = true)
-    data class SelectionState(@BagStuffWare(1) val selectionState: BpeSelectionState) : HistoryAction {
-        override val type = HistoryActionType.SelectionState
-    }
+    @BagStuff(polymorphicOf = HistoryAction::class, polymorphicId = 3)
+    data class Graphics(@BagStuffWare(1) val graphicsAction: GraphicsAction) : HistoryAction
 
-    @BagStuff(isPolymorphic = true)
-    data class Graphics(@BagStuffWare(1) val graphicsAction: GraphicsAction) : HistoryAction {
-        override val type = HistoryActionType.Graphics
-    }
-
-    @BagStuff(isPolymorphic = true)
-    data class SelectionTransform(@BagStuffWare(1) val transformType: TransformType) : HistoryAction {
-        override val type = HistoryActionType.SelectionTransform
-    }
-
-    companion object : BagStuffPacker<HistoryAction>, BagStuffUnpacker<HistoryAction> {
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: HistoryAction) {
-            bag.put(value.type.value)
-            bag.put(value.type.polymorphicPacker, value)
-        }
-
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): HistoryAction {
-            requireSupportedStuffVersion("HistoryAction", 1, version)
-
-            return when (val type = bag.getInt()) {
-                HistoryActionType.CurrentLayer.value -> bag.getStuff(HistoryAction_CurrentLayer_PolymorphicStuff)
-                HistoryActionType.SelectionState.value -> bag.getStuff(HistoryAction_SelectionState_PolymorphicStuff)
-                HistoryActionType.Graphics.value -> bag.getStuff(HistoryAction_Graphics_PolymorphicStuff)
-                HistoryActionType.SelectionTransform.value -> bag.getStuff(HistoryAction_SelectionTransform_PolymorphicStuff)
-                else -> throw UnknownPolymorphicTypeBagUnpackException("HistoryAction", type)
-            }
-        }
-    }
+    @BagStuff(polymorphicOf = HistoryAction::class, polymorphicId = 4)
+    data class SelectionTransform(@BagStuffWare(1) val transformType: TransformType) : HistoryAction
 }
 
 fun HistoryStep.merge(innerStep: HistoryStep) = HistoryStep(actions + innerStep.actions, innerStep.undoActions + undoActions)

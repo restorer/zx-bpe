@@ -16,7 +16,7 @@ interface Layer {
     fun copyMutable(): Layer
 }
 
-@BagStuff(unpacker = "_")
+@BagStuff(unpacker = "MutableBackgroundLayer_Stuff")
 @BagStuffWare(1, field = "isVisible")
 @BagStuffWare(2, field = "isLocked")
 interface BackgroundLayer : Layer {
@@ -44,7 +44,7 @@ interface BackgroundLayer : Layer {
     override fun copyMutable(): MutableBackgroundLayer
 }
 
-@BagStuff(unpacker = "MutableCanvasLayer")
+@BagStuff(unpacker = "MutableCanvasLayer_Stuff")
 @BagStuffWare(1, field = "uid")
 @BagStuffWare(2, field = "isVisible")
 @BagStuffWare(3, field = "isLocked")

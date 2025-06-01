@@ -10,9 +10,9 @@ import com.eightsines.bpe.bag.UnknownPolymorphicTypeBagUnpackException
 import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
 
-enum class CellType(val value: Int, internal val polymorphicPacker: BagStuffPacker<out Cell>) {
-    Scii(1, SciiCell_PolymorphicStuff),
-    Block(2, BlockCell_PolymorphicStuff);
+enum class CellType(val value: Int) {
+    Scii(1),
+    Block(2);
 
     companion object {
         fun of(value: Int) = when (value) {
@@ -23,37 +23,20 @@ enum class CellType(val value: Int, internal val polymorphicPacker: BagStuffPack
     }
 }
 
-@BagStuff(packer = "Cell", unpacker = "Cell")
+@BagStuff(isPolymorphic = true)
 sealed interface Cell {
     val type: CellType
     val isTransparent: Boolean
 
-    companion object : BagStuffPacker<Cell>, BagStuffUnpacker<Cell> {
-        fun makeTransparent(type: CellType) = when (type) {
-            CellType.Scii -> SciiCell.Transparent
-            CellType.Block -> BlockCell.Transparent
-        }
-
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: Cell) {
-            bag.put(value.type.value)
-            bag.put(value.type.polymorphicPacker, value)
-        }
-
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Cell {
-            requireSupportedStuffVersion("Cell", 1, version)
-
-            return when (val type = bag.getInt()) {
-                CellType.Scii.value -> bag.getStuff(SciiCell_PolymorphicStuff)
-                CellType.Block.value -> bag.getStuff(BlockCell_PolymorphicStuff)
-                else -> throw UnknownPolymorphicTypeBagUnpackException("Cell", type)
-            }
-        }
-    }
+    // companion object{
+    //     fun makeTransparent(type: CellType) = when (type) {
+    //         CellType.Scii -> SciiCell.Transparent
+    //         CellType.Block -> BlockCell.Transparent
+    //     }
+    // }
 }
 
-@BagStuff(isPolymorphic = true)
+@BagStuff(polymorphicOf = Cell::class, polymorphicId = 1)
 data class SciiCell(
     @BagStuffWare(1) val character: SciiChar,
     @BagStuffWare(2) val ink: SciiColor,
@@ -163,7 +146,7 @@ data class SciiCell(
         )
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): SciiCell {
-            val cell = Cell.getOutOfTheBag(version, bag)
+            val cell = Cell_Stuff.getOutOfTheBag(version, bag)
 
             if (cell !is SciiCell) {
                 throw BagUnpackException("Mismatched type=\"${cell.type}\" for SciiCell")
@@ -174,7 +157,7 @@ data class SciiCell(
     }
 }
 
-@BagStuff(isPolymorphic = true)
+@BagStuff(polymorphicOf = Cell::class, polymorphicId = 2)
 data class BlockCell(
     @BagStuffWare(1) val color: SciiColor,
     @BagStuffWare(2) val bright: SciiLight,
@@ -193,7 +176,7 @@ data class BlockCell(
         val Transparent = BlockCell(color = SciiColor.Transparent, bright = SciiLight.Transparent)
 
         override fun getOutOfTheBag(version: Int, bag: UnpackableBag): BlockCell {
-            val cell = Cell.getOutOfTheBag(version, bag)
+            val cell = Cell_Stuff.getOutOfTheBag(version, bag)
 
             if (cell !is BlockCell) {
                 throw BagUnpackException("Mismatched type=\"${cell.type}\" for BlockCell")

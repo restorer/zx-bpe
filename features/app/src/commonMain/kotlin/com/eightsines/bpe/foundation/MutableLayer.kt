@@ -1,17 +1,15 @@
 package com.eightsines.bpe.foundation
 
 import com.eightsines.bpe.bag.BagStuff
+import com.eightsines.bpe.bag.BagStuffWare
+import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.SciiColor
 import com.eightsines.bpe.core.SciiLight
-import com.eightsines.bpe.bag.BagStuffUnpacker
-import com.eightsines.bpe.bag.BagStuffWare
-import com.eightsines.bpe.bag.UnpackableBag
-import com.eightsines.bpe.bag.requireSupportedStuffVersion
 
 interface MutableLayer : Layer
 
-@BagStuff(packer = "_")
+@BagStuff(packer = "BackgroundLayer_Stuff")
 class MutableBackgroundLayer(
     @BagStuffWare(1) override var isVisible: Boolean = true,
     @BagStuffWare(2) override var isLocked: Boolean = false,
@@ -30,15 +28,17 @@ class MutableBackgroundLayer(
     override fun toString() = "BackgroundLayer(isVisible=$isVisible, isLocked=$isLocked, border=$border, color=$color, bright=$bright)"
 }
 
+@BagStuff(packer = "CanvasLayer_Stuff")
 class MutableCanvasLayer<T : Cell>(
-    override val uid: LayerUid,
-    override var isVisible: Boolean = true,
-    override var isLocked: Boolean = false,
+    @BagStuffWare(1) override val uid: LayerUid,
+    @BagStuffWare(2) override var isVisible: Boolean = true,
+    @BagStuffWare(3) override var isLocked: Boolean = false,
     isMasked: Boolean = false,
-    override val canvas: MutableCanvas<T>,
+    @BagStuffWare(4) override val canvas: MutableCanvas<T>,
 ) : CanvasLayer<T>, MutableLayer {
     override val canvasType: CanvasType = canvas.type
 
+    @BagStuffWare(5, unpacker = "getMaskedOutOfTheBag", version = 2)
     override var isMasked: Boolean = isMasked
         set(value) {
             field = value
@@ -79,29 +79,9 @@ class MutableCanvasLayer<T : Cell>(
         }
     }
 
-    companion object : BagStuffUnpacker<MutableCanvasLayer<*>> {
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): MutableCanvasLayer<*> {
-            requireSupportedStuffVersion("MutableBackgroundLayer", 2, version)
-
-            // v1
-            val uid = LayerUid(bag.getString())
-            val isVisible = bag.getBoolean()
-            val isLocked = bag.getBoolean()
-            val canvas = bag.getStuff(MutableCanvas)
-
-            val isMasked = if (version >= 2) {
-                bag.getBoolean()
-            } else {
-                false
-            }
-
-            return MutableCanvasLayer(
-                uid = uid,
-                isVisible = isVisible,
-                isLocked = isLocked,
-                canvas = canvas,
-                isMasked = isMasked,
-            )
-        }
+    internal companion object {
+        @Suppress("NOTHING_TO_INLINE")
+        internal inline fun getMaskedOutOfTheBag(version: Int, bag: UnpackableBag): Boolean =
+            if (version >= 2) bag.getBoolean() else false
     }
 }

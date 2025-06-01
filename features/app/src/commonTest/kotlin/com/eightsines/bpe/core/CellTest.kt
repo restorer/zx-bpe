@@ -16,7 +16,7 @@ class CellTest {
     fun shouldPackScii() = performTest(
         arrange = { SciiCellMother.BlockVerticalLeft to PackableTestBag() },
         act = { (sut, bag) ->
-            bag.put(Cell, sut)
+            bag.put(Cell_Stuff, sut)
             bag.wares
         },
         assert = {
@@ -40,7 +40,7 @@ class CellTest {
     fun shouldPackBlockDrawing() = performTest(
         arrange = { BlockCellMother.WhiteBright to PackableTestBag() },
         act = { (sut, bag) ->
-            bag.put(Cell, sut)
+            bag.put(Cell_Stuff, sut)
             bag.wares
         },
         assert = {
@@ -73,7 +73,7 @@ class CellTest {
                 ),
             )
         },
-        act = { it.getStuff(Cell) },
+        act = { it.getStuff(Cell_Stuff) },
         assert = { assertEquals(SciiCellMother.BlockVerticalLeft, it) },
     )
 
@@ -90,7 +90,7 @@ class CellTest {
                 ),
             )
         },
-        act = { it.getStuff(Cell) },
+        act = { it.getStuff(Cell_Stuff) },
         assert = { assertEquals(BlockCellMother.WhiteBright, it) },
     )
 
@@ -103,6 +103,6 @@ class CellTest {
             ),
         )
 
-        assertFailsWith<BagUnpackException> { bag.getStuff(Cell) }
+        assertFailsWith<BagUnpackException> { bag.getStuff(Cell_Stuff) }
     }
 }

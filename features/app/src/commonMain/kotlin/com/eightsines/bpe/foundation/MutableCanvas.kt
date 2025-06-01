@@ -1,5 +1,6 @@
 package com.eightsines.bpe.foundation
 
+import com.eightsines.bpe.bag.BagStuff
 import com.eightsines.bpe.core.BlockCell
 import com.eightsines.bpe.core.Cell
 import com.eightsines.bpe.core.SciiCell
@@ -10,6 +11,7 @@ import com.eightsines.bpe.bag.UnknownPolymorphicTypeBagUnpackException
 import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
 
+@BagStuff(packer = "Canvas_Stuff", unpacker = "MutableCanvas")
 interface MutableCanvas<T : Cell> : Canvas<T> {
     fun mutate(block: (mutator: CanvasMutator<T>) -> Unit)
 
@@ -29,10 +31,10 @@ interface MutableCanvas<T : Cell> : Canvas<T> {
             val sciiHeight = bag.getInt()
 
             return when (type) {
-                CanvasType.Scii.value -> bag.getStuff(MutableSciiCanvas.PolymorphicUnpacker(sciiWidth, sciiHeight))
-                CanvasType.HBlock.value -> bag.getStuff(MutableHBlockCanvas.PolymorphicUnpacker(sciiWidth, sciiHeight))
-                CanvasType.VBlock.value -> bag.getStuff(MutableVBlockCanvas.PolymorphicUnpacker(sciiWidth, sciiHeight))
-                CanvasType.QBlock.value -> bag.getStuff(MutableQBlockCanvas.PolymorphicUnpacker(sciiWidth, sciiHeight))
+                CanvasType.Scii.POLYMORPHIC_ID -> bag.getStuff(MutableSciiCanvas.PolymorphicUnpacker(sciiWidth, sciiHeight))
+                CanvasType.HBlock.POLYMORPHIC_ID -> bag.getStuff(MutableHBlockCanvas.PolymorphicUnpacker(sciiWidth, sciiHeight))
+                CanvasType.VBlock.POLYMORPHIC_ID -> bag.getStuff(MutableVBlockCanvas.PolymorphicUnpacker(sciiWidth, sciiHeight))
+                CanvasType.QBlock.POLYMORPHIC_ID -> bag.getStuff(MutableQBlockCanvas.PolymorphicUnpacker(sciiWidth, sciiHeight))
                 else -> throw UnknownPolymorphicTypeBagUnpackException("MutableCanvas", type)
             }
         }

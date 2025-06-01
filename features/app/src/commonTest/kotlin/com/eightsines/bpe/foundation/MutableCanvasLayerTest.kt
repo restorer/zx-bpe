@@ -77,7 +77,7 @@ class MutableCanvasLayerTest {
             )
         },
         act = {
-            val sut = it.getStuff(MutableCanvasLayer)
+            val sut = it.getStuff(MutableCanvasLayer_Stuff)
 
             sut to listOf(
                 sut.isVisible,

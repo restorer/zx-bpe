@@ -4,7 +4,13 @@ import kotlin.reflect.KClass
 
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS)
-annotation class BagStuff(val packer: String = "", val unpacker: String = "", val isPolymorphic: Boolean = false)
+annotation class BagStuff(
+    val packer: String = "",
+    val unpacker: String = "",
+    val polymorphicOf: KClass<*> = Nothing::class,
+    val polymorphicId: Int = 0,
+    val isPolymorphic: Boolean = false,
+)
 
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.CLASS, AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.PROPERTY)

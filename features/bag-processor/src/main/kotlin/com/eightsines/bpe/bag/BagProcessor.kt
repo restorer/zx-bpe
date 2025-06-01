@@ -14,27 +14,45 @@ class BagProcessorProvider : SymbolProcessorProvider {
         BagProcessor(environment.logger, environment.codeGenerator)
 }
 
-class BagProcessor(private val logger: KSPLogger, private val codeGenerator: CodeGenerator) : SymbolProcessor {
+class BagProcessor(logger: KSPLogger, codeGenerator: CodeGenerator) : SymbolProcessor {
     private val stuffParser = BagStuffParser(logger)
     private val stuffGenerator = BagStuffGenerator(logger, codeGenerator)
     private val singlefieldParser = BagSinglefieldParser(logger)
 
     private val allDescriptors = mutableMapOf<TypeDescriptor, BagDescriptor>()
-    private val stuffDescriptors = mutableSetOf<BagDescriptor.Stuff>()
+    private val candidatesStuffMap = mutableMapOf<String, BagDescriptor.Stuff>()
+    private val polymorphicOfStuffMap = mutableMapOf<NameDescriptor, MutableList<BagDescriptor.Stuff>>()
     private val alreadyGeneratedStuffs = mutableSetOf<BagDescriptor.Stuff>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        for (descriptor in stuffParser.parseAll(resolver)) {
-            allDescriptors[descriptor.classDescriptor.asRawTypeDescriptor()] = descriptor
-            stuffDescriptors.add(descriptor)
+        val generatorResolver = object : BagStuffGenerator.Resolver {
+            override fun resolveName(nameReference: NameDescriptorReference): NameDescriptor? = resolveName(resolver, nameReference)
+            override fun resolveType(typeDescriptor: TypeDescriptor): BagDescriptor? = resolveType(resolver, typeDescriptor)
+
+            override fun resolvePolymorphicCases(nameDescriptor: NameDescriptor) =
+                this@BagProcessor.resolvePolymorphicCases(nameDescriptor)
         }
 
-        for (descriptor in stuffDescriptors) {
+        for (descriptor in stuffParser.parseAll(resolver)) {
+            allDescriptors[descriptor.classDescriptor.asRawTypeDescriptor()] = descriptor
+
+            if (descriptor.generateInfo != null) {
+                candidatesStuffMap[descriptor.generateInfo.nameDescriptor.qualifiedName] = descriptor
+            }
+
+            if (descriptor.polymorphicCase != null) {
+                polymorphicOfStuffMap
+                    .computeIfAbsent(descriptor.polymorphicCase.baseDescriptor) { mutableListOf() }
+                    .add(descriptor)
+            }
+        }
+
+        for (descriptor in candidatesStuffMap.values) {
             if (alreadyGeneratedStuffs.contains(descriptor)) {
                 continue
             }
 
-            if (stuffGenerator.generate(descriptor) { resolveDescriptor(resolver, it) }) {
+            if (stuffGenerator.generate(descriptor, generatorResolver)) {
                 alreadyGeneratedStuffs.add(descriptor)
             }
         }
@@ -42,7 +60,17 @@ class BagProcessor(private val logger: KSPLogger, private val codeGenerator: Cod
         return emptyList()
     }
 
-    private fun resolveDescriptor(resolver: Resolver, typeDescriptor: TypeDescriptor): BagDescriptor? {
+    private fun resolveName(resolver: Resolver, nameReference: NameDescriptorReference): NameDescriptor? = when (nameReference) {
+        is NameDescriptorReference.Strict ->
+            NameDescriptor(nameReference.packageName, nameReference.simpleName)
+
+        is NameDescriptorReference.Unresolved ->
+            resolver.getClassDescriptorByName(nameReference.currentPackageName, nameReference.className)?.nameDescriptor
+                ?: candidatesStuffMap[nameReference.className]?.generateInfo?.nameDescriptor
+                ?: candidatesStuffMap["${nameReference.currentPackageName}.${nameReference.className}"]?.generateInfo?.nameDescriptor
+    }
+
+    private fun resolveType(resolver: Resolver, typeDescriptor: TypeDescriptor): BagDescriptor? {
         val typeDescriptor = typeDescriptor.rawTypeDescriptor as? TypeDescriptor.Type ?: return null
 
         allDescriptors[typeDescriptor]?.let { return it }
@@ -61,4 +89,7 @@ class BagProcessor(private val logger: KSPLogger, private val codeGenerator: Cod
 
         return null
     }
+
+    private fun resolvePolymorphicCases(nameDescriptor: NameDescriptor): List<BagDescriptor.Stuff> =
+        polymorphicOfStuffMap[nameDescriptor]?.toList() ?: emptyList()
 }

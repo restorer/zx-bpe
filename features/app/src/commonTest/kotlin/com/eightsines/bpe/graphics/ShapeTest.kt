@@ -20,7 +20,7 @@ class ShapeTest {
             sut to PackableTestBag()
         },
         act = { (sut, bag) ->
-            bag.put(Shape, sut)
+            bag.put(Shape_Stuff, sut)
             bag.wares
         },
         assert = {
@@ -67,10 +67,10 @@ class ShapeTest {
             )
         },
         act = {
-            val sut = it.getStuff(Shape)
+            val sut = it.getStuff(Shape_Stuff)
 
             sut to listOf(
-                sut.type,
+                sut is Shape.LinkedPoints,
                 sut.cellType,
                 (sut as? Shape.LinkedPoints<*>)?.points,
                 (sut as? Shape.LinkedPoints<*>)?.cell,
@@ -78,7 +78,7 @@ class ShapeTest {
         },
         assert = { (sut, props) ->
             assertIs<Shape.LinkedPoints<*>>(sut)
-            assertEquals(listOf(ShapeType.LinkedPoints, CellType.Block, listOf(5 to 8, 3 to 4), BlockCellMother.WhiteBright), props)
+            assertEquals(listOf(true, CellType.Block, listOf(5 to 8, 3 to 4), BlockCellMother.WhiteBright), props)
         }
     )
 
@@ -89,7 +89,7 @@ class ShapeTest {
             sut to PackableTestBag()
         },
         act = { (sut, bag) ->
-            bag.put(Shape, sut)
+            bag.put(Shape_Stuff, sut)
             bag.wares
         },
         assert = {
@@ -134,10 +134,10 @@ class ShapeTest {
             )
         },
         act = {
-            val sut = it.getStuff(Shape)
+            val sut = it.getStuff(Shape_Stuff)
 
             sut to listOf(
-                sut.type,
+                sut is Shape.Line,
                 sut.cellType,
                 (sut as? Shape.Line<*>)?.sx,
                 (sut as? Shape.Line<*>)?.sy,
@@ -148,7 +148,7 @@ class ShapeTest {
         },
         assert = { (sut, props) ->
             assertIs<Shape.Line<*>>(sut)
-            assertEquals(listOf(ShapeType.Line, CellType.Block, 1, 2, 5, 8, BlockCellMother.WhiteBright), props)
+            assertEquals(listOf(true, CellType.Block, 1, 2, 5, 8, BlockCellMother.WhiteBright), props)
         }
     )
 
@@ -159,7 +159,7 @@ class ShapeTest {
             sut to PackableTestBag()
         },
         act = { (sut, bag) ->
-            bag.put(Shape, sut)
+            bag.put(Shape_Stuff, sut)
             bag.wares
         },
         assert = {
@@ -204,10 +204,10 @@ class ShapeTest {
             )
         },
         act = {
-            val sut = it.getStuff(Shape)
+            val sut = it.getStuff(Shape_Stuff)
 
             sut to listOf(
-                sut.type,
+                sut is Shape.FillBox,
                 sut.cellType,
                 (sut as? Shape.FillBox<*>)?.sx,
                 (sut as? Shape.FillBox<*>)?.sy,
@@ -218,7 +218,7 @@ class ShapeTest {
         },
         assert = { (sut, props) ->
             assertIs<Shape.FillBox<*>>(sut)
-            assertEquals(listOf(ShapeType.FillBox, CellType.Block, 1, 2, 5, 8, BlockCellMother.WhiteBright), props)
+            assertEquals(listOf(true, CellType.Block, 1, 2, 5, 8, BlockCellMother.WhiteBright), props)
         }
     )
 
@@ -229,7 +229,7 @@ class ShapeTest {
             sut to PackableTestBag()
         },
         act = { (sut, bag) ->
-            bag.put(Shape, sut)
+            bag.put(Shape_Stuff, sut)
             bag.wares
         },
         assert = {
@@ -274,10 +274,10 @@ class ShapeTest {
             )
         },
         act = {
-            val sut = it.getStuff(Shape)
+            val sut = it.getStuff(Shape_Stuff)
 
             sut to listOf(
-                sut.type,
+                sut is Shape.StrokeBox,
                 sut.cellType,
                 (sut as? Shape.StrokeBox<*>)?.sx,
                 (sut as? Shape.StrokeBox<*>)?.sy,
@@ -288,7 +288,7 @@ class ShapeTest {
         },
         assert = { (sut, props) ->
             assertIs<Shape.StrokeBox<*>>(sut)
-            assertEquals(listOf(ShapeType.StrokeBox, CellType.Block, 1, 2, 5, 8, BlockCellMother.WhiteBright), props)
+            assertEquals(listOf(true, CellType.Block, 1, 2, 5, 8, BlockCellMother.WhiteBright), props)
         }
     )
 
@@ -309,7 +309,7 @@ class ShapeTest {
             sut to PackableTestBag()
         },
         act = { (sut, bag) ->
-            bag.put(Shape, sut)
+            bag.put(Shape_Stuff, sut)
             bag.wares
         },
         assert = {
@@ -368,10 +368,10 @@ class ShapeTest {
             )
         },
         act = {
-            val sut = it.getStuff(Shape)
+            val sut = it.getStuff(Shape_Stuff)
 
             sut to listOf(
-                sut.type,
+                sut is Shape.Cells,
                 sut.cellType,
                 (sut as? Shape.Cells<*>)?.x,
                 (sut as? Shape.Cells<*>)?.y,
@@ -383,7 +383,7 @@ class ShapeTest {
 
             assertEquals(
                 listOf(
-                    ShapeType.Cells,
+                    true,
                     CellType.Block,
                     1,
                     2, Crate(

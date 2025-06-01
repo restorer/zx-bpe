@@ -24,6 +24,7 @@ import com.eightsines.bpe.bag.requireSupportedStuffVersion
 import com.eightsines.bpe.foundation.BackgroundLayer_Stuff
 import com.eightsines.bpe.foundation.CanvasLayer_Stuff
 import com.eightsines.bpe.foundation.MutableBackgroundLayer_Stuff
+import com.eightsines.bpe.foundation.MutableCanvasLayer_Stuff
 
 class GraphicsEngine(
     private val logger: Logger,
@@ -585,7 +586,7 @@ class GraphicsEngine(
             requireSupportedStuffVersion("GraphicsEngine", 1, version)
 
             val backgroundLayer = bag.getStuff(MutableBackgroundLayer_Stuff)
-            val canvasLayers = bag.getList { bag.getStuff(MutableCanvasLayer) }
+            val canvasLayers = bag.getList { bag.getStuff(MutableCanvasLayer_Stuff) }
 
             // Unpacked successfully, can mutate safely
 

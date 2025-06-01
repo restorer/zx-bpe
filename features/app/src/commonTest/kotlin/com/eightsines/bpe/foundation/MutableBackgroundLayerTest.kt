@@ -56,7 +56,7 @@ class MutableBackgroundLayerTest {
             )
         },
         act = {
-            val sut = it.getStuff(MutableBackgroundLayer)
+            val sut = it.getStuff(MutableBackgroundLayer_Stuff)
 
             sut to listOf(
                 sut.isVisible,

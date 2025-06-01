@@ -6,6 +6,7 @@ import com.eightsines.bpe.bag.PackableBag
 import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.core.Box
 import com.eightsines.bpe.core.Cell
+import com.eightsines.bpe.core.Cell_Stuff
 import com.eightsines.bpe.core.SciiCell
 
 @BagStuff
@@ -93,11 +94,11 @@ data class Crate<T : Cell>(
 
         @Suppress("NOTHING_TO_INLINE")
         internal inline fun putCellsInTheBag(bag: PackableBag, cells: List<List<Cell>>) {
-            cells.forEach { line -> line.forEach { bag.put(Cell, it) } }
+            cells.forEach { line -> line.forEach { bag.put(Cell_Stuff, it) } }
         }
 
         @Suppress("NOTHING_TO_INLINE")
         internal inline fun getCellsOutOfTheBag(bag: UnpackableBag, width: Int, height: Int): List<List<Cell>> =
-            (0..<height).map { (0..<width).map { bag.getStuff(Cell) } }
+            (0..<height).map { (0..<width).map { bag.getStuff(Cell_Stuff) } }
     }
 }

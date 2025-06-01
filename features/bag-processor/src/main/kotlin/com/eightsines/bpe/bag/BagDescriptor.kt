@@ -33,16 +33,28 @@ sealed interface BagDescriptor {
 
     data class Stuff(
         val classDescriptor: DeclarationDescriptor,
-        val packerDescriptor: NameDescriptor?,
-        val unpackerDescriptor: NameDescriptor?,
+        val isSealed: Boolean,
+        val packerReference: NameDescriptorReference?,
+        val unpackerReference: NameDescriptorReference?,
+        val polymorphicCase: BagStuffPolymorphicCase?,
         val wares: List<BagStuffWareDescriptor>,
-        val generatedSimpleName: String?,
-        val shouldGeneratePacker: Boolean,
-        val shouldGenerateUnpacker: Boolean,
+        val generateInfo: BagStuffGenerateInfo?,
         val sourceSymbol: KSNode,
         val sourceFile: KSFile,
     ) : BagDescriptor
 }
+
+data class BagStuffGenerateInfo(
+    val nameDescriptor: NameDescriptor,
+    val shouldGeneratePacker: Boolean,
+    val shouldGenerateUnpacker: Boolean,
+    val isPolymorphic: Boolean,
+)
+
+data class BagStuffPolymorphicCase(
+    val baseDescriptor: NameDescriptor,
+    val id: Int,
+)
 
 data class BagStuffWareDescriptor(
     val fieldName: String,
