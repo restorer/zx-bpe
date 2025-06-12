@@ -6,23 +6,24 @@ object Merger {
         val ontoCharValue = onto.character.value
 
         return when {
-            charValue == SciiChar.Companion.VALUE_TRANSPARENT && ontoCharValue == SciiChar.Companion.VALUE_TRANSPARENT -> SciiCell.Companion.Transparent
+            charValue == SciiChar.ForceTransparent.value -> SciiCell.Transparent
+            charValue == SciiChar.Transparent.value && ontoCharValue == SciiChar.Transparent.value -> SciiCell.Transparent
 
-            charValue in SciiChar.Companion.BLOCK_VALUE_FIRST..SciiChar.Companion.BLOCK_VALUE_LAST &&
-                    ontoCharValue in SciiChar.Companion.BLOCK_VALUE_FIRST..SciiChar.Companion.BLOCK_VALUE_LAST -> {
+            charValue in SciiChar.BLOCK_VALUE_FIRST..SciiChar.BLOCK_VALUE_LAST &&
+                    ontoCharValue in SciiChar.BLOCK_VALUE_FIRST..SciiChar.BLOCK_VALUE_LAST -> {
 
                 val ontoInk = onto.ink
                 val ontoPaper = onto.paper
 
-                val trColor = if ((charValue and SciiChar.Companion.BLOCK_BIT_TR) != 0) which.ink else which.paper
-                val tlColor = if ((charValue and SciiChar.Companion.BLOCK_BIT_TL) != 0) which.ink else which.paper
-                val brColor = if ((charValue and SciiChar.Companion.BLOCK_BIT_BR) != 0) which.ink else which.paper
-                val blColor = if ((charValue and SciiChar.Companion.BLOCK_BIT_BL) != 0) which.ink else which.paper
+                val trColor = if ((charValue and SciiChar.BLOCK_BIT_TR) != 0) which.ink else which.paper
+                val tlColor = if ((charValue and SciiChar.BLOCK_BIT_TL) != 0) which.ink else which.paper
+                val brColor = if ((charValue and SciiChar.BLOCK_BIT_BR) != 0) which.ink else which.paper
+                val blColor = if ((charValue and SciiChar.BLOCK_BIT_BL) != 0) which.ink else which.paper
 
-                val ontoTrColor = if ((ontoCharValue and SciiChar.Companion.BLOCK_BIT_TR) != 0) ontoInk else ontoPaper
-                val ontoTlColor = if ((ontoCharValue and SciiChar.Companion.BLOCK_BIT_TL) != 0) ontoInk else ontoPaper
-                val ontoBrColor = if ((ontoCharValue and SciiChar.Companion.BLOCK_BIT_BR) != 0) ontoInk else ontoPaper
-                val ontoBlColor = if ((ontoCharValue and SciiChar.Companion.BLOCK_BIT_BL) != 0) ontoInk else ontoPaper
+                val ontoTrColor = if ((ontoCharValue and SciiChar.BLOCK_BIT_TR) != 0) ontoInk else ontoPaper
+                val ontoTlColor = if ((ontoCharValue and SciiChar.BLOCK_BIT_TL) != 0) ontoInk else ontoPaper
+                val ontoBrColor = if ((ontoCharValue and SciiChar.BLOCK_BIT_BR) != 0) ontoInk else ontoPaper
+                val ontoBlColor = if ((ontoCharValue and SciiChar.BLOCK_BIT_BL) != 0) ontoInk else ontoPaper
 
                 val mergedTrColor = mergeColor(trColor, ontoTrColor)
                 val mergedTlColor = mergeColor(tlColor, ontoTlColor)
@@ -37,11 +38,11 @@ object Merger {
 
                 when (mergedColorsMap.size) {
                     1 -> {
-                        if (mergedTrColor == SciiColor.Companion.Transparent) {
-                            SciiCell.Companion.Transparent
+                        if (mergedTrColor.value < 0) {
+                            SciiCell.Transparent
                         } else {
                             SciiCell(
-                                character = SciiChar.Companion.BlockSpace,
+                                character = SciiChar.BlockSpace,
                                 ink = mergedTrColor,
                                 paper = mergedTrColor,
                                 bright = mergeLight(which.bright, onto.bright),
@@ -53,11 +54,11 @@ object Merger {
                     2 -> {
                         val (mergedInk, mergedPaper) = mergedColorsMap.keys.toList()
 
-                        val mergedValue = SciiChar.Companion.BLOCK_VALUE_FIRST +
-                                (if (mergedTrColor == mergedInk) SciiChar.Companion.BLOCK_BIT_TR else 0) +
-                                (if (mergedTlColor == mergedInk) SciiChar.Companion.BLOCK_BIT_TL else 0) +
-                                (if (mergedBrColor == mergedInk) SciiChar.Companion.BLOCK_BIT_BR else 0) +
-                                (if (mergedBlColor == mergedInk) SciiChar.Companion.BLOCK_BIT_BL else 0)
+                        val mergedValue = SciiChar.BLOCK_VALUE_FIRST +
+                                (if (mergedTrColor == mergedInk) SciiChar.BLOCK_BIT_TR else 0) +
+                                (if (mergedTlColor == mergedInk) SciiChar.BLOCK_BIT_TL else 0) +
+                                (if (mergedBrColor == mergedInk) SciiChar.BLOCK_BIT_BR else 0) +
+                                (if (mergedBlColor == mergedInk) SciiChar.BLOCK_BIT_BL else 0)
 
                         SciiCell(
                             character = SciiChar(mergedValue),
@@ -95,13 +96,25 @@ object Merger {
 
     @Suppress("NOTHING_TO_INLINE")
     inline fun mergeChar(which: SciiChar, onto: SciiChar): SciiChar =
-        if (which.value != SciiChar.Companion.VALUE_TRANSPARENT) which else onto
+        when (which) {
+            SciiChar.ForceTransparent -> SciiChar.Transparent
+            SciiChar.Transparent -> onto
+            else -> which
+        }
 
     @Suppress("NOTHING_TO_INLINE")
     inline fun mergeColor(which: SciiColor, onto: SciiColor): SciiColor =
-        if (which != SciiColor.Companion.Transparent) which else onto
+        when (which) {
+            SciiColor.ForceTransparent -> SciiColor.Transparent
+            SciiColor.Transparent -> onto
+            else -> which
+        }
 
     @Suppress("NOTHING_TO_INLINE")
     inline fun mergeLight(which: SciiLight, onto: SciiLight): SciiLight =
-        if (which != SciiLight.Companion.Transparent) which else onto
+        when (which) {
+            SciiLight.ForceTransparent -> SciiLight.Transparent
+            SciiLight.Transparent -> onto
+            else -> which
+        }
 }

@@ -27,7 +27,7 @@ interface BackgroundLayer : Layer {
 
     val sciiCell: SciiCell
         get() = SciiCell(
-            character = if (color == SciiColor.Transparent) SciiChar.Transparent else SciiChar.Space,
+            character = if (color.value < 0) SciiChar.Transparent else SciiChar.Space,
             ink = color,
             paper = color,
             bright = bright,

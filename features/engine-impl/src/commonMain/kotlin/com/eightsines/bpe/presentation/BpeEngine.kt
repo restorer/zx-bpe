@@ -802,8 +802,8 @@ class BpeEngine(
         private fun unpackStuff(bag: UnpackableBag): UnpackerStuff {
             val palette = bag.getStuff(MutablePalette_Stuff)
             val toolboxTool = requireNoIllegalArgumentException { BpeTool.of(bag.getInt()) }
-            val toolboxPaintShape = requireNoIllegalArgumentException { BpeShape.Companion.of(bag.getInt()) }
-            val toolboxEraseShape = requireNoIllegalArgumentException { BpeShape.Companion.of(bag.getInt()) }
+            val toolboxPaintShape = requireNoIllegalArgumentException { BpeShape.of(bag.getInt()) }
+            val toolboxEraseShape = requireNoIllegalArgumentException { BpeShape.of(bag.getInt()) }
             val currentLayerUid = LayerUid(bag.getString())
             val history = bag.getList { bag.getStuff(HistoryStep) }
             val historyPosition = bag.getInt()

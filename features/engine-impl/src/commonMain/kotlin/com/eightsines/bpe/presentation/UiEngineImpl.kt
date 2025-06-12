@@ -670,7 +670,7 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
                 Panel.Ink -> UiPanel.Colors(bpeState.paletteInk)
                 Panel.Paper -> UiPanel.Colors(bpeState.palettePaper ?: SciiColor.Transparent)
                 Panel.Bright -> UiPanel.Lights(bpeState.paletteBright ?: SciiLight.Transparent)
-                Panel.Flash -> UiPanel.Lights(bpeState.paletteBright ?: SciiLight.Transparent)
+                Panel.Flash -> UiPanel.Lights(bpeState.paletteFlash ?: SciiLight.Transparent)
                 Panel.Chars -> UiPanel.Chars(bpeState.paletteChar ?: SciiChar.Transparent)
                 Panel.SelectionMenu -> UiPanel.SelectionMenu
                 Panel.Layers -> UiPanel.Layers

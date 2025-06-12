@@ -1,11 +1,11 @@
 package com.eightsines.bpe.view
 
-import com.eightsines.bpe.foundation.SciiChar
-import com.eightsines.bpe.foundation.SciiColor
-import com.eightsines.bpe.foundation.SciiLight
 import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.foundation.LayerUid
+import com.eightsines.bpe.foundation.SciiChar
+import com.eightsines.bpe.foundation.SciiColor
+import com.eightsines.bpe.foundation.SciiLight
 import com.eightsines.bpe.presentation.BpePaintingMode
 import com.eightsines.bpe.presentation.BpeShape
 import com.eightsines.bpe.presentation.LayerView
@@ -14,9 +14,9 @@ import com.eightsines.bpe.presentation.UiArea
 import com.eightsines.bpe.presentation.UiPanel
 import com.eightsines.bpe.presentation.UiSheetView
 import com.eightsines.bpe.presentation.UiToolState
+import com.eightsines.bpe.util.ElapsedTimeProvider
 import com.eightsines.bpe.util.ResourceManager
 import com.eightsines.bpe.util.TextRes
-import com.eightsines.bpe.util.ElapsedTimeProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.dom.addClass
@@ -59,9 +59,7 @@ class BrowserView(
     private val palettePaper = document.find<HTMLElement>(".js-palette-paper")
     private val palettePaperIndicator = document.find<HTMLElement>(".js-palette-paper-indicator")
     private val paletteBright = document.find<HTMLElement>(".js-palette-bright")
-    private val paletteBrightIndicator = document.find<HTMLElement>(".js-palette-bright-indicator")
     private val paletteFlash = document.find<HTMLElement>(".js-palette-flash")
-    private val paletteFlashIndicator = document.find<HTMLElement>(".js-palette-flash-indicator")
     private val paletteChar = document.find<HTMLElement>(".js-palette-char")
     private val paletteCharIndicator = document.find<HTMLElement>(".js-palette-char-indicator")
 
@@ -339,11 +337,11 @@ class BrowserView(
         }
 
         paletteBright?.setToolState(uiState.paletteBright) {
-            paletteBrightIndicator?.replaceClassModifier("tool__light--", getLightClassSuffix(it))
+            paletteBright.replaceClassModifier("tool__light--", getLightClassSuffix(it))
         }
 
         paletteFlash?.setToolState(uiState.paletteFlash) {
-            paletteFlashIndicator?.replaceClassModifier("tool__light--", getLightClassSuffix(it))
+            paletteFlash.replaceClassModifier("tool__light--", getLightClassSuffix(it))
         }
 
         paletteChar?.setToolState(uiState.paletteChar) {
@@ -714,14 +712,24 @@ class BrowserView(
                 .also { colorItems[sciiColor] = it }
         }
 
-        document
-            .createElement(NAME_DIV) {
-                className = "tool tool--md"
-                addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ColorsItemClick(SciiColor.Transparent))) }
-            }
-            .appendChildren(document.createElement(NAME_DIV) { className = "tool__color tool__color--transparent" })
-            .appendTo(paneElement)
-            .also { colorItems[SciiColor.Transparent] = it }
+        for ((sciiColor, suffix) in listOf(SciiColor.Transparent to SUFFIX_TRANSPARENT, SciiColor.ForceTransparent to SUFFIX_FORCE_TRANSPARENT)) {
+            document
+                .createElement(NAME_DIV) {
+                    className = "tool tool--md"
+                    addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.ColorsItemClick(sciiColor))) }
+                }
+                .appendChildren(
+                    document.createElement(NAME_IMG) {
+                        this as HTMLImageElement
+
+                        className = "tool__indicator tool__indicator--transparent"
+                        src = SRC_LIGHT_FORMAT.replace("{}", suffix)
+                        alt = ""
+                    }
+                )
+                .appendTo(paneElement)
+                .also { colorItems[sciiColor] = it }
+        }
     }
 
     private fun createLightItems() {
@@ -729,13 +737,28 @@ class BrowserView(
             .createElement(NAME_DIV) { className = "panel__pane" }
             .appendTo(lightsPanel)
 
-        for ((sciiLight, suffix) in listOf(SciiLight.Off to "off", SciiLight.On to "on", SciiLight.Transparent to SUFFIX_TRANSPARENT)) {
+        val availLights = listOf(
+            SciiLight.Off to SUFFIX_OFF,
+            SciiLight.On to SUFFIX_ON,
+            SciiLight.Transparent to SUFFIX_TRANSPARENT,
+            SciiLight.ForceTransparent to SUFFIX_FORCE_TRANSPARENT,
+        )
+
+        for ((sciiLight, suffix) in availLights) {
             document
                 .createElement(NAME_DIV) {
                     className = "tool tool--md"
                     addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.LightsItemClick(sciiLight))) }
                 }
-                .appendChildren(document.createElement(NAME_DIV) { className = "tool__light tool__light--${suffix}" })
+                .appendChildren(
+                    document.createElement(NAME_IMG) {
+                        this as HTMLImageElement
+
+                        className = "tool__icon tool__icon--light"
+                        src = SRC_LIGHT_FORMAT.replace("{}", suffix)
+                        alt = ""
+                    }
+                )
                 .appendTo(paneElement)
                 .also { lightItems[sciiLight] = it }
         }
@@ -762,14 +785,28 @@ class BrowserView(
             }
         }
 
-        document
-            .createElement(NAME_DIV) {
-                className = "tool tool--xs"
-                addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.CharsItemClick(SciiChar.Transparent))) }
-            }
-            .appendChildren(document.createElement(NAME_DIV) { className = "tool__char tool__char--transparent" })
+        val paneElement = document
+            .createElement(NAME_DIV) { className = "panel__pane" }
             .appendTo(charsPanel)
-            .also { charItems[SciiChar.Transparent] = it }
+
+        for ((sciiChar, suffix) in listOf(SciiChar.Transparent to SUFFIX_TRANSPARENT, SciiChar.ForceTransparent to SUFFIX_FORCE_TRANSPARENT)) {
+            document
+                .createElement(NAME_DIV) {
+                    className = "tool tool--xs"
+                    addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.CharsItemClick(sciiChar))) }
+                }
+                .appendChildren(
+                    document.createElement(NAME_IMG) {
+                        this as HTMLImageElement
+
+                        className = "tool__indicator tool__indicator--transparent"
+                        src = SRC_LIGHT_FORMAT.replace("{}", suffix)
+                        alt = ""
+                    }
+                )
+                .appendTo(paneElement)
+                .also { charItems[sciiChar] = it }
+        }
     }
 
     private fun createLayerTypeItems() {
@@ -936,22 +973,23 @@ class BrowserView(
         removeClass(CLASS_TOOL_ACTIVE)
     }
 
-    private fun getColorClassSuffix(color: SciiColor) = if (color == SciiColor.Transparent) {
-        SUFFIX_TRANSPARENT
-    } else {
-        color.value.toString()
+    private fun getColorClassSuffix(color: SciiColor) = when (color) {
+        SciiColor.ForceTransparent -> SUFFIX_FORCE_TRANSPARENT
+        SciiColor.Transparent -> SUFFIX_TRANSPARENT
+        else -> color.value.toString()
     }
 
     private fun getLightClassSuffix(light: SciiLight) = when (light) {
         SciiLight.On -> "on"
         SciiLight.Off -> "off"
+        SciiLight.ForceTransparent -> SUFFIX_FORCE_TRANSPARENT
         else -> SUFFIX_TRANSPARENT
     }
 
-    private fun getCharClassSuffix(character: SciiChar) = if (character == SciiChar.Transparent) {
-        SUFFIX_TRANSPARENT
-    } else {
-        character.value.toString()
+    private fun getCharClassSuffix(character: SciiChar) = when (character) {
+        SciiChar.ForceTransparent -> SUFFIX_FORCE_TRANSPARENT
+        SciiChar.Transparent -> SUFFIX_TRANSPARENT
+        else -> character.value.toString()
     }
 
     private fun getShapeClassSuffix(shape: BpeShape) = when (shape) {
@@ -982,7 +1020,10 @@ class BrowserView(
         private const val CLASS_HIDDEN = "hidden"
         private const val CLASS_TOOL_DISABLED = "tool--disabled"
         private const val CLASS_TOOL_ACTIVE = "tool--active"
+        private const val SUFFIX_OFF = "off"
+        private const val SUFFIX_ON = "on"
         private const val SUFFIX_TRANSPARENT = "transparent"
+        private const val SUFFIX_FORCE_TRANSPARENT = "force_transparent"
         const val SELECTOR_DRAWING_SHEET = ".js-drawing-sheet"
 
         private const val EVENT_CLICK = "click"
@@ -1012,6 +1053,8 @@ class BrowserView(
         private const val SRC_TYPE_HBLOCK = "drawable/type__hblock.svg"
         private const val SRC_TYPE_VBLOCK = "drawable/type__vblock.svg"
         private const val SRC_TYPE_QBLOCK = "drawable/type__qblock.svg"
+
+        private const val SRC_LIGHT_FORMAT = "drawable/light__{}.svg"
 
         private const val PREVIEW_WIDTH = 256
         private const val PREVIEW_HEIGHT = 192

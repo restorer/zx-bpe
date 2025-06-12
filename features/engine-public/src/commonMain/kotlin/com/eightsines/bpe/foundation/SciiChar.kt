@@ -10,8 +10,6 @@ value class SciiChar(val value: Int) {
     override fun toString() = "SciiChar($value)"
 
     companion object {
-        const val VALUE_TRANSPARENT = -1
-
         const val BLOCK_VALUE_FIRST = 0x80
         const val BLOCK_VALUE_LAST = 0x8F
 
@@ -21,6 +19,7 @@ value class SciiChar(val value: Int) {
         const val BLOCK_BIT_BL = 0x08
         const val BLOCK_MASK = BLOCK_BIT_TR + BLOCK_BIT_TL + BLOCK_BIT_BR + BLOCK_BIT_BL
 
+        val ForceTransparent = SciiChar(-2)
         val Transparent = SciiChar(-1)
         val Space = SciiChar(32)
 

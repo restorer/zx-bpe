@@ -95,7 +95,7 @@ abstract class HBlockCanvas(
         val topCell = cells[drawingY][sciiX]
         val bottomCell = cells[drawingY + 1][sciiX]
 
-        return if (topCell.color == SciiColor.Transparent && bottomCell.color == SciiColor.Transparent) {
+        return if (topCell.color.value < 0 && bottomCell.color.value < 0) {
             SciiCell.Transparent
         } else {
             SciiCell(
@@ -151,7 +151,7 @@ abstract class VBlockCanvas(
         val leftCell = cells[sciiY][drawingX]
         val rightCell = cells[sciiY][drawingX + 1]
 
-        return if (leftCell.color == SciiColor.Transparent && rightCell.color == SciiColor.Transparent) {
+        return if (leftCell.color.value < 0 && rightCell.color.value < 0) {
             SciiCell.Transparent
         } else {
             SciiCell(

@@ -55,10 +55,10 @@ class ScrExporter(
             for (sciiX in 0..31) {
                 val cell = preview.getSciiCell(sciiX, sciiY)
 
-                val paper = if (cell.paper == SciiColor.Transparent) defaultPaper else cell.paper.value
-                val ink = if (cell.ink == SciiColor.Transparent) defaultInk else cell.ink.value
-                val bright = if (cell.bright == SciiLight.Transparent) defaultBright else cell.bright.value
-                val flash = if (cell.flash == SciiLight.Transparent) defaultFlash else cell.flash.value
+                val paper = if (cell.paper.value < 0) defaultPaper else cell.paper.value
+                val ink = if (cell.ink.value < 0) defaultInk else cell.ink.value
+                val bright = if (cell.bright.value < 0) defaultBright else cell.bright.value
+                val flash = if (cell.flash.value < 0) defaultFlash else cell.flash.value
 
                 val attrsValue = flash * 128 + bright * 64 + paper * 8 + ink
                 result.add(attrsValue.toByte())

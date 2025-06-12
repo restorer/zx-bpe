@@ -7,6 +7,7 @@ value class SciiColor(val value: Int) {
     override fun toString() = "SciiColor($value)"
 
     companion object {
+        val ForceTransparent = SciiColor(-2)
         val Transparent = SciiColor(-1)
         val Black = SciiColor(0)
 
