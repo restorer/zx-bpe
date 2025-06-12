@@ -17,7 +17,7 @@ class BagStuffParser(private val logger: KSPLogger) {
         }
     }
 
-    private fun parse(resolver: Resolver, classDeclaration: KSClassDeclaration): BagDescriptor.Stuff? {
+    fun parse(resolver: Resolver, classDeclaration: KSClassDeclaration): BagDescriptor.Stuff? {
         val annotation = classDeclaration.annotations.firstOrNull { it.nameDescriptor == STUFF_ANNOTATION_NAME_DESCRIPTOR }
 
         return if (annotation != null) {
@@ -146,7 +146,7 @@ class BagStuffParser(private val logger: KSPLogger) {
                 null
             },
             sourceSymbol = classDeclaration,
-            sourceFile = requireNotNull(classDeclaration.containingFile),
+            sourceFile = classDeclaration.containingFile,
         )
     }
 

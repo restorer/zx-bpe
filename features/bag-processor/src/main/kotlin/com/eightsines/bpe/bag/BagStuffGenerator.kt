@@ -25,6 +25,15 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
     fun generate(descriptor: BagDescriptor.Stuff, resolver: Resolver): Boolean {
         val generateInfo = descriptor.generateInfo ?: return true
 
+        if (descriptor.sourceFile == null) {
+            logger.error(
+                "@${BagStuffParser.STUFF_ANNOTATION_NAME} of \"${descriptor.classDescriptor}\": not generating Stuff, because class is from dependency module",
+                descriptor.sourceSymbol,
+            )
+
+            return false
+        }
+
         val polymorphicCases = if (generateInfo.isPolymorphic) {
             val cases = resolver.resolvePolymorphicCases(descriptor.classDescriptor.nameDescriptor)
                 .map { requireNotNull(it.polymorphicCase) to it }

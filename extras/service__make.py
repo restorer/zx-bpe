@@ -8,7 +8,7 @@ WEBROOT = '.'
 
 
 def main() -> int:
-    resources_path = os.path.abspath(os.path.dirname(__file__) + '/../features/app/src/jsMain/resources')
+    resources_path = os.path.abspath(os.path.dirname(__file__) + '/../features/ui-pwa-impl/src/jsMain/resources')
     template_path = os.path.dirname(__file__) + '/service__template.js'
     result_path = resources_path + '/service.js'
 

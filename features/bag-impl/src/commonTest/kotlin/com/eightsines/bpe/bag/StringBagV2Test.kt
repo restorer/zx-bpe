@@ -1,10 +1,5 @@
 package com.eightsines.bpe.bag
 
-import com.eightsines.bpe.bag.BagUnpackException
-import com.eightsines.bpe.bag.PackableBag
-import com.eightsines.bpe.bag.PackableStringBagV2
-import com.eightsines.bpe.bag.UnpackableBag
-import com.eightsines.bpe.bag.UnpackableStringBagV2
 import com.eightsines.bpe.testing.TestStuff
 import com.eightsines.bpe.testing.TestStuffMother
 import com.eightsines.bpe.testing.performTest

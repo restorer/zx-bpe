@@ -2,7 +2,7 @@ package com.eightsines.bpe.bag
 
 import kotlin.reflect.KClass
 
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.CLASS)
 annotation class BagStuff(
     val packer: String = "",
@@ -12,7 +12,7 @@ annotation class BagStuff(
     val isPolymorphic: Boolean = false,
 )
 
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.CLASS, AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.PROPERTY)
 @Repeatable
 annotation class BagStuffWare(

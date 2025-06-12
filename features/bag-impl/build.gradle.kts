@@ -21,7 +21,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(projects.features.bagPublic)
+            api(projects.features.bagPublic)
         }
 
         commonTest.dependencies {

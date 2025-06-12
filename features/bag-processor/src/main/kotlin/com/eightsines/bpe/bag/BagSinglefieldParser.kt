@@ -10,7 +10,9 @@ class BagSinglefieldParser(private val logger: KSPLogger) {
     fun parse(resolver: Resolver, classDeclaration: KSClassDeclaration): BagDescriptor.Singlefield? {
         val classDescriptor = classDeclaration.declarationDescriptor
 
-        return if (classDeclaration.modifiers.contains(Modifier.VALUE)) {
+        // Class declaration has "VALUE" modifier, when class is in the same module,
+        // bub "INLINE", when class is in the dependency module.
+        return if (classDeclaration.modifiers.contains(Modifier.VALUE) || classDeclaration.modifiers.contains(Modifier.INLINE)) {
             parseValueClass(classDeclaration, classDescriptor)
         } else {
             val annotation = classDeclaration.annotations.firstOrNull { it.nameDescriptor == ANNOTATION_NAME_DESCRIPTOR }

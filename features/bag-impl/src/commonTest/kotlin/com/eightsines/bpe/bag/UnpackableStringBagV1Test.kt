@@ -1,6 +1,5 @@
 package com.eightsines.bpe.bag
 
-import com.eightsines.bpe.bag.UnpackableStringBagV1
 import com.eightsines.bpe.testing.TestStuff
 import com.eightsines.bpe.testing.TestStuffMother
 import com.eightsines.bpe.testing.performTest

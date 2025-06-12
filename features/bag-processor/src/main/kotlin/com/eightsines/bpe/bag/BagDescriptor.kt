@@ -40,7 +40,7 @@ sealed interface BagDescriptor {
         val wares: List<BagStuffWareDescriptor>,
         val generateInfo: BagStuffGenerateInfo?,
         val sourceSymbol: KSNode,
-        val sourceFile: KSFile,
+        val sourceFile: KSFile?,
     ) : BagDescriptor
 }
 

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+    <meta name="apple-mobile-web-app-status-bar" content="#3e2723"/>
+    <meta name="theme-color" content="#3e2723"/>
+    <title>BPE</title>
+    <link rel="manifest" href="manifest.json"/>
+    <link rel="stylesheet" type="text/css" href="style/material.css"/>
+    <link rel="stylesheet" type="text/css" href="style/bpe.css"/>
+    <link rel="stylesheet" type="text/css" href="style/specscii.css"/>
+    <link rel="icon" href="favicon.ico"/>
+    <link rel="apple-touch-icon" href="icons/icon__48x48.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__72x72.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__96x96.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__128x128.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__144x144.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__152x152.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__168x168.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__192x192.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__384x384.png"/>
+    <link rel="apple-touch-icon" href="icons/icon__512x512.png"/>
+    <script type="application/javascript" src="app.js"></script>
+    <script type="application/javascript">
+
+        if (window.origin != "null" && "serviceWorker" in navigator) {
+            window.addEventListener("load", function() {
+                navigator.serviceWorker
+                    .register("./service.js", { scope: "." })
+                    .catch(err => console.log(String(err)));
+            });
+        }
+
+    </script>
+</head>
+<body bpe-build="109">
+<div class="loading js-loading"></div>
+<div class="container hidden js-container">
+    <div class="drawing js-drawing">
+        <canvas width="320" height="256" class="drawing__sheet js-drawing-sheet"></canvas>
+        <canvas width="320" height="256" class="drawing__areas js-drawing-areas"></canvas>
+    </div>
+    <div class="panel panel--palette">
+        <div class="panel__pane">
+            <div class="tool js-palette-color" bpe-title="palette_select_color">
+                <div class="tool__color js-palette-color-indicator"></div>
+                <img src="drawable/palette__color.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-palette-paper" bpe-title="palette_select_paper">
+                <div class="tool__color_paper js-palette-paper-indicator"></div>
+                <img src="drawable/palette__paper.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-palette-ink" bpe-title="palette_select_ink">
+                <div class="tool__color_ink js-palette-ink-indicator"></div>
+                <img src="drawable/palette__ink.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-palette-bright" bpe-title="palette_select_bright">
+                <div class="tool__light js-palette-bright-indicator"></div>
+                <img src="drawable/palette__bright.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-palette-flash" bpe-title="palette_select_flash">
+                <div class="tool__light js-palette-flash-indicator"></div>
+                <img src="drawable/palette__flash.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-palette-char" bpe-title="palette_select_character">
+                <div class="tool__char js-palette-char-indicator"></div>
+                <img src="drawable/palette__char.svg" alt="" class="tool"/>
+            </div>
+        </div>
+        <div class="panel__pane">
+            <div class="tool js-selection-paste" bpe-title="selection_paste">
+                <img src="drawable/selection__paste.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-menu" bpe-title="selection_menu">
+                <img src="drawable/menu__secondary.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-layers" bpe-title="layers">
+                <img src="drawable/layers.svg" alt="" class="tool__icon"/>
+            </div>
+        </div>
+    </div>
+    <div class="panel panel--toolbox">
+        <div class="panel__pane">
+            <div class="tool js-toolbox-paint" bpe-title="tool_paint">
+                <img src="drawable/tool__paint.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool tool__shape js-toolbox-shape">
+                <img src="drawable/shape__point.svg" alt="" class="tool__icon tool__icon--shape__point"/>
+                <img src="drawable/shape__line.svg" alt="" class="tool__icon tool__icon--shape__line"/>
+                <img src="drawable/shape__stroke_box.svg" alt="" class="tool__icon tool__icon--shape__stroke_box"/>
+                <img src="drawable/shape__fill_box.svg" alt="" class="tool__icon tool__icon--shape__fill_box"/>
+                <img src="drawable/shape__stroke_ellipse.svg" alt="" class="tool__icon tool__icon--shape__stroke_ellipse"/>
+                <img src="drawable/shape__fill_ellipse.svg" alt="" class="tool__icon tool__icon--shape__fill_ellipse"/>
+            </div>
+            <div class="tool js-toolbox-erase" bpe-title="tool_erase">
+                <img src="drawable/tool__erase.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-toolbox-select" bpe-title="tool_select">
+                <img src="drawable/tool__select.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-toolbox-pick-color" bpe-title="tool_pick_color">
+                <img src="drawable/tool__pick_color.svg" alt="" class="tool__icon"/>
+            </div>
+        </div>
+        <div class="panel__pane">
+            <div class="tool js-toolbox-undo" bpe-title="toolbox_undo">
+                <img src="drawable/toolbox__undo.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-toolbox-redo" bpe-title="toolbox_redo">
+                <img src="drawable/toolbox__redo.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool tool__mode js-toolbox-mode">
+                <img src="drawable/toolbox__mode_edge.svg" alt="" class="tool__icon tool__icon--mode__edge"/>
+                <img src="drawable/toolbox__mode_center.svg" alt="" class="tool__icon tool__icon--mode__center"/>
+            </div>
+            <div class="tool js-menu" bpe-title="menu">
+                <img src="drawable/menu__primary.svg" alt="" class="tool__icon"/>
+            </div>
+        </div>
+    </div>
+    <div class="informer js-informer"></div>
+    <div class="subpanel subpanel--palette js-colors-panel"></div>
+    <div class="subpanel subpanel--palette js-lights-panel"></div>
+    <div class="subpanel subpanel--palette subpanel--palette_chars js-chars-panel"></div>
+    <div class="subpanel subpanel--palette subpanel--palette_selection js-selection-panel">
+        <div class="panel__pane">
+            <div class="tool js-selection-cut" bpe-title="selection_cut">
+                <img src="drawable/selection__cut.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-copy" bpe-title="selection_copy">
+                <img src="drawable/selection__copy.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-flip-horizontal" bpe-title="selection_flip_horizontal">
+                <img src="drawable/selection__flip_horizontal.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-flip-vertical" bpe-title="selection_flip_vertical">
+                <img src="drawable/selection__flip_vertical.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-rotate-cw" bpe-title="selection_rotate_cw">
+                <img src="drawable/selection__rotate_cw.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-rotate-ccw" bpe-title="selection_rotate_ccw">
+                <img src="drawable/selection__rotate_ccw.svg" alt="" class="tool__icon"/>
+            </div>
+        </div>
+    </div>
+    <div class="layers js-layers-panel">
+        <div class="layers__items js-layers-items"></div>
+        <div class="layers__toolbar js-layers-toolbar-primary">
+            <div class="panel__pane">
+                <div class="tool tool--md js-layers-create" bpe-title="layers_create">
+                    <img src="drawable/layer__create.svg" alt="" class="tool__icon"/>
+                </div>
+                <div class="tool tool--md js-layers-merge" bpe-title="layers_merge">
+                    <img src="drawable/layer__merge.svg" alt="" class="tool__icon"/>
+                </div>
+                <div class="tool tool--md js-layers-convert" bpe-title="layers_convert">
+                    <img src="drawable/layer__convert.svg" alt="" class="tool__icon"/>
+                </div>
+                <div class="tool tool--md js-layers-delete" bpe-title="layers_delete">
+                    <img src="drawable/layer__delete.svg" alt="" class="tool__icon"/>
+                </div>
+            </div>
+            <div class="panel__pane">
+                <div class="tool tool--md js-layers-move-up" bpe-title="layers_move_up">
+                    <img src="drawable/layer__move_up.svg" alt="" class="tool__icon"/>
+                </div>
+                <div class="tool tool--md js-layers-move-down" bpe-title="layers_move_down">
+                    <img src="drawable/layer__move_down.svg" alt="" class="tool__icon"/>
+                </div>
+            </div>
+        </div>
+        <div class="layers__toolbar layers__toolbar--types js-layers-toolbar-types">
+            <div class="panel__pane">
+                <div class="tool tool--md js-layers-create-cancel" bpe-title="layers_create_cancel">
+                    <img src="drawable/layer__create.svg" alt="" class="tool__icon"/>
+                </div>
+                <div class="tool tool--md js-layers-convert-cancel" bpe-title="layers_convert_cancel">
+                    <img src="drawable/layer__convert.svg" alt="" class="tool__icon"/>
+                </div>
+            </div>
+            <div class="panel__pane js-layers-types"></div>
+        </div>
+    </div>
+    <div class="subpanel subpanel--tools js-shapes-panel">
+        <div class="panel__pane">
+            <div class="tool js-shape-point" bpe-title="shape_point">
+                <img src="drawable/shape__point.svg" alt="" class="tool__icon tool__icon--shape__point"/>
+            </div>
+            <div class="tool js-shape-line" bpe-title="shape_line">
+                <img src="drawable/shape__line.svg" alt="" class="tool__icon tool__icon--shape__line"/>
+            </div>
+            <div class="tool js-shape-stroke-box" bpe-title="shape_stroke_box">
+                <img src="drawable/shape__stroke_box.svg" alt="" class="tool__icon tool__icon--shape__stroke_box"/>
+            </div>
+            <div class="tool js-shape-fill-box" bpe-title="shape_fill_box">
+                <img src="drawable/shape__fill_box.svg" alt="" class="tool__icon tool__icon--shape__fill_box"/>
+            </div>
+            <div class="tool js-shape-stroke-ellipse" bpe-title="shape_stroke_ellipse">
+                <img src="drawable/shape__stroke_ellipse.svg" alt="" class="tool__icon tool__icon--shape__stroke_ellipse"/>
+            </div>
+            <div class="tool js-shape-fill-ellipse" bpe-title="shape_fill_ellipse">
+                <img src="drawable/shape__fill_ellipse.svg" alt="" class="tool__icon tool__icon--shape__fill_ellipse"/>
+            </div>
+        </div>
+    </div>
+    <div class="subpanel subpanel--menu js-menu-panel">
+        <div class="menu__item js-menu-new">
+            <div class="menu__item-content" bpe-text="menu_new"></div>
+        </div>
+        <div class="menu__item">
+            <div class="menu__item-content" bpe-text="menu_load"></div>
+            <input type="file" class="menu__item-load js-menu-load" accept=".bpe"/>
+        </div>
+        <div class="menu__item js-menu-save">
+            <div class="menu__item-content" bpe-text="menu_save"></div>
+        </div>
+        <div class="menu__item js-menu-export-tap">
+            <div class="menu__item-content" bpe-text="menu_export_tap"></div>
+        </div>
+        <div class="menu__item js-menu-export-scr">
+            <div class="menu__item-content" bpe-text="menu_export_scr"></div>
+        </div>
+        <div class="menu__item js-menu-export-png">
+            <div class="menu__item-content" bpe-text="menu_export_png"></div>
+        </div>
+    </div>
+    <div class="dialog js-dialog hidden">
+        <div class="dialog__background js-dialog-background"></div>
+        <div class="dialog__content">
+            <div class="dialog__alert js-dialog-alert hidden"></div>
+            <div class="dialog__confirm js-dialog-confirm hidden">
+                <div class="dialog__confirm_message js-dialog-confirm-message"></div>
+                <div class="dialog__button dialog__button--ok js-dialog-confirm-ok" bpe-text="dialog_ok"></div>
+                <div class="dialog__button dialog__button--cancel js-dialog-confirm-cancel" bpe-text="dialog_cancel"></div>
+            </div>
+            <div class="dialog__prompt js-dialog-prompt hidden">
+                <label for="prompt_input" class="dialog__prompt_message js-dialog-prompt-message"></label>
+                <div class="dialog__prompt_content">
+                    <input id="prompt_input" type="text" minlength="1" maxlength="8" class="dialog__prompt_input js-dialog-prompt-input"/>
+                    <div class="dialog__button dialog__button--ok js-dialog-prompt-ok" bpe-text="dialog_ok"></div>
+                    <div class="dialog__button dialog__button--cancel js-dialog-prompt-cancel" bpe-text="dialog_cancel"></div>
+                </div>
+                <div class="dialog__prompt_hint js-dialog-prompt-hint"></div>
+            </div>
+        </div>
+    </div>
+    <div class="error js-error hidden">
+        <div class="error__header js-error-header">Unhandled error</div>
+        <pre class="error__content js-error-content"></pre>
+    </div>
+</div>
+</body>
+</html>

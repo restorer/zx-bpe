@@ -1,7 +1,5 @@
 package com.eightsines.bpe.bag
 
-import com.eightsines.bpe.bag.BagUnpackException
-import com.eightsines.bpe.bag.Base64BitstreamReader
 import com.eightsines.bpe.testing.performTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

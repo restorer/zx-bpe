@@ -81,7 +81,10 @@ class BagProcessor(logger: KSPLogger, codeGenerator: CodeGenerator) : SymbolProc
         }
 
         resolver.getClassDeclarationByName(typeDescriptor.nameDescriptor.qualifiedName)
-            ?.let { singlefieldParser.parse(resolver, it) }
+            ?.let {
+                singlefieldParser.parse(resolver, it)
+                    ?: stuffParser.parse(resolver, it)
+            }
             ?.let {
                 allDescriptors[typeDescriptor] = it
                 return it

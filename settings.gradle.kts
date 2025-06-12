@@ -16,9 +16,12 @@ dependencyResolutionManagement {
 }
 
 include(
-    ":features:app",
+    ":features:app-pwa",
     ":features:bag-impl",
     ":features:bag-processor",
     ":features:bag-public",
+    ":features:engine-public",
+    ":features:engine-impl",
     ":features:testkit-public",
+    ":features:ui-pwa-impl",
 )
