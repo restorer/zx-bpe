@@ -6,32 +6,19 @@ import com.eightsines.bpe.bag.BagStuffUnpacker
 import com.eightsines.bpe.bag.BagStuffWare
 import com.eightsines.bpe.bag.PackableBag
 import com.eightsines.bpe.bag.UnpackableBag
-import com.eightsines.bpe.bag.getList
-import com.eightsines.bpe.bag.putList
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
 import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.foundation.TransformType
 import com.eightsines.bpe.graphics.GraphicsAction
 import com.eightsines.bpe.graphics.GraphicsActionPair
 
-data class HistoryStep(val actions: List<HistoryAction>, val undoActions: List<HistoryAction>) {
-    companion object : BagStuffPacker<HistoryStep>, BagStuffUnpacker<HistoryStep> {
+@BagStuff
+data class HistoryStep(
+    @BagStuffWare(1) val actions: List<HistoryAction>,
+    @BagStuffWare(2) val undoActions: List<HistoryAction>,
+) {
+    companion object {
         val Empty = HistoryStep(emptyList(), emptyList())
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: HistoryStep) {
-            bag.putList(value.actions) { bag.put(HistoryAction_Stuff, it) }
-            bag.putList(value.undoActions) { bag.put(HistoryAction_Stuff, it) }
-        }
-
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): HistoryStep {
-            requireSupportedStuffVersion("HistoryStep", 1, version)
-
-            val actions = bag.getList { bag.getStuff(HistoryAction_Stuff) }
-            val undoActions = bag.getList { bag.getStuff(HistoryAction_Stuff) }
-
-            return HistoryStep(actions, undoActions)
-        }
     }
 }
 

@@ -1,17 +1,13 @@
 package com.eightsines.bpe.graphics
 
-import com.eightsines.bpe.bag.BagStuffPacker
+import com.eightsines.bpe.bag.BagStuff
 import com.eightsines.bpe.bag.BagStuffUnpacker
-import com.eightsines.bpe.bag.PackableBag
+import com.eightsines.bpe.bag.BagStuffWare
 import com.eightsines.bpe.bag.UnpackableBag
-import com.eightsines.bpe.bag.getList
-import com.eightsines.bpe.bag.putList
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
 import com.eightsines.bpe.foundation.BackgroundLayer
-import com.eightsines.bpe.foundation.BackgroundLayer_Stuff
 import com.eightsines.bpe.foundation.Box
 import com.eightsines.bpe.foundation.CanvasLayer
-import com.eightsines.bpe.foundation.CanvasLayer_Stuff
 import com.eightsines.bpe.foundation.Cell
 import com.eightsines.bpe.foundation.Crate
 import com.eightsines.bpe.foundation.LayerUid
@@ -27,12 +23,14 @@ import com.eightsines.bpe.foundation.SciiColor
 import com.eightsines.bpe.foundation.SciiLight
 import com.eightsines.bpe.util.Logger
 
+@BagStuff(unpacker = "_")
 class GraphicsEngine(
     private val logger: Logger,
     private val painter: Painter,
     private val renderer: Renderer,
 ) {
-    private var backgroundLayer = MutableBackgroundLayer(
+    @BagStuffWare(1)
+    internal var backgroundLayer = MutableBackgroundLayer(
         isVisible = true,
         isLocked = false,
         border = SciiColor.Transparent,
@@ -40,7 +38,9 @@ class GraphicsEngine(
         bright = SciiLight.Transparent,
     )
 
-    private var canvasLayers = mutableListOf<MutableCanvasLayer<*>>()
+    @BagStuffWare(2)
+    internal var canvasLayers = mutableListOf<MutableCanvasLayer<*>>()
+
     private val canvasLayersMap = mutableMapOf<String, MutableCanvasLayer<*>>()
     private val preview = MutableSciiCanvas(SCREEN_SCII_WIDTH, SCREEN_SCII_HEIGHT)
 
@@ -575,15 +575,6 @@ class GraphicsEngine(
         const val SCREEN_SCII_HEIGHT = 24
 
         private val ScreenBox = Box.ofSize(0, 0, SCREEN_SCII_WIDTH, SCREEN_SCII_HEIGHT)
-    }
-
-    object Packer : BagStuffPacker<GraphicsEngine> {
-        override val putInTheBagVersion = 1
-
-        override fun putInTheBag(bag: PackableBag, value: GraphicsEngine) {
-            bag.put(BackgroundLayer_Stuff, value.backgroundLayer)
-            bag.putList(value.canvasLayers) { bag.put(CanvasLayer_Stuff, it) }
-        }
     }
 
     private inner class Unpacker : BagStuffUnpacker<GraphicsEngine> {

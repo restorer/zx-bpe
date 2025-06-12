@@ -4,8 +4,6 @@ import com.eightsines.bpe.bag.BagStuff
 import com.eightsines.bpe.bag.BagStuffWare
 import com.eightsines.bpe.bag.PackableBag
 import com.eightsines.bpe.bag.UnpackableBag
-import com.eightsines.bpe.bag.getList
-import com.eightsines.bpe.bag.putList
 import com.eightsines.bpe.foundation.Box
 import com.eightsines.bpe.foundation.Cell
 import com.eightsines.bpe.foundation.CellType

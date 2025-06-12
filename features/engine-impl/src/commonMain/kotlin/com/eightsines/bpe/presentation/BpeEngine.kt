@@ -7,21 +7,18 @@ import com.eightsines.bpe.bag.PackableBag
 import com.eightsines.bpe.bag.PackableStringBag
 import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.bag.UnpackableStringBag
-import com.eightsines.bpe.bag.getList
-import com.eightsines.bpe.bag.putList
 import com.eightsines.bpe.bag.requireNoIllegalArgumentException
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
 import com.eightsines.bpe.exporters.ScrExporter
 import com.eightsines.bpe.foundation.BackgroundLayer
 import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasType
-import com.eightsines.bpe.foundation.Crate
 import com.eightsines.bpe.foundation.Layer
 import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.foundation.TransformType
 import com.eightsines.bpe.graphics.GraphicsAction
 import com.eightsines.bpe.graphics.GraphicsEngine
-import com.eightsines.bpe.graphics.Shape
+import com.eightsines.bpe.graphics.GraphicsEngine_Stuff
 import com.eightsines.bpe.graphics.executePair
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.UidFactory
@@ -759,12 +756,12 @@ class BpeEngine(
             bag.put(value.toolboxPaintShape.value)
             bag.put(value.toolboxEraseShape.value)
             bag.put(value.currentLayer.uid.value)
-            bag.putList(history) { bag.put(HistoryStep, it) }
+            bag.putList(history) { bag.put(HistoryStep_Stuff, it) }
             bag.put(historyPosition)
             bag.put(BpeClipboard_Stuff, value.clipboard)
 
             // Put GraphicsEngine at the end, to be able to recover from unpack error in Unpacker
-            bag.put(GraphicsEngine.Packer, value.graphicsEngine)
+            bag.put(GraphicsEngine_Stuff, value.graphicsEngine)
         }
     }
 
@@ -779,7 +776,7 @@ class BpeEngine(
 
             if (version < 2) {
                 val stableGraphicsEngineBagData = PackableStringBag()
-                    .also { it.put(GraphicsEngine.Packer, graphicsEngine) }
+                    .also { it.put(GraphicsEngine_Stuff, graphicsEngine) }
                     .toString()
 
                 graphicsEngine.selfUnpacker().getOutOfTheBag(1, bag)
@@ -805,7 +802,7 @@ class BpeEngine(
             val toolboxPaintShape = requireNoIllegalArgumentException { BpeShape.of(bag.getInt()) }
             val toolboxEraseShape = requireNoIllegalArgumentException { BpeShape.of(bag.getInt()) }
             val currentLayerUid = LayerUid(bag.getString())
-            val history = bag.getList { bag.getStuff(HistoryStep) }
+            val history = bag.getList { bag.getStuff(HistoryStep_Stuff) }
             val historyPosition = bag.getInt()
             val clipboard = bag.getStuffOrNull(BpeClipboard_Stuff)
 

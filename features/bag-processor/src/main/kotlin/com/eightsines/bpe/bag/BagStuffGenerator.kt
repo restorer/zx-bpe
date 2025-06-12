@@ -230,7 +230,25 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
             return true
         }
 
-        val descriptor = resolver.resolveType(ware.typeDescriptor)
+        val (isList, wareTypeDescriptor) =
+            if (ware.typeDescriptor is TypeDescriptor.Type &&
+                (ware.typeDescriptor.nameDescriptor == LIST_NAME_DESCRIPTOR || ware.typeDescriptor.nameDescriptor == MUTABLE_LIST_NAME_DESCRIPTOR)
+            ) {
+                if (ware.typeDescriptor.typeParameterDescriptors.size != 1) {
+                    logger.error(
+                        "Unable to resolve packer for field \"${ware.sourceClassDescriptor}::${ware.fieldName}\" of type \"${ware.typeDescriptor}\"",
+                        ware.sourceSymbol,
+                    )
+
+                    return false
+                }
+
+                true to ware.typeDescriptor.typeParameterDescriptors.first()
+            } else {
+                false to ware.typeDescriptor
+            }
+
+        val descriptor = resolver.resolveType(wareTypeDescriptor)
 
         if (descriptor == null) {
             logger.error(
@@ -242,14 +260,23 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
         }
 
         when (descriptor) {
-            is BagDescriptor.Primitive -> funBuilder.addStatement("bag.put(`value`.%N)", ware.fieldName)
-            is BagDescriptor.Singlefield -> funBuilder.addStatement("bag.put(`value`.%N.%N)", ware.fieldName, descriptor.fieldName)
+            is BagDescriptor.Primitive -> funBuilder.addStatement(
+                if (isList) "bag.putList(`value`.%N) { bag.put(it) }" else "bag.put(`value`.%N)",
+                ware.fieldName,
+            )
+
+            is BagDescriptor.Singlefield -> funBuilder.addStatement(
+                if (isList) "bag.putList(`value`.%N.%N) { bag.put(it) }" else "bag.put(`value`.%N.%N)",
+                ware.fieldName,
+                descriptor.fieldName,
+            )
 
             is BagDescriptor.Stuff -> if (descriptor.packerReference == null) {
                 logger.error(
                     "Packer is missing for field \"${ware.sourceClassDescriptor}::${ware.fieldName}\" of type \"${ware.typeDescriptor}\"",
-                    ware.sourceSymbol
+                    ware.sourceSymbol,
                 )
+
                 return false
             } else {
                 val pouetClassName = resolver.resolveName(descriptor.packerReference)?.pouetClassName
@@ -263,7 +290,11 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
                     return false
                 }
 
-                funBuilder.addStatement("bag.put(%T, `value`.%N)", pouetClassName, ware.fieldName)
+                if (isList) {
+                    funBuilder.addStatement("bag.putList(`value`.%N) { bag.put(%T, it) }", ware.fieldName, pouetClassName)
+                } else {
+                    funBuilder.addStatement("bag.put(%T, `value`.%N)", pouetClassName, ware.fieldName)
+                }
             }
         }
 
@@ -389,7 +420,23 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
             return true
         }
 
-        val wareDescriptor = resolver.resolveType(ware.typeDescriptor)
+        val (isList, wareTypeDescriptor) =
+            if (ware.typeDescriptor is TypeDescriptor.Type && ware.typeDescriptor.nameDescriptor == LIST_NAME_DESCRIPTOR) {
+                if (ware.typeDescriptor.typeParameterDescriptors.size != 1) {
+                    logger.error(
+                        "Unable to resolve unpacker for field \"${ware.sourceClassDescriptor}::${ware.fieldName}\" of type \"${ware.typeDescriptor}\"",
+                        ware.sourceSymbol,
+                    )
+
+                    return false
+                }
+
+                true to ware.typeDescriptor.typeParameterDescriptors.first()
+            } else {
+                false to ware.typeDescriptor
+            }
+
+        val wareDescriptor = resolver.resolveType(wareTypeDescriptor)
 
         if (wareDescriptor == null) {
             logger.error(
@@ -401,11 +448,15 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
         }
 
         when (wareDescriptor) {
-            is BagDescriptor.Primitive -> funBuilder.addStatement("val %N = bag.%N()", ware.fieldName, wareDescriptor.unpackMethod)
+            is BagDescriptor.Primitive -> funBuilder.addStatement(
+                if (isList) "val %N = bag.getList { bag.%N() }" else "val %N = bag.%N()",
+                ware.fieldName,
+                wareDescriptor.unpackMethod,
+            )
 
             is BagDescriptor.Singlefield -> if (wareDescriptor.shouldCheckCreatorException) {
                 funBuilder.addStatement(
-                    "val %N = %M { %M(bag.%N()) }",
+                    if (isList) "val %N = bag.getList { %M { %M(bag.%N()) } }" else "val %N = %M { %M(bag.%N()) }",
                     ware.fieldName,
                     MemberName("com.eightsines.bpe.bag", "requireNoIllegalArgumentException"),
                     wareDescriptor.creatorDescriptor.pouetMemberName,
@@ -439,7 +490,7 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
                 }
 
                 funBuilder.addStatement(
-                    "val %N: %T = bag.getStuff(%T)",
+                    if (isList) "val %N: %T = bag.getList { bag.getStuff(%T) }" else "val %N: %T = bag.getStuff(%T)",
                     ware.fieldName,
                     ware.typeDescriptor.pouetTypeName,
                     pouetClassName,
@@ -448,5 +499,10 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
         }
 
         return true
+    }
+
+    private companion object {
+        private val LIST_NAME_DESCRIPTOR = NameDescriptor("kotlin.collections", "List")
+        private val MUTABLE_LIST_NAME_DESCRIPTOR = NameDescriptor("kotlin.collections", "MutableList")
     }
 }

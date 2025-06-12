@@ -5,13 +5,13 @@ interface PackableBag {
     fun put(value: Int?)
     fun put(value: String?)
     fun <T> put(packer: BagStuffPacker<out T>, value: T?)
-}
 
-fun <T> PackableBag.putList(list: List<T>, packer: (T) -> Unit) {
-    put(list.size)
+    fun <T> putList(list: List<T>, packer: (T) -> Unit) {
+        put(list.size)
 
-    for (item in list) {
-        packer(item)
+        for (item in list) {
+            packer(item)
+        }
     }
 }
 
@@ -25,11 +25,11 @@ interface UnpackableBag {
     fun getInt(): Int
     fun getString(): String
     fun <T> getStuff(unpacker: BagStuffUnpacker<in T>): T
-}
 
-fun <T> UnpackableBag.getList(unpacker: () -> T): MutableList<T> {
-    val size = getInt()
-    return (0..<size).mapTo(mutableListOf()) { unpacker() }
+    fun <T> getList(unpacker: () -> T): MutableList<T> {
+        val size = getInt()
+        return (0..<size).mapTo(mutableListOf()) { unpacker() }
+    }
 }
 
 interface BagStuffPacker<T> {
