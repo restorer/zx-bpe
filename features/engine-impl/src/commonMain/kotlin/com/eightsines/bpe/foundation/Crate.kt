@@ -1,14 +1,11 @@
 package com.eightsines.bpe.foundation
 
 import com.eightsines.bpe.bag.BagStuff
-import com.eightsines.bpe.bag.BagStuffUnpacker
 import com.eightsines.bpe.bag.BagStuffWare
 import com.eightsines.bpe.bag.PackableBag
 import com.eightsines.bpe.bag.UnpackableBag
-import com.eightsines.bpe.bag.requireNoIllegalArgumentException
-import com.eightsines.bpe.bag.requireSupportedStuffVersion
 
-@BagStuff(unpacker = "Crate")
+@BagStuff
 data class Crate<T : Cell>(
     @BagStuffWare(1) val canvasType: CanvasType,
     @BagStuffWare(2) val width: Int,
@@ -55,7 +52,7 @@ data class Crate<T : Cell>(
         }
     }
 
-    companion object : BagStuffUnpacker<Crate<*>> {
+    companion object {
         fun fromCanvasScii(
             canvas: Canvas<*>,
             sciiX: Int,
@@ -99,31 +96,5 @@ data class Crate<T : Cell>(
         @Suppress("NOTHING_TO_INLINE")
         internal inline fun getCellsOutOfTheBag(bag: UnpackableBag, width: Int, height: Int): List<List<Cell>> =
             (0..<height).map { (0..<width).map { bag.getStuff(Cell_Stuff) } }
-
-        override fun getOutOfTheBag(version: Int, bag: UnpackableBag): Crate<*> {
-            requireSupportedStuffVersion("Crate", 1, version)
-
-            var canvasType = requireNoIllegalArgumentException { CanvasType.of(bag.getInt()) }
-            val width = bag.getInt()
-            val height = bag.getInt()
-
-            val cells = getCellsOutOfTheBag(
-                bag = bag,
-                width = width,
-                height = height,
-            )
-
-            if (canvasType == CanvasType.Scii && cells.firstOrNull()?.firstOrNull()?.type == CellType.Block) {
-                println(">>> FIX")
-                canvasType = CanvasType.QBlock
-            }
-
-            return Crate(
-                canvasType = canvasType,
-                width = width,
-                height = height,
-                cells = cells,
-            )
-        }
     }
 }

@@ -117,8 +117,11 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
     override fun exportToTap(): List<Byte> = bpeEngine.exportToTap()
     override fun exportToScr(): List<Byte> = bpeEngine.exportToScr()
 
-    override fun selfUnpacker(): BagStuffUnpacker<out UiEngine> = Unpacker()
-    override fun selfPacker(historyStepsLimit: Int): BagStuffPacker<out UiEngine> = Packer(historyStepsLimit)
+    @Suppress("UNCHECKED_CAST")
+    override fun selfUnpacker(): BagStuffUnpacker<UiEngine> = Unpacker() as BagStuffUnpacker<UiEngine>
+
+    @Suppress("UNCHECKED_CAST")
+    override fun selfPacker(historyStepsLimit: Int): BagStuffPacker<UiEngine> = Packer(historyStepsLimit) as BagStuffPacker<UiEngine>
 
     override fun clear() {
         bpeEngine.clear()

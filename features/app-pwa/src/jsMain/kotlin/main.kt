@@ -6,7 +6,7 @@ import com.eightsines.bpe.presentation.BpeEngine
 import com.eightsines.bpe.presentation.PaintingController
 import com.eightsines.bpe.presentation.SelectionController
 import com.eightsines.bpe.presentation.UiEngineImpl
-import com.eightsines.bpe.resources.ResourceManager
+import com.eightsines.bpe.util.ResourceManager
 import com.eightsines.bpe.util.ElapsedTimeProviderImpl
 import com.eightsines.bpe.util.LoggerImpl
 import com.eightsines.bpe.util.UidFactoryImpl

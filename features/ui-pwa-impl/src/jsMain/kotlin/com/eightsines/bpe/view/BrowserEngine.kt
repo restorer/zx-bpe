@@ -149,7 +149,6 @@ class BrowserEngine(
 
         val reader = FileReader()
 
-        @Suppress("KotlinUnreachableCode")
         reader.addEventListener("loadend", {
             action.inputElement.value = ""
 

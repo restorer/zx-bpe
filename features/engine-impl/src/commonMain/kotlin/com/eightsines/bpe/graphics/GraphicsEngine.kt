@@ -7,14 +7,12 @@ import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.bag.getList
 import com.eightsines.bpe.bag.putList
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
-import com.eightsines.bpe.foundation.Box
-import com.eightsines.bpe.foundation.Cell
-import com.eightsines.bpe.foundation.SciiColor
-import com.eightsines.bpe.foundation.SciiLight
 import com.eightsines.bpe.foundation.BackgroundLayer
 import com.eightsines.bpe.foundation.BackgroundLayer_Stuff
+import com.eightsines.bpe.foundation.Box
 import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasLayer_Stuff
+import com.eightsines.bpe.foundation.Cell
 import com.eightsines.bpe.foundation.Crate
 import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.foundation.Merger
@@ -25,6 +23,8 @@ import com.eightsines.bpe.foundation.MutableCanvasLayer
 import com.eightsines.bpe.foundation.MutableCanvasLayer_Stuff
 import com.eightsines.bpe.foundation.MutableSciiCanvas
 import com.eightsines.bpe.foundation.SciiCanvas
+import com.eightsines.bpe.foundation.SciiColor
+import com.eightsines.bpe.foundation.SciiLight
 import com.eightsines.bpe.util.Logger
 
 class GraphicsEngine(

@@ -1,7 +1,6 @@
-package com.eightsines.bpe.resources
+package com.eightsines.bpe.util
 
-import com.eightsines.bpe.util.TextDescriptor
-import com.eightsines.bpe.util.TextRes
+import kotlin.collections.iterator
 
 class ResourceManager {
     fun resolveText(res: TextRes) = requireNotNull(textMap[res.id])

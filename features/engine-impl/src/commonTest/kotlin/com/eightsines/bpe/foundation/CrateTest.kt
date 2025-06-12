@@ -83,7 +83,7 @@ class CrateTest {
                 ),
             )
         },
-        act = { it.getStuff(Crate) },
+        act = { it.getStuff(Crate_Stuff) },
         assert = {
             assertEqualsExt(
                 Crate(
@@ -158,7 +158,7 @@ class CrateTest {
                 ),
             )
         },
-        act = { it.getStuff(Crate) },
+        act = { it.getStuff(Crate_Stuff) },
         assert = {
             assertEqualsExt(
                 Crate(

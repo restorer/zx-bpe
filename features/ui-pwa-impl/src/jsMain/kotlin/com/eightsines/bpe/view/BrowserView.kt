@@ -14,7 +14,7 @@ import com.eightsines.bpe.presentation.UiArea
 import com.eightsines.bpe.presentation.UiPanel
 import com.eightsines.bpe.presentation.UiSheetView
 import com.eightsines.bpe.presentation.UiToolState
-import com.eightsines.bpe.resources.ResourceManager
+import com.eightsines.bpe.util.ResourceManager
 import com.eightsines.bpe.util.TextRes
 import com.eightsines.bpe.util.ElapsedTimeProvider
 import kotlinx.coroutines.flow.Flow

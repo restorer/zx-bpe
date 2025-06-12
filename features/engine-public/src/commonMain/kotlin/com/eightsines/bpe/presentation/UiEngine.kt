@@ -13,8 +13,8 @@ interface UiEngine {
     fun exportToTap(): List<Byte>
     fun exportToScr(): List<Byte>
 
-    fun selfUnpacker(): BagStuffUnpacker<out UiEngine>
-    fun selfPacker(historyStepsLimit: Int = -1): BagStuffPacker<out UiEngine>
+    fun selfUnpacker(): BagStuffUnpacker<UiEngine>
+    fun selfPacker(historyStepsLimit: Int = -1): BagStuffPacker<UiEngine>
 
     fun clear()
 }
