@@ -1,15 +1,13 @@
 package com.eightsines.bpe.presentation
 
-import com.eightsines.bpe.foundation.BlockCell
-import com.eightsines.bpe.foundation.Box
-import com.eightsines.bpe.foundation.Cell
-import com.eightsines.bpe.foundation.Rect
-import com.eightsines.bpe.foundation.SciiCell
 import com.eightsines.bpe.foundation.BackgroundLayer
+import com.eightsines.bpe.foundation.Box
 import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasType
+import com.eightsines.bpe.foundation.Cell
 import com.eightsines.bpe.foundation.Layer
 import com.eightsines.bpe.foundation.LayerUid
+import com.eightsines.bpe.foundation.Rect
 import com.eightsines.bpe.foundation.Selection
 import com.eightsines.bpe.graphics.GraphicsAction
 import com.eightsines.bpe.graphics.GraphicsActionPair
@@ -181,16 +179,21 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
         drawingY: Int,
     ): PaintingResult {
         val currentCanvasLayer = currentLayer as? CanvasLayer<*> ?: return PaintingResult.Empty
-        val toolDescriptor = TOOL_DESCRIPTORS[tool] ?: return PaintingResult.Empty
         val shapeDescriptor = SHAPE_DESCRIPTORS[shape] ?: return PaintingResult.Empty
+
+        val cell = when (tool) {
+            BpeTool.Paint -> palette.makePaintCell(currentCanvasLayer.canvasType)
+            BpeTool.Erase -> palette.makeEraseCell(currentCanvasLayer.canvasType)
+            else -> null
+        } ?: return PaintingResult.Empty
 
         val deselectResult = selectionController.deselect()
         pendingHistoryStep = deselectResult.historyStep
 
         currentPaintingSpec = shapeDescriptor.createPaintingSpec(
+            layerUid = currentCanvasLayer.uid,
             canvasType = currentCanvasLayer.canvasType,
-            cell = toolDescriptor.getCell(currentCanvasLayer.canvasType, palette),
-            shapePainter = toolDescriptor.createShapePainter(currentCanvasLayer.uid),
+            cell = cell,
             drawingX = drawingX,
             drawingY = drawingY,
         )
@@ -259,26 +262,13 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
 
     private fun executePickColor(currentLayer: Layer, palette: MutablePalette, drawingX: Int, drawingY: Int) = when (currentLayer) {
         is BackgroundLayer -> {
-            palette.ink = currentLayer.color
+            palette.paintSciiInk = currentLayer.color
             PaintingResult.Updated
         }
 
-        is CanvasLayer<*> -> when (val cell = currentLayer.canvas.getDrawingCell(drawingX, drawingY)) {
-            is SciiCell -> {
-                palette.ink = cell.ink
-                palette.paper = cell.paper
-                palette.bright = cell.bright
-                palette.flash = cell.flash
-                palette.character = cell.character
-
-                PaintingResult.Updated
-            }
-
-            is BlockCell -> {
-                palette.ink = cell.color
-                palette.bright = cell.bright
-                PaintingResult.Updated
-            }
+        is CanvasLayer<*> -> {
+            palette.setPaintFromCell(currentLayer.canvas.getDrawingCell(drawingX, drawingY))
+            PaintingResult.Updated
         }
 
         else -> PaintingResult.Empty
@@ -293,7 +283,7 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
 
         spec.paintActions?.let { graphicsEngine.execute(it.undoAction) }
         spec.lastRect = rect
-        spec.paintActions = graphicsEngine.executePair(spec.painter(rect.sx, rect.sy, rect.ex, rect.ey))
+        spec.paintActions = graphicsEngine.executePair(GraphicsAction.MergeShape(spec.layerUid, spec.shapeCreator(rect.sx, rect.sy, rect.ex, rect.ey)))
 
         return PaintingResult(
             shouldRefresh = true,
@@ -310,7 +300,7 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
 
         spec.paintActions?.let { graphicsEngine.execute(it.undoAction) }
         spec.points.add(point)
-        spec.paintActions = graphicsEngine.executePair(spec.painter(spec.points.toList()))
+        spec.paintActions = graphicsEngine.executePair(GraphicsAction.MergeShape(spec.layerUid, spec.shapeCreator(spec.points.toList())))
 
         return PaintingResult.Updated
     }
@@ -369,50 +359,19 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
     }
 
     private companion object {
-        private val TOOL_DESCRIPTORS = buildMap {
-            put(
-                BpeTool.Paint,
-                object : PaintingToolDescriptor {
-                    override fun getCell(canvasType: CanvasType, palette: MutablePalette) = when (canvasType) {
-                        is CanvasType.Scii -> SciiCell(
-                            character = palette.character,
-                            ink = palette.ink,
-                            paper = palette.paper,
-                            bright = palette.bright,
-                            flash = palette.flash,
-                        )
-
-                        is CanvasType.HBlock, is CanvasType.VBlock, is CanvasType.QBlock -> BlockCell(palette.ink, palette.bright)
-                    }
-
-                    override fun createShapePainter(layerUid: LayerUid): (Shape<Cell>) -> GraphicsAction =
-                        { GraphicsAction.MergeShape(layerUid, it) }
-                },
-            )
-
-            put(
-                BpeTool.Erase,
-                object : PaintingToolDescriptor {
-                    override fun getCell(canvasType: CanvasType, palette: MutablePalette) = canvasType.transparentCell
-
-                    override fun createShapePainter(layerUid: LayerUid): (Shape<Cell>) -> GraphicsAction =
-                        { GraphicsAction.ReplaceShape(layerUid, it) }
-                }
-            )
-        }
-
         private val SHAPE_DESCRIPTORS = buildMap {
             put(
                 BpeShape.Point,
                 object : PaintingShapeDescriptor {
                     override fun createPaintingSpec(
+                        layerUid: LayerUid,
                         canvasType: CanvasType,
                         cell: Cell,
-                        shapePainter: (Shape<Cell>) -> GraphicsAction,
                         drawingX: Int,
                         drawingY: Int,
                     ) = PaintingSpec.Multiple(
-                        painter = { shapePainter(Shape.LinkedPoints(it, cell)) },
+                        layerUid = layerUid,
+                        shapeCreator = { Shape.LinkedPoints(it, cell) },
                         points = LinkedHashSet(),
                     )
                 }
@@ -422,14 +381,15 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 BpeShape.Line,
                 object : PaintingShapeDescriptor {
                     override fun createPaintingSpec(
+                        layerUid: LayerUid,
                         canvasType: CanvasType,
                         cell: Cell,
-                        shapePainter: (Shape<Cell>) -> GraphicsAction,
                         drawingX: Int,
                         drawingY: Int,
                     ) = PaintingSpec.Single(
+                        layerUid = layerUid,
                         canvasType = canvasType,
-                        painter = { sx, sy, ex, ey -> shapePainter(Shape.Line(sx, sy, ex, ey, cell)) },
+                        shapeCreator = { sx, sy, ex, ey -> Shape.Line(sx, sy, ex, ey, cell) },
                         initialX = drawingX,
                         initialY = drawingY,
                     )
@@ -440,14 +400,15 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 BpeShape.FillBox,
                 object : PaintingShapeDescriptor {
                     override fun createPaintingSpec(
+                        layerUid: LayerUid,
                         canvasType: CanvasType,
                         cell: Cell,
-                        shapePainter: (Shape<Cell>) -> GraphicsAction,
                         drawingX: Int,
                         drawingY: Int,
                     ) = PaintingSpec.Single(
+                        layerUid = layerUid,
                         canvasType = canvasType,
-                        painter = { sx, sy, ex, ey -> shapePainter(Shape.FillBox(sx, sy, ex, ey, cell)) },
+                        shapeCreator = { sx, sy, ex, ey -> Shape.FillBox(sx, sy, ex, ey, cell) },
                         initialX = drawingX,
                         initialY = drawingY,
                     )
@@ -458,14 +419,15 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 BpeShape.StrokeBox,
                 object : PaintingShapeDescriptor {
                     override fun createPaintingSpec(
+                        layerUid: LayerUid,
                         canvasType: CanvasType,
                         cell: Cell,
-                        shapePainter: (Shape<Cell>) -> GraphicsAction,
                         drawingX: Int,
                         drawingY: Int,
                     ) = PaintingSpec.Single(
+                        layerUid = layerUid,
                         canvasType = canvasType,
-                        painter = { sx, sy, ex, ey -> shapePainter(Shape.StrokeBox(sx, sy, ex, ey, cell)) },
+                        shapeCreator = { sx, sy, ex, ey -> Shape.StrokeBox(sx, sy, ex, ey, cell) },
                         initialX = drawingX,
                         initialY = drawingY,
                     )
@@ -476,14 +438,15 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 BpeShape.FillEllipse,
                 object : PaintingShapeDescriptor {
                     override fun createPaintingSpec(
+                        layerUid: LayerUid,
                         canvasType: CanvasType,
                         cell: Cell,
-                        shapePainter: (Shape<Cell>) -> GraphicsAction,
                         drawingX: Int,
                         drawingY: Int,
                     ) = PaintingSpec.Single(
+                        layerUid = layerUid,
                         canvasType = canvasType,
-                        painter = { sx, sy, ex, ey -> shapePainter(Shape.FillEllipse(sx, sy, ex, ey, cell)) },
+                        shapeCreator = { sx, sy, ex, ey -> Shape.FillEllipse(sx, sy, ex, ey, cell) },
                         initialX = drawingX,
                         initialY = drawingY,
                     )
@@ -494,14 +457,15 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
                 BpeShape.StrokeEllipse,
                 object : PaintingShapeDescriptor {
                     override fun createPaintingSpec(
+                        layerUid: LayerUid,
                         canvasType: CanvasType,
                         cell: Cell,
-                        shapePainter: (Shape<Cell>) -> GraphicsAction,
                         drawingX: Int,
                         drawingY: Int,
                     ) = PaintingSpec.Single(
+                        layerUid = layerUid,
                         canvasType = canvasType,
-                        painter = { sx, sy, ex, ey -> shapePainter(Shape.StrokeEllipse(sx, sy, ex, ey, cell)) },
+                        shapeCreator = { sx, sy, ex, ey -> Shape.StrokeEllipse(sx, sy, ex, ey, cell) },
                         initialX = drawingX,
                         initialY = drawingY,
                     )
@@ -528,8 +492,9 @@ data class PaintingFinishResult(
 
 private sealed interface PaintingSpec {
     class Single(
+        val layerUid: LayerUid,
         val canvasType: CanvasType,
-        val painter: (Int, Int, Int, Int) -> GraphicsAction,
+        val shapeCreator: (Int, Int, Int, Int) -> Shape<Cell>,
         val initialX: Int,
         val initialY: Int,
         var paintActions: GraphicsActionPair? = null,
@@ -537,7 +502,8 @@ private sealed interface PaintingSpec {
     ) : PaintingSpec
 
     class Multiple(
-        val painter: (List<Pair<Int, Int>>) -> GraphicsAction,
+        val layerUid: LayerUid,
+        val shapeCreator: (List<Pair<Int, Int>>) -> Shape<Cell>,
         var points: LinkedHashSet<Pair<Int, Int>>,
         var paintActions: GraphicsActionPair? = null,
     ) : PaintingSpec
@@ -564,16 +530,11 @@ private sealed interface PaintingSpec {
     ) : PaintingSpec
 }
 
-private interface PaintingToolDescriptor {
-    fun getCell(canvasType: CanvasType, palette: MutablePalette): Cell
-    fun createShapePainter(layerUid: LayerUid): (Shape<Cell>) -> GraphicsAction
-}
-
 private interface PaintingShapeDescriptor {
     fun createPaintingSpec(
+        layerUid: LayerUid,
         canvasType: CanvasType,
         cell: Cell,
-        shapePainter: (Shape<Cell>) -> GraphicsAction,
         drawingX: Int,
         drawingY: Int,
     ): PaintingSpec

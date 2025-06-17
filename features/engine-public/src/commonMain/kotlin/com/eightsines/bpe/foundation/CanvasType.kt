@@ -77,3 +77,10 @@ sealed class CanvasType {
         }
     }
 }
+
+val CanvasType?.isBlock: Boolean
+    get() = when (this) {
+        null -> false
+        CanvasType.Scii -> false
+        CanvasType.HBlock, CanvasType.VBlock, CanvasType.QBlock -> true
+    }

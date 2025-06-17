@@ -63,6 +63,7 @@ data class BagStuffWareDescriptor(
     val typeDescriptor: TypeDescriptor,
     val packerDescriptor: FunctionDescriptor?,
     val unpackerDescriptor: FunctionDescriptor?,
+    val fallbackValue: String?,
     val sourceClassDescriptor: DeclarationDescriptor,
     val sourceSymbol: KSNode,
 )

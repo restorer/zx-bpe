@@ -12,6 +12,7 @@ import com.eightsines.bpe.foundation.Layer
 import com.eightsines.bpe.foundation.QBlockCanvas
 import com.eightsines.bpe.foundation.SciiCanvas
 import com.eightsines.bpe.foundation.VBlockCanvas
+import com.eightsines.bpe.foundation.isTransparent
 import com.eightsines.bpe.presentation.UiArea
 import com.eightsines.bpe.presentation.UiAreaType
 import com.eightsines.bpe.presentation.UiSpec
@@ -46,7 +47,7 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         val htmlContext = htmlCanvas.getContext("2d", GET_CONTEXT_OPTIONS) as CanvasRenderingContext2D
         htmlContext.clearRect(0.0, 0.0, FULL_WIDTH, FULL_HEIGHT)
 
-        if (backgroundLayer.isVisible && backgroundLayer.border != SciiColor.Transparent) {
+        if (backgroundLayer.isVisible && !backgroundLayer.border.isTransparent) {
             renderBackgroundBorder(htmlContext, backgroundLayer, PICTURE_WIDTH, PICTURE_HEIGHT)
         } else {
             renderTransparent(htmlContext, TRANSPARENT_COLORS_BORDER, 0.0, 0.0, FULL_WIDTH, BORDER_SIZE)
@@ -55,7 +56,7 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
             renderTransparent(htmlContext, TRANSPARENT_COLORS_BORDER, 0.0, PICTURE_HEIGHT + BORDER_SIZE, FULL_WIDTH, BORDER_SIZE)
         }
 
-        if (!backgroundLayer.isVisible || backgroundLayer.color == SciiColor.Transparent) {
+        if (!backgroundLayer.isVisible || backgroundLayer.color.isTransparent) {
             renderTransparent(htmlContext, TRANSPARENT_COLORS_SCREEN, BORDER_SIZE, BORDER_SIZE, PICTURE_WIDTH, PICTURE_HEIGHT)
         }
 
@@ -300,7 +301,7 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
     }
 
     private fun getColor(color: SciiColor, light: SciiLight) = when {
-        color == SciiColor.Transparent -> null
+        color.isTransparent -> null
         light == SciiLight.On -> COLORS[color.value + 8]
         else -> COLORS[color.value]
     }

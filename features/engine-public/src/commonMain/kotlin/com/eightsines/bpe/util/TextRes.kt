@@ -16,6 +16,8 @@ enum class TextRes(val id: String) {
     SelectionFlipVertical("selection_flip_vertical"),
     SelectionRotateCw("selection_rotate_cw"),
     SelectionRotateCcw("selection_rotate_ccw"),
+    SelectionFill("selection_fill"),
+    SelectionClear("selection_clear"),
     Layers("layers"),
 
     ToolPaint("tool_paint"),

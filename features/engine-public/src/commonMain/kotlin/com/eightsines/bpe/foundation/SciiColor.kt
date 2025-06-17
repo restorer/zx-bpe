@@ -27,3 +27,6 @@ value class SciiColor(val value: Int) {
         val White = SciiColor(7)
     }
 }
+
+val SciiColor.isTransparent
+    get() = this.value < 0

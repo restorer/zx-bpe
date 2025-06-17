@@ -38,6 +38,8 @@ class ResourceManager {
             TextRes.SelectionFlipVertical -> "Flip vertical"
             TextRes.SelectionRotateCw -> "Rotate right"
             TextRes.SelectionRotateCcw -> "Rotate left"
+            TextRes.SelectionFill -> "Fill"
+            TextRes.SelectionClear -> "Clear"
             TextRes.Layers -> "Layers"
 
             TextRes.ToolPaint -> "Paint"

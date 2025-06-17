@@ -22,4 +22,5 @@ annotation class BagStuffWare(
     val packer: String = "",
     val unpacker: String = "",
     val version: Int = 1,
+    val fallback: String = "",
 )

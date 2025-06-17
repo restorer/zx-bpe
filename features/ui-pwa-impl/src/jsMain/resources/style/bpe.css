@@ -132,8 +132,8 @@ body {
     right: 0;
     bottom: 0;
     left: 0;
-    min-width: 344px;
-    min-height: 344px;
+    min-width: 360px;
+    min-height: 360px;
 }
 
 .panel {
@@ -508,9 +508,11 @@ body {
 }
 
 .tool__char {
+    --offset: calc((var(--tool-size) - var(--tool-char-size)) / 2);
+
     position: absolute;
-    top: 0;
-    left: 0;
+    top: var(--offset);
+    left: var(--offset);
     width: var(--tool-char-size);
     height: var(--tool-char-size);
     background-image: url(../drawable/specscii__24x24.png);
@@ -991,8 +993,8 @@ body {
     }
 }
 
-@media screen and (((orientation: portrait) and (max-width: 399px))
-    or ((orientation: landscape) and (max-height: 399px))) {
+@media screen and (((orientation: portrait) and (max-width: 431px))
+    or ((orientation: landscape) and (max-height: 431px))) {
 
     :root {
         --tool-size: 40px;
@@ -1012,14 +1014,14 @@ body {
     }
 }
 
-@media screen and ((orientation: portrait) and (max-width: 399px)) {
+@media screen and ((orientation: portrait) and (max-width: 431px)) {
     :root {
         --panel-active-highlight-size: 3px;
         --layers-width: 224px;
     }
 }
 
-@media screen and ((orientation: landscape) and (min-width: 400px)) {
+@media screen and ((orientation: landscape) and (min-width: 432px)) {
     :root {
         --dialog-padding-ver: 16px;
         --dialog-padding-hor: 24px;

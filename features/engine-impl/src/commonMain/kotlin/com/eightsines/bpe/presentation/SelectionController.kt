@@ -1,13 +1,14 @@
 package com.eightsines.bpe.presentation
 
 import com.eightsines.bpe.foundation.Box
-import com.eightsines.bpe.foundation.Cell
-import com.eightsines.bpe.foundation.toRect
 import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasType
+import com.eightsines.bpe.foundation.Cell
 import com.eightsines.bpe.foundation.Crate
+import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.foundation.Selection
 import com.eightsines.bpe.foundation.TransformType
+import com.eightsines.bpe.foundation.toRect
 import com.eightsines.bpe.graphics.GraphicsAction
 import com.eightsines.bpe.graphics.GraphicsActionPair
 import com.eightsines.bpe.graphics.GraphicsEngine
@@ -112,6 +113,45 @@ class SelectionController(private val graphicsEngine: GraphicsEngine) {
             )
 
             SelectionResult(shouldRefresh = true, historyStep = HistoryStep.Empty, clipboard = clipboard)
+        }
+    }
+
+    fun paint(layerUid: LayerUid, cell: Cell) = when (val selectionState = selectionState) {
+        is BpeSelectionState.None -> SelectionResult.Empty
+
+        is BpeSelectionState.Selected -> {
+            val shape = Shape.FillBox(selectionState.selection.drawingBox, cell)
+            val actions = graphicsEngine.executePair(GraphicsAction.MergeShape(layerUid, shape)) ?: return SelectionResult.Empty
+
+            SelectionResult(
+                shouldRefresh = true,
+                historyStep = actions.toHistoryStep(),
+            )
+        }
+
+        is BpeSelectionState.Floating -> {
+            val shape = Shape.FillBox(selectionState.selection.drawingBox, cell)
+            val actions = graphicsEngine.executePair(GraphicsAction.MergeShape(layerUid, shape)) ?: return SelectionResult.Empty
+
+            this.selectionState = BpeSelectionState.Selected(selectionState.selection)
+
+            SelectionResult(
+                shouldRefresh = true,
+                historyStep = HistoryStep(
+                    listOf(
+                        // No need to apply overlayActions.action.
+                        HistoryAction.Graphics(actions.action),
+                        HistoryAction.SelectionState(this.selectionState),
+                    ),
+                    listOf(
+                        // Use selectionState.overlayActions.action in undoActions, because we are
+                        // restoring floatingState, and need to re-apply action.
+                        HistoryAction.Graphics(actions.undoAction),
+                        HistoryAction.Graphics(selectionState.overlayActions.action),
+                        HistoryAction.SelectionState(selectionState),
+                    ),
+                ),
+            )
         }
     }
 

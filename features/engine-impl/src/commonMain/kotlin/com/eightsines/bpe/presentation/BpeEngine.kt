@@ -16,6 +16,7 @@ import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.foundation.Layer
 import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.foundation.TransformType
+import com.eightsines.bpe.foundation.isBlock
 import com.eightsines.bpe.graphics.GraphicsAction
 import com.eightsines.bpe.graphics.GraphicsEngine
 import com.eightsines.bpe.graphics.GraphicsEngine_Stuff
@@ -60,11 +61,25 @@ class BpeEngine(
         }
 
         when (action) {
-            is BpeAction.PaletteSetInk -> executePaletteSetInk(action)
-            is BpeAction.PaletteSetPaper -> executePaletteSetPaper(action)
-            is BpeAction.PaletteSetBright -> executePaletteSetBright(action)
-            is BpeAction.PaletteSetFlash -> executePaletteSetFlash(action)
-            is BpeAction.PaletteSetChar -> executePaletteSetChar(action)
+            is BpeAction.PaletteSetBackgroundBorder -> executePaletteSetBackgroundBorder(action)
+            is BpeAction.PaletteSetBackgroundPaper -> executePaletteSetBackgroundPaper(action)
+            is BpeAction.PaletteSetBackgroundBright -> executePaletteSetBackgroundBright(action)
+
+            is BpeAction.PaletteSetPaintSciiInk -> executePaletteSetSciiInk(action)
+            is BpeAction.PaletteSetPaintSciiPaper -> executePaletteSetSciiPaper(action)
+            is BpeAction.PaletteSetPaintSciiBright -> executePaletteSetSciiBright(action)
+            is BpeAction.PaletteSetPaintSciiFlash -> executePaletteSetSciiFlash(action)
+            is BpeAction.PaletteSetPaintSciiChar -> executePaletteSetSciiChar(action)
+            is BpeAction.PaletteSetPaintBlockColor -> executePaletteSetBlockColor(action)
+            is BpeAction.PaletteSetPaintBlockBright -> executePaletteSetBlockBright(action)
+
+            is BpeAction.PaletteSetEraseSciiInk -> executePaletteSetEraseSciiInk(action)
+            is BpeAction.PaletteSetEraseSciiPaper -> executePaletteSetEraseSciiPaper(action)
+            is BpeAction.PaletteSetEraseSciiBright -> executePaletteSetEraseSciiBright(action)
+            is BpeAction.PaletteSetEraseSciiFlash -> executePaletteSetEraseSciiFlash(action)
+            is BpeAction.PaletteSetEraseSciiChar -> executePaletteSetEraseSciiChar(action)
+            is BpeAction.PaletteSetEraseBlockColor -> executePaletteSetEraseBlockColor(action)
+            is BpeAction.PaletteSetEraseBlockBright -> executePaletteSetEraseBlockBright(action)
 
             is BpeAction.LayersSetCurrent -> executeLayersSetCurrent(action)
             is BpeAction.LayersSetVisible -> executeLayersSetVisible(action)
@@ -90,6 +105,8 @@ class BpeEngine(
             is BpeAction.SelectionFlipVertical -> executeSelectionFlipVertical()
             is BpeAction.SelectionRotateCw -> executeSelectionRotateCw()
             is BpeAction.SelectionRotateCcw -> executeSelectionRotateCcw()
+            is BpeAction.SelectionFill -> executeSelectionFill()
+            is BpeAction.SelectionClear -> executeSelectionClear()
 
             is BpeAction.CanvasDown -> executeCanvasDown(action)
             is BpeAction.CanvasMove -> executeCanvasMove(action)
@@ -132,49 +149,140 @@ class BpeEngine(
     }
 
     //
-    // Palette
+    // Palette background
     //
 
-    private fun executePaletteSetInk(action: BpeAction.PaletteSetInk) {
+    private fun executePaletteSetBackgroundBorder(action: BpeAction.PaletteSetBackgroundBorder) {
         if (currentLayer is BackgroundLayer) {
             appendHistoryStep(graphicsEngine.executePair(GraphicsAction.SetBackgroundColor(action.color)).toHistoryStep())
-        } else {
-            palette.ink = action.color
-        }
-
-        shouldRefresh = true
-    }
-
-    private fun executePaletteSetPaper(action: BpeAction.PaletteSetPaper) {
-        if (currentLayer is BackgroundLayer) {
-            appendHistoryStep(graphicsEngine.executePair(GraphicsAction.SetBackgroundBorder(action.color)).toHistoryStep())
-        } else {
-            palette.paper = action.color
-        }
-
-        shouldRefresh = true
-    }
-
-    private fun executePaletteSetBright(action: BpeAction.PaletteSetBright) {
-        if (currentLayer is BackgroundLayer) {
-            appendHistoryStep(graphicsEngine.executePair(GraphicsAction.SetBackgroundBright(action.light)).toHistoryStep())
-        } else {
-            palette.bright = action.light
-        }
-
-        shouldRefresh = true
-    }
-
-    private fun executePaletteSetFlash(action: BpeAction.PaletteSetFlash) {
-        if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
-            palette.flash = action.light
             shouldRefresh = true
         }
     }
 
-    private fun executePaletteSetChar(action: BpeAction.PaletteSetChar) {
+    private fun executePaletteSetBackgroundPaper(action: BpeAction.PaletteSetBackgroundPaper) {
+        if (currentLayer is BackgroundLayer) {
+            appendHistoryStep(graphicsEngine.executePair(GraphicsAction.SetBackgroundBorder(action.color)).toHistoryStep())
+            shouldRefresh = true
+        }
+    }
+
+    private fun executePaletteSetBackgroundBright(action: BpeAction.PaletteSetBackgroundBright) {
+        if (currentLayer is BackgroundLayer) {
+            appendHistoryStep(graphicsEngine.executePair(GraphicsAction.SetBackgroundBright(action.light)).toHistoryStep())
+            shouldRefresh = true
+        }
+    }
+
+    //
+    // Palette paint SCII
+    //
+
+    private fun executePaletteSetSciiInk(action: BpeAction.PaletteSetPaintSciiInk) {
         if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
-            palette.character = action.character
+            palette.paintSciiInk = action.color
+            shouldRefresh = true
+        }
+    }
+
+    private fun executePaletteSetSciiPaper(action: BpeAction.PaletteSetPaintSciiPaper) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
+            palette.paintSciiPaper = action.color
+            shouldRefresh = true
+        }
+    }
+
+    private fun executePaletteSetSciiBright(action: BpeAction.PaletteSetPaintSciiBright) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
+            palette.paintSciiBright = action.light
+            shouldRefresh = true
+        }
+    }
+
+    private fun executePaletteSetSciiFlash(action: BpeAction.PaletteSetPaintSciiFlash) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
+            palette.paintSciiFlash = action.light
+            shouldRefresh = true
+        }
+    }
+
+    private fun executePaletteSetSciiChar(action: BpeAction.PaletteSetPaintSciiChar) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
+            palette.paintSciiCharacter = action.character
+            shouldRefresh = true
+        }
+    }
+
+    //
+    // Palette paint block
+    //
+
+    private fun executePaletteSetBlockColor(action: BpeAction.PaletteSetPaintBlockColor) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType.isBlock) {
+            palette.paintBlockColor = action.color
+            shouldRefresh = true
+        }
+    }
+
+    private fun executePaletteSetBlockBright(action: BpeAction.PaletteSetPaintBlockBright) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType.isBlock) {
+            palette.paintBlockBright = action.light
+            shouldRefresh = true
+        }
+    }
+
+    //
+    // Palette erase SCII
+    //
+
+    private fun executePaletteSetEraseSciiInk(action: BpeAction.PaletteSetEraseSciiInk) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
+            palette.eraseSciiInk = action.shouldEraseColor
+            shouldRefresh = true
+        }
+    }
+
+    private fun executePaletteSetEraseSciiPaper(action: BpeAction.PaletteSetEraseSciiPaper) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
+            palette.eraseSciiPaper = action.shouldEraseColor
+            shouldRefresh = true
+        }
+    }
+
+    private fun executePaletteSetEraseSciiBright(action: BpeAction.PaletteSetEraseSciiBright) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
+            palette.eraseSciiBright = action.shouldEraseLight
+            shouldRefresh = true
+        }
+    }
+
+    private fun executePaletteSetEraseSciiFlash(action: BpeAction.PaletteSetEraseSciiFlash) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
+            palette.eraseSciiFlash = action.shouldEraseLight
+            shouldRefresh = true
+        }
+    }
+
+    private fun executePaletteSetEraseSciiChar(action: BpeAction.PaletteSetEraseSciiChar) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) {
+            palette.eraseSciiCharacter = action.shouldEraseCharacter
+            shouldRefresh = true
+        }
+    }
+
+    //
+    // Palette erase block
+    //
+
+    private fun executePaletteSetEraseBlockColor(action: BpeAction.PaletteSetEraseBlockColor) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType.isBlock) {
+            palette.eraseBlockColor = action.shouldEraseColor
+            shouldRefresh = true
+        }
+    }
+
+    private fun executePaletteSetEraseBlockBright(action: BpeAction.PaletteSetEraseBlockBright) {
+        if ((currentLayer as? CanvasLayer<*>)?.canvasType.isBlock) {
+            palette.eraseBlockBright = action.shouldEraseLight
             shouldRefresh = true
         }
     }
@@ -456,6 +564,16 @@ class BpeEngine(
         processSelectionResult(selectionController.transform(it, TransformType.RotateCcw))
     }
 
+    private fun executeSelectionFill() = (currentLayer as? CanvasLayer<*>)?.let {
+        cancelPainting()
+        processSelectionResult(selectionController.paint(it.uid, palette.makePaintCell(it.canvasType)))
+    }
+
+    private fun executeSelectionClear() = (currentLayer as? CanvasLayer<*>)?.let {
+        cancelPainting()
+        processSelectionResult(selectionController.paint(it.uid, palette.makeEraseCell(it.canvasType)))
+    }
+
     //
     // Canvas
     //
@@ -651,17 +769,25 @@ class BpeEngine(
             canvas = CanvasView(graphicsState.preview),
             drawingType = (currentLayer as? CanvasLayer<*>)?.canvasType,
 
-            paletteInk = if (currentLayer is BackgroundLayer) currentLayer.color else palette.ink,
+            paletteBackgroundBorder = if (currentLayer is BackgroundLayer) currentLayer.border else null,
+            paletteBackgroundPaper = if (currentLayer is BackgroundLayer) currentLayer.color else null,
+            paletteBackgroundBright = if (currentLayer is BackgroundLayer) currentLayer.bright else null,
 
-            palettePaper = when {
-                currentLayer is BackgroundLayer -> currentLayer.border
-                (currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii -> palette.paper
-                else -> null
-            },
+            palettePaintSciiInk = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.paintSciiInk else null,
+            palettePaintSciiPaper = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.paintSciiPaper else null,
+            palettePaintSciiBright = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.paintSciiBright else null,
+            palettePaintSciiFlash = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.paintSciiFlash else null,
+            palettePaintSciiChar = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.paintSciiCharacter else null,
+            palettePaintBlockColor = if ((currentLayer as? CanvasLayer<*>)?.canvasType.isBlock) palette.paintBlockColor else null,
+            palettePaintBlockBright = if ((currentLayer as? CanvasLayer<*>)?.canvasType.isBlock) palette.paintBlockBright else null,
 
-            paletteBright = if (currentLayer is BackgroundLayer) currentLayer.bright else palette.bright,
-            paletteFlash = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.flash else null,
-            paletteChar = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.character else null,
+            paletteEraseSciiInk = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.eraseSciiInk else null,
+            paletteEraseSciiPaper = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.eraseSciiPaper else null,
+            paletteEraseSciiBright = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.eraseSciiBright else null,
+            paletteEraseSciiFlash = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.eraseSciiFlash else null,
+            paletteEraseSciiChar = if ((currentLayer as? CanvasLayer<*>)?.canvasType == CanvasType.Scii) palette.eraseSciiCharacter else null,
+            paletteEraseBlockColor = if ((currentLayer as? CanvasLayer<*>)?.canvasType.isBlock) palette.eraseBlockColor else null,
+            paletteEraseBlockBright = if ((currentLayer as? CanvasLayer<*>)?.canvasType.isBlock) palette.eraseBlockBright else null,
 
             layers = graphicsState.canvasLayers.reversed().map(::CanvasLayerView) + listOf(backgroundLayerView),
             layersCurrentUid = currentLayer.uid,

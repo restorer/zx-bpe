@@ -2,16 +2,16 @@ package com.eightsines.bpe.presentation
 
 import com.eightsines.bpe.bag.BagStuff
 import com.eightsines.bpe.bag.BagStuffWare
+import com.eightsines.bpe.foundation.BackgroundLayer
+import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.foundation.Cell
+import com.eightsines.bpe.foundation.Crate
+import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.foundation.Rect
+import com.eightsines.bpe.foundation.SciiCanvas
 import com.eightsines.bpe.foundation.SciiChar
 import com.eightsines.bpe.foundation.SciiColor
 import com.eightsines.bpe.foundation.SciiLight
-import com.eightsines.bpe.foundation.BackgroundLayer
-import com.eightsines.bpe.foundation.CanvasType
-import com.eightsines.bpe.foundation.Crate
-import com.eightsines.bpe.foundation.LayerUid
-import com.eightsines.bpe.foundation.SciiCanvas
 import com.eightsines.bpe.foundation.Selection
 import com.eightsines.bpe.graphics.GraphicsActionPair
 
@@ -20,11 +20,24 @@ data class BpeState(
     val canvas: CanvasView<SciiCanvas>,
     val drawingType: CanvasType?,
 
-    val paletteInk: SciiColor,
-    val palettePaper: SciiColor?,
-    val paletteBright: SciiLight?,
-    val paletteFlash: SciiLight?,
-    val paletteChar: SciiChar?,
+    val paletteBackgroundBorder: SciiColor?,
+    val paletteBackgroundPaper: SciiColor?,
+    val paletteBackgroundBright: SciiLight?,
+    val palettePaintSciiInk: SciiColor?,
+    val palettePaintSciiPaper: SciiColor?,
+    val palettePaintSciiBright: SciiLight?,
+    val palettePaintSciiFlash: SciiLight?,
+    val palettePaintSciiChar: SciiChar?,
+    val palettePaintBlockColor: SciiColor?,
+    val palettePaintBlockBright: SciiLight?,
+
+    val paletteEraseSciiInk: Boolean?,
+    val paletteEraseSciiPaper: Boolean?,
+    val paletteEraseSciiBright: Boolean?,
+    val paletteEraseSciiFlash: Boolean?,
+    val paletteEraseSciiChar: Boolean?,
+    val paletteEraseBlockColor: Boolean?,
+    val paletteEraseBlockBright: Boolean?,
 
     val layers: List<LayerView<*>>,
     val layersCurrentUid: LayerUid,

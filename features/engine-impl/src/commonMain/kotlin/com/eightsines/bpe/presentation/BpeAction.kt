@@ -7,11 +7,25 @@ import com.eightsines.bpe.foundation.SciiColor
 import com.eightsines.bpe.foundation.SciiLight
 
 sealed interface BpeAction {
-    data class PaletteSetInk(val color: SciiColor) : BpeAction
-    data class PaletteSetPaper(val color: SciiColor) : BpeAction
-    data class PaletteSetBright(val light: SciiLight) : BpeAction
-    data class PaletteSetFlash(val light: SciiLight) : BpeAction
-    data class PaletteSetChar(val character: SciiChar) : BpeAction
+    data class PaletteSetBackgroundBorder(val color: SciiColor) : BpeAction
+    data class PaletteSetBackgroundPaper(val color: SciiColor) : BpeAction
+    data class PaletteSetBackgroundBright(val light: SciiLight) : BpeAction
+
+    data class PaletteSetPaintSciiInk(val color: SciiColor) : BpeAction
+    data class PaletteSetPaintSciiPaper(val color: SciiColor) : BpeAction
+    data class PaletteSetPaintSciiBright(val light: SciiLight) : BpeAction
+    data class PaletteSetPaintSciiFlash(val light: SciiLight) : BpeAction
+    data class PaletteSetPaintSciiChar(val character: SciiChar) : BpeAction
+    data class PaletteSetPaintBlockColor(val color: SciiColor) : BpeAction
+    data class PaletteSetPaintBlockBright(val light: SciiLight) : BpeAction
+
+    data class PaletteSetEraseSciiInk(val shouldEraseColor: Boolean) : BpeAction
+    data class PaletteSetEraseSciiPaper(val shouldEraseColor: Boolean) : BpeAction
+    data class PaletteSetEraseSciiBright(val shouldEraseLight: Boolean) : BpeAction
+    data class PaletteSetEraseSciiFlash(val shouldEraseLight: Boolean) : BpeAction
+    data class PaletteSetEraseSciiChar(val shouldEraseCharacter: Boolean) : BpeAction
+    data class PaletteSetEraseBlockColor(val shouldEraseColor: Boolean) : BpeAction
+    data class PaletteSetEraseBlockBright(val shouldEraseLight: Boolean) : BpeAction
 
     data class LayersSetCurrent(val layerUid: LayerUid) : BpeAction
     data class LayersSetVisible(val layerUid: LayerUid, val isVisible: Boolean) : BpeAction
@@ -37,6 +51,8 @@ sealed interface BpeAction {
     data object SelectionFlipVertical : BpeAction
     data object SelectionRotateCw : BpeAction
     data object SelectionRotateCcw : BpeAction
+    data object SelectionFill : BpeAction
+    data object SelectionClear : BpeAction
 
     data class CanvasDown(val drawingX: Int, val drawingY: Int) : BpeAction
     data class CanvasMove(val drawingX: Int, val drawingY: Int) : BpeAction

@@ -14,8 +14,8 @@ sealed interface UiAction {
     data object SheetLeave : UiAction
 
     data object PaletteColorClick : UiAction
-    data object PaletteInkClick : UiAction
     data object PalettePaperClick : UiAction
+    data object PaletteInkClick : UiAction
     data object PaletteBrightClick : UiAction
     data object PaletteFlashClick : UiAction
     data object PaletteCharClick : UiAction
@@ -29,6 +29,8 @@ sealed interface UiAction {
     data object SelectionFlipVerticalClick : UiAction
     data object SelectionRotateCwClick : UiAction
     data object SelectionRotateCcwClick : UiAction
+    data object SelectionFillClick : UiAction
+    data object SelectionClearClick : UiAction
     data object LayersClick : UiAction
 
     data object ToolboxPaintClick : UiAction
@@ -42,10 +44,11 @@ sealed interface UiAction {
     data object ToolboxRedoClick : UiAction
     data object MenuClick : UiAction
 
-    data class ColorsItemClick(val color: SciiColor) : UiAction
-    data class LightsItemClick(val light: SciiLight) : UiAction
-    data class CharsItemClick(val character: SciiChar) : UiAction
-    data class ShapesItemClick(val shape: BpeShape) : UiAction
+    data class PanelColorClick(val color: SciiColor) : UiAction
+    data class PanelLightClick(val light: SciiLight) : UiAction
+    data class PanelCharClick(val character: SciiChar) : UiAction
+    data class PanelEraseClick(val shouldErase: Boolean) : UiAction
+    data class PanelShapeClick(val shape: BpeShape) : UiAction
 
     data class LayerItemClick(val layerUid: LayerUid) : UiAction
     data class LayerItemVisibleClick(val layerUid: LayerUid, val isVisible: Boolean) : UiAction

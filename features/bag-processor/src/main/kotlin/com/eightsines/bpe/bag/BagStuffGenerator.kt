@@ -447,16 +447,33 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
             return false
         }
 
+        var prefix = if (isList) "bag.getList { " else ""
+        var suffix = if (isList) " }" else ""
+
+        if (ware.version > 1) {
+            if (ware.fallbackValue == null) {
+                logger.error(
+                    "Fallback is required when version > 1 for field \"${ware.sourceClassDescriptor}::${ware.fieldName}\" of type \"${ware.typeDescriptor}\"",
+                    ware.sourceSymbol,
+                )
+
+                return false
+            }
+
+            prefix = "if (version >= ${ware.version}) { $prefix"
+            suffix = "$suffix } else { ${ware.fallbackValue} }"
+        }
+
         when (wareDescriptor) {
             is BagDescriptor.Primitive -> funBuilder.addStatement(
-                if (isList) "val %N = bag.getList { bag.%N() }" else "val %N = bag.%N()",
+                "val %N = ${prefix}bag.%N()$suffix",
                 ware.fieldName,
                 wareDescriptor.unpackMethod,
             )
 
             is BagDescriptor.Singlefield -> if (wareDescriptor.shouldCheckCreatorException) {
                 funBuilder.addStatement(
-                    if (isList) "val %N = bag.getList { %M { %M(bag.%N()) } }" else "val %N = %M { %M(bag.%N()) }",
+                    "val %N = $prefix%M { %M(bag.%N()) }$suffix",
                     ware.fieldName,
                     MemberName("com.eightsines.bpe.bag", "requireNoIllegalArgumentException"),
                     wareDescriptor.creatorDescriptor.pouetMemberName,
@@ -464,7 +481,7 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
                 )
             } else {
                 funBuilder.addStatement(
-                    "val %N = %M(bag.%N())",
+                    "val %N = $prefix%M(bag.%N())$suffix",
                     ware.fieldName,
                     wareDescriptor.creatorDescriptor.pouetMemberName,
                     wareDescriptor.primitiveDescriptor.unpackMethod
@@ -474,8 +491,9 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
             is BagDescriptor.Stuff -> if (wareDescriptor.unpackerReference == null) {
                 logger.error(
                     "Unpacker is missing for field \"${ware.sourceClassDescriptor}::${ware.fieldName}\" of type \"${ware.typeDescriptor}\"",
-                    ware.sourceSymbol
+                    ware.sourceSymbol,
                 )
+
                 return false
             } else {
                 val pouetClassName = resolver.resolveName(wareDescriptor.unpackerReference)?.pouetClassName
@@ -490,7 +508,7 @@ class BagStuffGenerator(private val logger: KSPLogger, private val codeGenerator
                 }
 
                 funBuilder.addStatement(
-                    if (isList) "val %N: %T = bag.getList { bag.getStuff(%T) }" else "val %N: %T = bag.getStuff(%T)",
+                    "val %N: %T = ${prefix}bag.getStuff(%T)$suffix",
                     ware.fieldName,
                     ware.typeDescriptor.pouetTypeName,
                     pouetClassName,

@@ -5,15 +5,16 @@ import com.eightsines.bpe.bag.BagStuffUnpacker
 import com.eightsines.bpe.bag.PackableBag
 import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
+import com.eightsines.bpe.foundation.CanvasType
 import com.eightsines.bpe.foundation.SciiChar
 import com.eightsines.bpe.foundation.SciiColor
 import com.eightsines.bpe.foundation.SciiLight
-import com.eightsines.bpe.foundation.CanvasType
+import com.eightsines.bpe.foundation.isBlock
 import com.eightsines.bpe.graphics.GraphicsEngine
-import com.eightsines.bpe.util.TextDescriptor
-import com.eightsines.bpe.util.TextRes
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.Severity
+import com.eightsines.bpe.util.TextDescriptor
+import com.eightsines.bpe.util.TextRes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -25,6 +26,8 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
     private var layerTypePanel: LayerTypePanel? = null
     private var currentDrawingType: CanvasType? = null
     private var currentAreaSpec: AreaSpec = AreaSpec(0, 0, 0, 0, 0.0, 0.0)
+    private var isPaintActive: Boolean = false
+    private var isEraseActive: Boolean = false
     private var cursorSpec: CursorSpec? = null
     private var isSheetDown: Boolean = false
     private val bpeStateFlow = MutableSharedFlow<BpeState>(extraBufferCapacity = 1)
@@ -76,6 +79,8 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
             is UiAction.SelectionFlipVerticalClick -> executeSelectionFlipVerticalClick()
             is UiAction.SelectionRotateCwClick -> executeSelectionRotateCwClick()
             is UiAction.SelectionRotateCcwClick -> executeSelectionRotateCcwClick()
+            is UiAction.SelectionFillClick -> executeSelectionFillClick()
+            is UiAction.SelectionClearClick -> executeSelectionClearClick()
             is UiAction.LayersClick -> executeLayersClick()
 
             is UiAction.ToolboxPaintClick -> executeToolboxPaintClick()
@@ -89,10 +94,11 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
             is UiAction.ToolboxRedoClick -> executeToolboxRedoClick()
             is UiAction.MenuClick -> executeMenuClick()
 
-            is UiAction.ColorsItemClick -> executeColorsItemClick(action)
-            is UiAction.LightsItemClick -> executeLightsItemClick(action)
-            is UiAction.CharsItemClick -> executeCharsItemClick(action)
-            is UiAction.ShapesItemClick -> executeShapesItemClick(action)
+            is UiAction.PanelColorClick -> executePanelColorClick(action)
+            is UiAction.PanelLightClick -> executePanelLightClick(action)
+            is UiAction.PanelCharClick -> executePanelCharClick(action)
+            is UiAction.PanelEraseClick -> executePanelEraseClick(action)
+            is UiAction.PanelShapeClick -> executePanelShapeClick(action)
 
             is UiAction.LayerItemClick -> executeLayerItemClick(action)
             is UiAction.LayerItemVisibleClick -> executeLayerItemVisibleClick(action)
@@ -199,37 +205,78 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
 
     private fun executePaletteColorClick() {
         if (state.paletteColor.isInteractable) {
-            activePanel = if (activePanel == Panel.Ink) null else Panel.Ink
-        }
-    }
+            val panel = when {
+                currentDrawingType.isBlock && isPaintActive -> Panel.PaintBlockColor
+                currentDrawingType.isBlock && isEraseActive -> Panel.EraseBlockColor
+                else -> null
+            }
 
-    private fun executePaletteInkClick() {
-        if (state.paletteInk.isInteractable) {
-            activePanel = if (activePanel == Panel.Ink) null else Panel.Ink
+            activePanel = if (activePanel == panel) null else panel
         }
     }
 
     private fun executePalettePaperClick() {
         if (state.palettePaper.isInteractable) {
-            activePanel = if (activePanel == Panel.Paper) null else Panel.Paper
+            val panel = when {
+                currentDrawingType == CanvasType.Scii && isPaintActive -> Panel.PaintSciiPaper
+                currentDrawingType == CanvasType.Scii && isEraseActive -> Panel.EraseSciiPaper
+                currentDrawingType == null -> Panel.BackgroundBorder
+                else -> null
+            }
+
+            activePanel = if (activePanel == panel) null else panel
+        }
+    }
+
+    private fun executePaletteInkClick() {
+        if (state.paletteInk.isInteractable) {
+            val panel = when {
+                currentDrawingType == CanvasType.Scii && isPaintActive -> Panel.PaintSciiInk
+                currentDrawingType == CanvasType.Scii && isEraseActive -> Panel.EraseSciiInk
+                currentDrawingType == null -> Panel.BackgroundPaper
+                else -> null
+            }
+
+            activePanel = if (activePanel == panel) null else panel
         }
     }
 
     private fun executePaletteBrightClick() {
         if (state.paletteBright.isInteractable) {
-            activePanel = if (activePanel == Panel.Bright) null else Panel.Bright
+            val panel = when {
+                currentDrawingType == CanvasType.Scii && isPaintActive -> Panel.PaintSciiBright
+                currentDrawingType == CanvasType.Scii && isEraseActive -> Panel.EraseSciiBright
+                currentDrawingType.isBlock && isPaintActive -> Panel.PaintBlockBright
+                currentDrawingType.isBlock && isEraseActive -> Panel.EraseBlockBright
+                currentDrawingType == null -> Panel.BackgroundBright
+                else -> null
+            }
+
+            activePanel = if (activePanel == panel) null else panel
         }
     }
 
     private fun executePaletteFlashClick() {
         if (state.paletteFlash.isInteractable) {
-            activePanel = if (activePanel == Panel.Flash) null else Panel.Flash
+            val panel = when {
+                currentDrawingType == CanvasType.Scii && isPaintActive -> Panel.PaintSciiFlash
+                currentDrawingType == CanvasType.Scii && isEraseActive -> Panel.EraseSciiFlash
+                else -> null
+            }
+
+            activePanel = if (activePanel == panel) null else panel
         }
     }
 
     private fun executePaletteCharClick() {
         if (state.paletteChar.isInteractable) {
-            activePanel = if (activePanel == Panel.Chars) null else Panel.Chars
+            val panel = when {
+                currentDrawingType == CanvasType.Scii && isPaintActive -> Panel.PaintSciiChar
+                currentDrawingType == CanvasType.Scii && isEraseActive -> Panel.EraseSciiChar
+                else -> null
+            }
+
+            activePanel = if (activePanel == panel) null else panel
         }
     }
 
@@ -294,6 +341,20 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
         }
     }
 
+    private fun executeSelectionFillClick() {
+        if (state.selectionMenu.isInteractable) {
+            bpeEngine.execute(BpeAction.SelectionFill)
+            activePanel = null
+        }
+    }
+
+    private fun executeSelectionClearClick() {
+        if (state.selectionMenu.isInteractable) {
+            bpeEngine.execute(BpeAction.SelectionClear)
+            activePanel = null
+        }
+    }
+
     private fun executeLayersClick() {
         activePanel = if (activePanel == Panel.Layers) null else Panel.Layers
         layerTypePanel = null
@@ -301,10 +362,10 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
 
     private fun executeToolboxPaintClick() {
         if (state.toolboxPaint.isInteractable) {
-            activePanel = when {
-                bpeEngine.state.toolboxTool != BpeTool.Paint -> Panel.Shapes
-                activePanel == Panel.Shapes -> null
-                else -> Panel.Shapes
+            activePanel = if (bpeEngine.state.toolboxTool != BpeTool.Paint || activePanel == Panel.Shapes) {
+                null
+            } else {
+                Panel.Shapes
             }
 
             bpeEngine.execute(BpeAction.ToolboxSetTool(BpeTool.Paint))
@@ -319,10 +380,10 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
 
     private fun executeToolboxEraseClick() {
         if (state.toolboxErase.isInteractable) {
-            activePanel = when {
-                bpeEngine.state.toolboxTool != BpeTool.Erase -> Panel.Shapes
-                activePanel == Panel.Shapes -> null
-                else -> Panel.Shapes
+            activePanel = if (bpeEngine.state.toolboxTool != BpeTool.Erase || activePanel == Panel.Shapes) {
+                null
+            } else {
+                Panel.Shapes
             }
 
             bpeEngine.execute(BpeAction.ToolboxSetTool(BpeTool.Erase))
@@ -369,32 +430,52 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
         }
     }
 
-    private fun executeColorsItemClick(action: UiAction.ColorsItemClick) {
+    private fun executePanelColorClick(action: UiAction.PanelColorClick) {
         when (activePanel) {
-            Panel.Ink -> bpeEngine.execute(BpeAction.PaletteSetInk(action.color))
-            Panel.Paper -> bpeEngine.execute(BpeAction.PaletteSetPaper(action.color))
+            Panel.BackgroundBorder -> bpeEngine.execute(BpeAction.PaletteSetBackgroundBorder(action.color))
+            Panel.BackgroundPaper -> bpeEngine.execute(BpeAction.PaletteSetBackgroundPaper(action.color))
+            Panel.PaintSciiPaper -> bpeEngine.execute(BpeAction.PaletteSetPaintSciiPaper(action.color))
+            Panel.PaintSciiInk -> bpeEngine.execute(BpeAction.PaletteSetPaintSciiInk(action.color))
+            Panel.PaintBlockColor -> bpeEngine.execute(BpeAction.PaletteSetPaintBlockColor(action.color))
             else -> Unit
         }
 
         activePanel = null
     }
 
-    private fun executeLightsItemClick(action: UiAction.LightsItemClick) {
+    private fun executePanelLightClick(action: UiAction.PanelLightClick) {
         when (activePanel) {
-            Panel.Bright -> bpeEngine.execute(BpeAction.PaletteSetBright(action.light))
-            Panel.Flash -> bpeEngine.execute(BpeAction.PaletteSetFlash(action.light))
+            Panel.BackgroundBright -> bpeEngine.execute(BpeAction.PaletteSetBackgroundBright(action.light))
+            Panel.PaintSciiBright -> bpeEngine.execute(BpeAction.PaletteSetPaintSciiBright(action.light))
+            Panel.PaintSciiFlash -> bpeEngine.execute(BpeAction.PaletteSetPaintSciiFlash(action.light))
+            Panel.PaintBlockBright -> bpeEngine.execute(BpeAction.PaletteSetPaintBlockBright(action.light))
             else -> Unit
         }
 
         activePanel = null
     }
 
-    private fun executeCharsItemClick(action: UiAction.CharsItemClick) {
-        bpeEngine.execute(BpeAction.PaletteSetChar(action.character))
+    private fun executePanelCharClick(action: UiAction.PanelCharClick) {
+        bpeEngine.execute(BpeAction.PaletteSetPaintSciiChar(action.character))
         activePanel = null
     }
 
-    private fun executeShapesItemClick(action: UiAction.ShapesItemClick) {
+    private fun executePanelEraseClick(action: UiAction.PanelEraseClick) {
+        when (activePanel) {
+            Panel.EraseSciiPaper -> bpeEngine.execute(BpeAction.PaletteSetEraseSciiPaper(action.shouldErase))
+            Panel.EraseSciiInk -> bpeEngine.execute(BpeAction.PaletteSetEraseSciiInk(action.shouldErase))
+            Panel.EraseSciiBright -> bpeEngine.execute(BpeAction.PaletteSetEraseSciiBright(action.shouldErase))
+            Panel.EraseSciiFlash -> bpeEngine.execute(BpeAction.PaletteSetEraseSciiFlash(action.shouldErase))
+            Panel.EraseSciiChar -> bpeEngine.execute(BpeAction.PaletteSetEraseSciiChar(action.shouldErase))
+            Panel.EraseBlockColor -> bpeEngine.execute(BpeAction.PaletteSetEraseBlockColor(action.shouldErase))
+            Panel.EraseBlockBright -> bpeEngine.execute(BpeAction.PaletteSetEraseBlockBright(action.shouldErase))
+            else -> Unit
+        }
+
+        activePanel = null
+    }
+
+    private fun executePanelShapeClick(action: UiAction.PanelShapeClick) {
         bpeEngine.execute(BpeAction.ToolboxSetShape(action.shape))
         activePanel = null
     }
@@ -566,8 +647,8 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
         val isPaintAvailable = bpeState.toolboxAvailTools.contains(BpeTool.Paint)
         val isEraseAvailable = bpeState.toolboxAvailTools.contains(BpeTool.Erase)
 
-        val isPaintActive = bpeState.toolboxTool == BpeTool.Paint && isPaintAvailable
-        val isEraseActive = bpeState.toolboxTool == BpeTool.Erase && isEraseAvailable
+        isPaintActive = bpeState.toolboxTool == BpeTool.Paint && isPaintAvailable
+        isEraseActive = bpeState.toolboxTool == BpeTool.Erase && isEraseAvailable
 
         return UiState(
             sheet = UiSheetView(bpeState.background, bpeState.canvas),
@@ -587,36 +668,53 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
                 cursorSpec?.primaryArea,
             ),
 
-            paletteColor = when {
-                bpeState.palettePaper != null -> UiToolState.Hidden
-                activePanel == Panel.Ink -> UiToolState.Active(bpeState.paletteInk)
-                else -> UiToolState.Visible(bpeState.paletteInk)
-            },
-            paletteInk = when {
-                bpeState.palettePaper == null -> UiToolState.Hidden
-                activePanel == Panel.Ink -> UiToolState.Active(bpeState.paletteInk)
-                else -> UiToolState.Visible(bpeState.paletteInk)
-            },
-            palettePaper = when {
-                bpeState.palettePaper == null -> UiToolState.Hidden
-                activePanel == Panel.Paper -> UiToolState.Active(bpeState.palettePaper)
-                else -> UiToolState.Visible(bpeState.palettePaper)
-            },
-            paletteBright = when {
-                bpeState.paletteBright == null -> UiToolState.Hidden
-                activePanel == Panel.Bright -> UiToolState.Active(bpeState.paletteBright)
-                else -> UiToolState.Visible(bpeState.paletteBright)
-            },
-            paletteFlash = when {
-                bpeState.paletteFlash == null -> UiToolState.Hidden
-                activePanel == Panel.Flash -> UiToolState.Active(bpeState.paletteFlash)
-                else -> UiToolState.Visible(bpeState.paletteFlash)
-            },
-            paletteChar = when {
-                bpeState.paletteChar == null -> UiToolState.Hidden
-                activePanel == Panel.Chars -> UiToolState.Active(bpeState.paletteChar)
-                else -> UiToolState.Visible(bpeState.paletteChar)
-            },
+            paletteColor = makeToolState(
+                when {
+                    currentDrawingType.isBlock && isPaintActive -> bpeState.palettePaintBlockColor to Panel.PaintBlockColor
+                    currentDrawingType.isBlock && isEraseActive -> makeColor(bpeState.paletteEraseBlockColor) to Panel.EraseBlockColor
+                    else -> null
+                }
+            ),
+            palettePaper = makeToolState(
+                when {
+                    currentDrawingType == CanvasType.Scii && isPaintActive -> bpeState.palettePaintSciiPaper to Panel.PaintSciiPaper
+                    currentDrawingType == CanvasType.Scii && isEraseActive -> makeColor(bpeState.paletteEraseSciiPaper) to Panel.EraseSciiPaper
+                    currentDrawingType == null -> bpeState.paletteBackgroundBorder to Panel.BackgroundBorder
+                    else -> null
+                }
+            ),
+            paletteInk = makeToolState(
+                when {
+                    currentDrawingType == CanvasType.Scii && isPaintActive -> bpeState.palettePaintSciiInk to Panel.PaintSciiInk
+                    currentDrawingType == CanvasType.Scii && isEraseActive -> makeColor(bpeState.paletteEraseSciiInk) to Panel.EraseSciiInk
+                    currentDrawingType == null -> bpeState.paletteBackgroundPaper to Panel.BackgroundPaper
+                    else -> null
+                }
+            ),
+            paletteBright = makeToolState(
+                when {
+                    currentDrawingType == CanvasType.Scii && isPaintActive -> bpeState.palettePaintSciiBright to Panel.PaintSciiBright
+                    currentDrawingType == CanvasType.Scii && isEraseActive -> makeLight(bpeState.paletteEraseSciiBright) to Panel.EraseSciiBright
+                    currentDrawingType.isBlock && isPaintActive -> bpeState.palettePaintBlockBright to Panel.PaintBlockBright
+                    currentDrawingType.isBlock && isEraseActive -> makeLight(bpeState.paletteEraseBlockBright) to Panel.EraseBlockBright
+                    currentDrawingType == null -> bpeState.paletteBackgroundBright to Panel.BackgroundBright
+                    else -> null
+                }
+            ),
+            paletteFlash = makeToolState(
+                when {
+                    currentDrawingType == CanvasType.Scii && isPaintActive -> bpeState.palettePaintSciiFlash to Panel.PaintSciiFlash
+                    currentDrawingType == CanvasType.Scii && isEraseActive -> makeLight(bpeState.paletteEraseSciiFlash) to Panel.EraseSciiFlash
+                    else -> null
+                }
+            ),
+            paletteChar = makeToolState(
+                when {
+                    currentDrawingType == CanvasType.Scii && isPaintActive -> bpeState.palettePaintSciiChar to Panel.PaintSciiChar
+                    currentDrawingType == CanvasType.Scii && isEraseActive -> makeChar(bpeState.paletteEraseSciiChar) to Panel.EraseSciiChar
+                    else -> null
+                }
+            ),
 
             selectionPaste = if (bpeState.toolboxCanPaste) UiToolState.Visible(Unit) else UiToolState.Hidden,
             selectionMenu = when {
@@ -667,11 +765,27 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
 
             activePanel = when (activePanel) {
                 null -> null
-                Panel.Ink -> UiPanel.Colors(bpeState.paletteInk)
-                Panel.Paper -> UiPanel.Colors(bpeState.palettePaper ?: SciiColor.Transparent)
-                Panel.Bright -> UiPanel.Lights(bpeState.paletteBright ?: SciiLight.Transparent)
-                Panel.Flash -> UiPanel.Lights(bpeState.paletteFlash ?: SciiLight.Transparent)
-                Panel.Chars -> UiPanel.Chars(bpeState.paletteChar ?: SciiChar.Transparent)
+
+                Panel.BackgroundBorder -> UiPanel.Colors(bpeState.paletteBackgroundBorder ?: SciiColor.Transparent)
+                Panel.BackgroundPaper -> UiPanel.Colors(bpeState.paletteBackgroundPaper ?: SciiColor.Transparent)
+                Panel.BackgroundBright -> UiPanel.Lights(bpeState.paletteBackgroundBright ?: SciiLight.Transparent)
+
+                Panel.PaintSciiInk -> UiPanel.Colors(bpeState.palettePaintSciiInk ?: SciiColor.Transparent)
+                Panel.PaintSciiPaper -> UiPanel.Colors(bpeState.palettePaintSciiPaper ?: SciiColor.Transparent)
+                Panel.PaintSciiBright -> UiPanel.Lights(bpeState.palettePaintSciiBright ?: SciiLight.Transparent)
+                Panel.PaintSciiFlash -> UiPanel.Lights(bpeState.palettePaintSciiFlash ?: SciiLight.Transparent)
+                Panel.PaintSciiChar -> UiPanel.Chars(bpeState.palettePaintSciiChar ?: SciiChar.Transparent)
+                Panel.PaintBlockColor -> UiPanel.Colors(bpeState.palettePaintBlockColor ?: SciiColor.Transparent)
+                Panel.PaintBlockBright -> UiPanel.Lights(bpeState.palettePaintBlockBright ?: SciiLight.Transparent)
+
+                Panel.EraseSciiInk -> UiPanel.Erase(bpeState.paletteEraseSciiInk ?: true)
+                Panel.EraseSciiPaper -> UiPanel.Erase(bpeState.paletteEraseSciiPaper ?: true)
+                Panel.EraseSciiBright -> UiPanel.Erase(bpeState.paletteEraseSciiBright ?: true)
+                Panel.EraseSciiFlash -> UiPanel.Erase(bpeState.paletteEraseSciiFlash ?: true)
+                Panel.EraseSciiChar -> UiPanel.Erase(bpeState.paletteEraseSciiChar ?: true)
+                Panel.EraseBlockColor -> UiPanel.Erase(bpeState.paletteEraseBlockColor ?: true)
+                Panel.EraseBlockBright -> UiPanel.Erase(bpeState.paletteEraseBlockBright ?: true)
+
                 Panel.SelectionMenu -> UiPanel.SelectionMenu
                 Panel.Layers -> UiPanel.Layers
                 Panel.Shapes -> UiPanel.Shapes(bpeState.toolboxShape ?: BpeShape.Point)
@@ -731,6 +845,34 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
         )
     }
 
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun makeColor(shouldErase: Boolean?) = when (shouldErase) {
+        null -> null
+        true -> SciiColor.ForceTransparent
+        false -> SciiColor.Transparent
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun makeLight(shouldErase: Boolean?) = when (shouldErase) {
+        null -> null
+        true -> SciiLight.ForceTransparent
+        false -> SciiLight.Transparent
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun makeChar(shouldErase: Boolean?) = when (shouldErase) {
+        null -> null
+        true -> SciiChar.ForceTransparent
+        false -> SciiChar.Transparent
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T : Any> makeToolState(pair: Pair<T?, Panel?>?) = when {
+        pair == null || pair.first == null -> UiToolState.Hidden
+        activePanel == pair.second -> UiToolState.Active(pair.first)
+        else -> UiToolState.Visible(pair.first)
+    } as UiToolState<T>
+
     private class Packer(private val historyStepsLimit: Int = -1) : BagStuffPacker<UiEngineImpl> {
         override val putInTheBagVersion = 3
 
@@ -761,11 +903,26 @@ private enum class PanelPlacement {
 }
 
 private enum class Panel(val placement: PanelPlacement) {
-    Ink(PanelPlacement.Palette),
-    Paper(PanelPlacement.Palette),
-    Bright(PanelPlacement.Palette),
-    Flash(PanelPlacement.Palette),
-    Chars(PanelPlacement.Palette),
+    BackgroundBorder(PanelPlacement.Palette),
+    BackgroundPaper(PanelPlacement.Palette),
+    BackgroundBright(PanelPlacement.Palette),
+
+    PaintSciiInk(PanelPlacement.Palette),
+    PaintSciiPaper(PanelPlacement.Palette),
+    PaintSciiBright(PanelPlacement.Palette),
+    PaintSciiFlash(PanelPlacement.Palette),
+    PaintSciiChar(PanelPlacement.Palette),
+    PaintBlockColor(PanelPlacement.Palette),
+    PaintBlockBright(PanelPlacement.Palette),
+
+    EraseSciiInk(PanelPlacement.Palette),
+    EraseSciiPaper(PanelPlacement.Palette),
+    EraseSciiBright(PanelPlacement.Palette),
+    EraseSciiFlash(PanelPlacement.Palette),
+    EraseSciiChar(PanelPlacement.Palette),
+    EraseBlockColor(PanelPlacement.Palette),
+    EraseBlockBright(PanelPlacement.Palette),
+
     SelectionMenu(PanelPlacement.Palette),
     Layers(PanelPlacement.Palette),
     Shapes(PanelPlacement.Toolbox),

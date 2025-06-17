@@ -12,8 +12,8 @@ data class UiState(
     val areas: List<UiArea>,
 
     val paletteColor: UiToolState<SciiColor>,
-    val paletteInk: UiToolState<SciiColor>,
     val palettePaper: UiToolState<SciiColor>,
+    val paletteInk: UiToolState<SciiColor>,
     val paletteBright: UiToolState<SciiLight>,
     val paletteFlash: UiToolState<SciiLight>,
     val paletteChar: UiToolState<SciiChar>,
@@ -88,6 +88,7 @@ sealed interface UiPanel {
     data class Colors(val color: SciiColor) : UiPanel
     data class Lights(val light: SciiLight) : UiPanel
     data class Chars(val character: SciiChar) : UiPanel
+    data class Erase(val shouldErase: Boolean) : UiPanel
     data object SelectionMenu : UiPanel
     data object Layers : UiPanel
     data class Shapes(val shape: BpeShape) : UiPanel

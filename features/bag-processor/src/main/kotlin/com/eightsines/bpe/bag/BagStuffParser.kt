@@ -256,6 +256,7 @@ class BagStuffParser(private val logger: KSPLogger) {
         val packerName = annotation.getArgumentValue<String>(WARE_ARGUMENT_PACKER_NAME) ?: ""
         val unpackerName = annotation.getArgumentValue<String>(WARE_ARGUMENT_UNPACKER_NAME) ?: ""
         val version = annotation.getArgumentValue<Int>(WARE_ARGUMENT_VERSION_NAME) ?: 1
+        val fallback = annotation.getArgumentValue<String>(WARE_ARGUMENT_FALLBACK_NAME) ?: ""
 
         val typeDescriptor = if (customTypeDescriptor == null || customTypeDescriptor == NOTHING_DESCRIPTOR) {
             sourceTypeDescriptor
@@ -315,6 +316,7 @@ class BagStuffParser(private val logger: KSPLogger) {
             typeDescriptor = typeDescriptor,
             packerDescriptor = packerDescriptor,
             unpackerDescriptor = unpackerDescriptor,
+            fallbackValue = fallback.ifEmpty { null },
             sourceClassDescriptor = classDescriptor,
             sourceSymbol = sourceSymbol,
         )
@@ -343,6 +345,7 @@ class BagStuffParser(private val logger: KSPLogger) {
         private const val WARE_ARGUMENT_PACKER_NAME = "packer"
         private const val WARE_ARGUMENT_UNPACKER_NAME = "unpacker"
         private const val WARE_ARGUMENT_VERSION_NAME = "version"
+        private const val WARE_ARGUMENT_FALLBACK_NAME = "fallback"
 
         private const val GENERATED_SUFFIX_STUFF = "Stuff"
         private const val GENERATED_SUFFIX_POLYMORPHIC_STUFF = "PolymorphicStuff"

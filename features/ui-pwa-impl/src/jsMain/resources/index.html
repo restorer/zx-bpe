@@ -34,7 +34,7 @@
 
     </script>
 </head>
-<body bpe-build="169">
+<body bpe-build="199">
 <div class="loading js-loading"></div>
 <div class="container hidden js-container">
     <div class="drawing js-drawing">
@@ -87,11 +87,11 @@
             </div>
         </div>
         <div class="panel__pane">
-            <div class="tool js-selection-paste" bpe-title="selection_paste">
+            <div class="tool js-selection-paste-outer" bpe-title="selection_paste">
                 <img src="drawable/selection__paste.svg" alt="" class="tool__icon"/>
             </div>
             <div class="tool js-selection-menu" bpe-title="selection_menu">
-                <img src="drawable/menu__secondary.svg" alt="" class="tool__icon"/>
+                <img src="drawable/menu__selection.svg" alt="" class="tool__icon"/>
             </div>
             <div class="tool js-layers" bpe-title="layers">
                 <img src="drawable/layers.svg" alt="" class="tool__icon"/>
@@ -141,6 +141,16 @@
     <div class="subpanel subpanel--palette js-colors-panel"></div>
     <div class="subpanel subpanel--palette js-lights-panel"></div>
     <div class="subpanel subpanel--palette subpanel--palette_chars js-chars-panel"></div>
+    <div class="subpanel subpanel--palette js-erase-panel">
+        <div class="panel__pane">
+            <div class="tool tool--md js-erase-off">
+                <img class="tool__icon tool__icon--light" src="drawable/light__transparent.svg" alt="" />
+            </div>
+            <div class="tool tool--md js-erase-on">
+                <img class="tool__icon tool__icon--light" src="drawable/light__force_transparent.svg" alt="" />
+            </div>
+        </div>
+    </div>
     <div class="subpanel subpanel--palette subpanel--palette_selection js-selection-panel">
         <div class="panel__pane">
             <div class="tool js-selection-cut" bpe-title="selection_cut">
@@ -148,6 +158,9 @@
             </div>
             <div class="tool js-selection-copy" bpe-title="selection_copy">
                 <img src="drawable/selection__copy.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-paste-menu" bpe-title="selection_paste">
+                <img src="drawable/selection__paste.svg" alt="" class="tool__icon"/>
             </div>
             <div class="tool js-selection-flip-horizontal" bpe-title="selection_flip_horizontal">
                 <img src="drawable/selection__flip_horizontal.svg" alt="" class="tool__icon"/>
@@ -160,6 +173,12 @@
             </div>
             <div class="tool js-selection-rotate-ccw" bpe-title="selection_rotate_ccw">
                 <img src="drawable/selection__rotate_ccw.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-fill" bpe-title="selection_fill">
+                <img src="drawable/tool__paint.svg" alt="" class="tool__icon"/>
+            </div>
+            <div class="tool js-selection-clear" bpe-title="selection_clear">
+                <img src="drawable/tool__erase.svg" alt="" class="tool__icon"/>
             </div>
         </div>
     </div>

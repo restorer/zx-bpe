@@ -1,6 +1,45 @@
 package com.eightsines.bpe.foundation
 
 object Merger {
+    fun normalizeSciiCell(cell: SciiCell): SciiCell {
+        val isCharForceTransparent = cell.character == SciiChar.ForceTransparent
+        val isInkForceTransparent = cell.ink == SciiColor.ForceTransparent
+        val isPaperForceTransparent = cell.paper == SciiColor.ForceTransparent
+        val isBrightForceTransparent = cell.bright == SciiLight.ForceTransparent
+        val isFlashForceTransparent = cell.flash == SciiLight.ForceTransparent
+
+        return if (isCharForceTransparent ||
+            isInkForceTransparent ||
+            isPaperForceTransparent ||
+            isBrightForceTransparent ||
+            isFlashForceTransparent
+        ) {
+            SciiCell(
+                character = if (isCharForceTransparent) SciiChar.Transparent else cell.character,
+                ink = if (isInkForceTransparent) SciiColor.Transparent else cell.ink,
+                paper = if (isPaperForceTransparent) SciiColor.Transparent else cell.paper,
+                bright = if (isBrightForceTransparent) SciiLight.Transparent else cell.bright,
+                flash = if (isFlashForceTransparent) SciiLight.Transparent else cell.flash,
+            )
+        } else {
+            cell
+        }
+    }
+
+    fun normalizeBlockCell(cell: BlockCell): BlockCell {
+        val isColorForceTransparent = cell.color == SciiColor.ForceTransparent
+        val isBrightForceTransparent = cell.bright == SciiLight.ForceTransparent
+
+        return if (isColorForceTransparent || isBrightForceTransparent) {
+            BlockCell(
+                color = if (isColorForceTransparent) SciiColor.Transparent else cell.color,
+                bright = if (isBrightForceTransparent) SciiLight.Transparent else cell.bright,
+            )
+        } else {
+            cell
+        }
+    }
+
     fun mergeSciiCell(which: SciiCell, onto: SciiCell): SciiCell {
         val charValue = which.character.value
         val ontoCharValue = onto.character.value
@@ -89,10 +128,16 @@ object Merger {
         }
     }
 
-    fun mergeBlockCell(which: BlockCell, onto: BlockCell) = BlockCell(
-        color = mergeColor(which.color, onto.color),
-        bright = mergeLight(which.bright, onto.bright),
-    )
+    fun mergeBlockCell(which: BlockCell, onto: BlockCell, ontoBright: SciiLight): BlockCell {
+        val mergedColor = mergeColor(which.color, onto.color)
+        val mergedBright = mergeLight(which.bright, ontoBright)
+
+        return when {
+            mergedColor == which.color && mergedBright == which.bright -> which
+            mergedColor == onto.color && mergedBright == onto.bright -> onto
+            else -> BlockCell(color = mergedColor, bright = mergedBright)
+        }
+    }
 
     @Suppress("NOTHING_TO_INLINE")
     inline fun mergeChar(which: SciiChar, onto: SciiChar): SciiChar =
