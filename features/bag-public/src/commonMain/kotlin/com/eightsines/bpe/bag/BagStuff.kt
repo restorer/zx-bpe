@@ -3,8 +3,10 @@ package com.eightsines.bpe.bag
 import kotlin.reflect.KClass
 
 @Retention(AnnotationRetention.BINARY)
-@Target(AnnotationTarget.CLASS)
+@Target(AnnotationTarget.FILE, AnnotationTarget.CLASS)
+@Repeatable
 annotation class BagStuff(
+    val of: String = "",
     val packer: String = "",
     val unpacker: String = "",
     val polymorphicOf: KClass<*> = Nothing::class,
@@ -13,7 +15,7 @@ annotation class BagStuff(
 )
 
 @Retention(AnnotationRetention.BINARY)
-@Target(AnnotationTarget.CLASS, AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.PROPERTY)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY, AnnotationTarget.VALUE_PARAMETER)
 @Repeatable
 annotation class BagStuffWare(
     val index: Int,

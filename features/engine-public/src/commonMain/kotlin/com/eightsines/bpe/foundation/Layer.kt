@@ -2,6 +2,16 @@ package com.eightsines.bpe.foundation
 
 import com.eightsines.bpe.bag.BagStuff
 import com.eightsines.bpe.bag.BagStuffWare
+import kotlin.jvm.JvmInline
+
+@JvmInline
+value class LayerUid(val value: String) {
+    override fun toString() = "LayerUid($value)"
+
+    companion object {
+        val Background = LayerUid("")
+    }
+}
 
 interface Layer {
     val uid: LayerUid
@@ -35,7 +45,6 @@ interface BackgroundLayer : Layer {
         )
 }
 
-@BagStuff(unpacker = "MutableCanvasLayer_Stuff")
 @BagStuffWare(1, field = "uid")
 @BagStuffWare(2, field = "isVisible")
 @BagStuffWare(3, field = "isLocked")

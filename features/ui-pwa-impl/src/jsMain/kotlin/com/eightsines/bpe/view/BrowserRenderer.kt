@@ -1,17 +1,15 @@
 package com.eightsines.bpe.view
 
+import com.eightsines.bpe.foundation.BackgroundLayer
+import com.eightsines.bpe.foundation.BlockCell
+import com.eightsines.bpe.foundation.Canvas
+import com.eightsines.bpe.foundation.CanvasLayer
+import com.eightsines.bpe.foundation.CanvasType
+import com.eightsines.bpe.foundation.Layer
 import com.eightsines.bpe.foundation.SciiCell
 import com.eightsines.bpe.foundation.SciiChar
 import com.eightsines.bpe.foundation.SciiColor
 import com.eightsines.bpe.foundation.SciiLight
-import com.eightsines.bpe.foundation.BackgroundLayer
-import com.eightsines.bpe.foundation.BlockCanvas
-import com.eightsines.bpe.foundation.CanvasLayer
-import com.eightsines.bpe.foundation.HBlockCanvas
-import com.eightsines.bpe.foundation.Layer
-import com.eightsines.bpe.foundation.QBlockCanvas
-import com.eightsines.bpe.foundation.SciiCanvas
-import com.eightsines.bpe.foundation.VBlockCanvas
 import com.eightsines.bpe.foundation.isTransparent
 import com.eightsines.bpe.presentation.UiArea
 import com.eightsines.bpe.presentation.UiAreaType
@@ -28,22 +26,23 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         val htmlContext = htmlCanvas.getContext("2d", GET_CONTEXT_OPTIONS) as CanvasRenderingContext2D
         htmlContext.clearRect(0.0, 0.0, PICTURE_WIDTH, PICTURE_HEIGHT)
 
+        @Suppress("UNCHECKED_CAST")
         when (layer) {
             is BackgroundLayer -> {
                 renderBackgroundBorder(htmlContext, layer, BACKGROUND_PREVIEW_PICTURE_WIDTH, BACKGROUND_PREVIEW_PICTURE_HEIGHT)
                 renderBackgroundPaper(htmlContext, layer, BACKGROUND_PREVIEW_PICTURE_WIDTH, BACKGROUND_PREVIEW_PICTURE_HEIGHT)
             }
 
-            is CanvasLayer<*> -> when (val canvas = layer.canvas) {
-                is SciiCanvas -> renderSciiCanvas(htmlContext, canvas, 0.0, 0.0)
-                is HBlockCanvas -> renderHBlockCanvas(htmlContext, canvas, 0.0, 0.0)
-                is VBlockCanvas -> renderVBlockCanvas(htmlContext, canvas, 0.0, 0.0)
-                is QBlockCanvas -> renderQBlockCanvas(htmlContext, canvas, 0.0, 0.0)
+            is CanvasLayer<*> -> when (layer.canvas.type) {
+                is CanvasType.Scii -> renderSciiCanvas(htmlContext, layer.canvas as Canvas<SciiCell>, 0.0, 0.0)
+                is CanvasType.HBlock -> renderHBlockCanvas(htmlContext, layer.canvas as Canvas<BlockCell>, 0.0, 0.0)
+                is CanvasType.VBlock -> renderVBlockCanvas(htmlContext, layer.canvas as Canvas<BlockCell>, 0.0, 0.0)
+                is CanvasType.QBlock -> renderQBlockCanvas(htmlContext, layer.canvas as Canvas<BlockCell>, 0.0, 0.0)
             }
         }
     }
 
-    fun renderSheet(htmlCanvas: HTMLCanvasElement, backgroundLayer: BackgroundLayer, canvas: SciiCanvas) {
+    fun renderSheet(htmlCanvas: HTMLCanvasElement, backgroundLayer: BackgroundLayer, canvas: Canvas<SciiCell>) {
         val htmlContext = htmlCanvas.getContext("2d", GET_CONTEXT_OPTIONS) as CanvasRenderingContext2D
         htmlContext.clearRect(0.0, 0.0, FULL_WIDTH, FULL_HEIGHT)
 
@@ -136,7 +135,7 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
         }
     }
 
-    private fun renderSciiCanvas(htmlContext: CanvasRenderingContext2D, canvas: SciiCanvas, top: Double, left: Double) {
+    private fun renderSciiCanvas(htmlContext: CanvasRenderingContext2D, canvas: Canvas<SciiCell>, top: Double, left: Double) {
         val imageData = htmlContext.getImageData(top, left, PICTURE_WIDTH, PICTURE_HEIGHT)
         val elapsedTimeMs = elapsedTimeProvider.getElapsedTimeMs()
 
@@ -156,20 +155,20 @@ class BrowserRenderer(private val elapsedTimeProvider: ElapsedTimeProvider) {
     }
 
     @Suppress("NOTHING_TO_INLINE")
-    private inline fun renderHBlockCanvas(htmlContext: CanvasRenderingContext2D, canvas: HBlockCanvas, top: Double, left: Double) =
+    private inline fun renderHBlockCanvas(htmlContext: CanvasRenderingContext2D, canvas: Canvas<BlockCell>, top: Double, left: Double) =
         renderBlockCanvas(htmlContext, canvas, top, left, 8.0, 4.0)
 
     @Suppress("NOTHING_TO_INLINE")
-    private inline fun renderVBlockCanvas(htmlContext: CanvasRenderingContext2D, canvas: VBlockCanvas, top: Double, left: Double) =
+    private inline fun renderVBlockCanvas(htmlContext: CanvasRenderingContext2D, canvas: Canvas<BlockCell>, top: Double, left: Double) =
         renderBlockCanvas(htmlContext, canvas, top, left, 4.0, 8.0)
 
     @Suppress("NOTHING_TO_INLINE")
-    private inline fun renderQBlockCanvas(htmlContext: CanvasRenderingContext2D, canvas: QBlockCanvas, top: Double, left: Double) =
+    private inline fun renderQBlockCanvas(htmlContext: CanvasRenderingContext2D, canvas: Canvas<BlockCell>, top: Double, left: Double) =
         renderBlockCanvas(htmlContext, canvas, top, left, 4.0, 4.0)
 
     private fun renderBlockCanvas(
         htmlContext: CanvasRenderingContext2D,
-        canvas: BlockCanvas,
+        canvas: Canvas<BlockCell>,
         top: Double,
         left: Double,
         blockWidth: Double,

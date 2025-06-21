@@ -1,9 +1,10 @@
 package com.eightsines.bpe.presentation
 
 import com.eightsines.bpe.foundation.BackgroundLayer
-import com.eightsines.bpe.foundation.SciiCanvas
+import com.eightsines.bpe.foundation.Canvas
+import com.eightsines.bpe.foundation.SciiCell
 
-class UiSheetView(val backgroundView: LayerView<BackgroundLayer>, val canvasView: CanvasView<SciiCanvas>) {
+class UiSheetView(val backgroundView: LayerView<BackgroundLayer>, val canvasView: CanvasView<Canvas<SciiCell>>) {
     override fun equals(other: Any?): Boolean {
         if (this === other) {
             return true

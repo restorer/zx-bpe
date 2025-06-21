@@ -3,6 +3,7 @@ package com.eightsines.bpe.bag
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -50,11 +51,14 @@ val KSType.typeDescriptor: TypeDescriptor
         )
     }
 
-fun Resolver.getClassDescriptorByName(currentPackageName: String, className: String): DeclarationDescriptor? {
-    getClassDeclarationByName(className)?.let { return it.declarationDescriptor }
-    getClassDeclarationByName("$currentPackageName.$className")?.let { return it.declarationDescriptor }
+fun Resolver.getClassDeclarationByName(currentPackageName: String, className: String): KSClassDeclaration? {
+    getClassDeclarationByName(className)?.let { return it }
+    getClassDeclarationByName("$currentPackageName.$className")?.let { return it }
     return null
 }
+
+fun Resolver.getClassDescriptorByName(currentPackageName: String, className: String): DeclarationDescriptor? =
+    getClassDeclarationByName(currentPackageName, className)?.declarationDescriptor
 
 fun Resolver.getFunctionDescriptorByName(currentPackageName: String, functionName: String): FunctionDescriptor? {
     val declaration = getFunctionDeclarationByName(currentPackageName, functionName) ?: return null

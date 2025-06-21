@@ -57,8 +57,8 @@ class BagSinglefieldParser(private val logger: KSPLogger) {
         classDescriptor: DeclarationDescriptor,
         annotation: KSAnnotation,
     ): BagDescriptor.Singlefield? {
-        val fieldName = annotation.getArgumentValue<String>(ARGUMENT_FIELD_NAME) ?: return null
-        val creatorName = annotation.getArgumentValue<String>(ARGUMENT_CREATOR_NAME) ?: return null
+        val fieldName = annotation.getArgumentValue<String>(ARGUMENT_FIELD) ?: return null
+        val creatorName = annotation.getArgumentValue<String>(ARGUMENT_CREATOR) ?: return null
 
         val fieldTypeDescriptor = classDeclaration.getAllProperties()
             .firstOrNull { it.simpleName.asString() == fieldName }
@@ -122,7 +122,7 @@ class BagSinglefieldParser(private val logger: KSPLogger) {
         private val ANNOTATION_NAME = requireNotNull(BagSinglefield::class.simpleName)
         private val ANNOTATION_NAME_DESCRIPTOR = BagSinglefield::class.nameDescriptor
 
-        private const val ARGUMENT_FIELD_NAME = "field"
-        private const val ARGUMENT_CREATOR_NAME = "creator"
+        private const val ARGUMENT_FIELD = "field"
+        private const val ARGUMENT_CREATOR = "creator"
     }
 }

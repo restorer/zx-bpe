@@ -1,3 +1,4 @@
+@file:BagStuff(of = "CanvasLayer", unpacker = "MutableCanvasLayer_Stuff")
 package com.eightsines.bpe.foundation
 
 import com.eightsines.bpe.bag.BagStuff

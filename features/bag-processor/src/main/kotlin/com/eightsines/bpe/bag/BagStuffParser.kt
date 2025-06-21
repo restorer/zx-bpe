@@ -5,6 +5,7 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSNode
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -12,44 +13,107 @@ import com.google.devtools.ksp.symbol.Modifier
 
 class BagStuffParser(private val logger: KSPLogger) {
     fun parseAll(resolver: Resolver): List<BagDescriptor.Stuff> = buildList {
-        for (declaration in resolver.getSymbolsWithAnnotation(STUFF_ANNOTATION_NAME_DESCRIPTOR.qualifiedName).filterIsInstance<KSClassDeclaration>()) {
-            parse(resolver, declaration)?.let { add(it) }
+        for (symbol in resolver.getSymbolsWithAnnotation(STUFF_ANNOTATION_NAME_DESCRIPTOR.qualifiedName)) {
+            when (symbol) {
+                is KSFile -> addAll(parseFile(resolver, symbol))
+                is KSClassDeclaration -> parseClass(resolver, symbol)?.let(::add)
+                else -> logger.error("@$STUFF_ANNOTATION_NAME: unsupported target $symbol")
+            }
         }
     }
 
-    fun parse(resolver: Resolver, classDeclaration: KSClassDeclaration): BagDescriptor.Stuff? {
-        val annotation = classDeclaration.annotations.firstOrNull { it.nameDescriptor == STUFF_ANNOTATION_NAME_DESCRIPTOR }
+    fun parseClass(resolver: Resolver, classDeclaration: KSClassDeclaration): BagDescriptor.Stuff? {
+        val annotations = classDeclaration.annotations
+            .filter { it.nameDescriptor == STUFF_ANNOTATION_NAME_DESCRIPTOR }
+            .toList()
 
-        return if (annotation != null) {
-            parseStuff(resolver, classDeclaration, classDeclaration.declarationDescriptor, annotation)
-        } else {
-            null
+        return when {
+            annotations.size > 1 -> {
+                logger.error("@$STUFF_ANNOTATION_NAME of \"${classDeclaration.declarationDescriptor}\": more then one stuff annotation is not supported for classes")
+                null
+            }
+
+            annotations.size == 1 -> {
+                val annotation = annotations[0]
+
+                if (!annotation.getArgumentValue<String>(STUFF_ARGUMENT_OF).isNullOrEmpty()) {
+                    logger.error("@$STUFF_ANNOTATION_NAME of \"${classDeclaration.declarationDescriptor}\": argument \"$STUFF_ARGUMENT_OF\" is not supported for classes")
+                    null
+                } else {
+                    parseStuff(
+                        resolver = resolver,
+                        classDeclaration = classDeclaration,
+                        classDescriptor = classDeclaration.declarationDescriptor,
+                        annotation = annotation,
+                        currentPackageName = classDeclaration.packageName.asString(),
+                        sourceSymbol = classDeclaration,
+                        sourceFile = classDeclaration.containingFile,
+                    )
+                }
+            }
+
+            else -> null
         }
     }
+
+    private fun parseFile(resolver: Resolver, declarationContainer: KSFile): List<BagDescriptor.Stuff> = buildList {
+        for (annotation in declarationContainer.annotations.filter { it.nameDescriptor == STUFF_ANNOTATION_NAME_DESCRIPTOR }) {
+            val ofClass = annotation.getArgumentValue<String>(STUFF_ARGUMENT_OF) ?: ""
+
+            if (ofClass.isEmpty()) {
+                logger.error(
+                    "@$STUFF_ANNOTATION_NAME of \"${declarationContainer.fileName}\": argument \"$STUFF_ARGUMENT_OF\" is not supported for classes",
+                    declarationContainer,
+                )
+
+                continue
+            }
+
+            val currentPackageName = declarationContainer.packageName.asString()
+            val classDeclaration = resolver.getClassDeclarationByName(currentPackageName, ofClass)
+
+            if (classDeclaration == null) {
+                logger.error("@$STUFF_ANNOTATION_NAME of \"${declarationContainer.fileName}\": class \"$ofClass\" is not found", declarationContainer)
+                continue
+            }
+
+            parseStuff(
+                resolver = resolver,
+                classDeclaration = classDeclaration,
+                classDescriptor = classDeclaration.declarationDescriptor,
+                annotation = annotation,
+                currentPackageName = classDeclaration.packageName.asString(),
+                sourceSymbol = declarationContainer,
+                sourceFile = declarationContainer,
+            )?.let(::add)
+        }
+    }
+
 
     private fun parseStuff(
         resolver: Resolver,
         classDeclaration: KSClassDeclaration,
         classDescriptor: DeclarationDescriptor,
         annotation: KSAnnotation,
+        currentPackageName: String,
+        sourceSymbol: KSNode,
+        sourceFile: KSFile?,
     ): BagDescriptor.Stuff? {
-        val currentPackageName = classDeclaration.packageName.asString()
+        val packerName = annotation.getArgumentValue<String>(STUFF_ARGUMENT_PACKER) ?: ""
+        val unpackerName = annotation.getArgumentValue<String>(STUFF_ARGUMENT_UNPACKER) ?: ""
 
-        val packerName = annotation.getArgumentValue<String>(STUFF_ARGUMENT_PACKER_NAME) ?: ""
-        val unpackerName = annotation.getArgumentValue<String>(STUFF_ARGUMENT_UNPACKER_NAME) ?: ""
-
-        val polymorphicOfDescriptor = annotation.getArgumentValue<KSType>(STUFF_ARGUMENT_POLYMORPHIC_OF_NAME)
+        val polymorphicOfDescriptor = annotation.getArgumentValue<KSType>(STUFF_ARGUMENT_POLYMORPHIC_OF)
             ?.typeDescriptor
             ?.let { it as? TypeDescriptor.Type }
             ?.nameDescriptor
 
-        val polymorphicId = annotation.getArgumentValue<Int>(STUFF_ARGUMENT_POLYMORPHIC_ID_NAME) ?: 0
-        val isPolymorphic = annotation.getArgumentValue<Boolean>(STUFF_ARGUMENT_IS_POLYMORPHIC_NAME) ?: false
+        val polymorphicId = annotation.getArgumentValue<Int>(STUFF_ARGUMENT_POLYMORPHIC_ID) ?: 0
+        val isPolymorphic = annotation.getArgumentValue<Boolean>(STUFF_ARGUMENT_IS_POLYMORPHIC) ?: false
 
         if ((polymorphicOfDescriptor != null && polymorphicId == 0) || (polymorphicOfDescriptor == null && polymorphicId != 0)) {
             logger.error(
-                "@$STUFF_ANNOTATION_NAME of \"$classDescriptor\": \"$STUFF_ARGUMENT_POLYMORPHIC_OF_NAME\" and \"$STUFF_ARGUMENT_POLYMORPHIC_ID_NAME\" must be set together",
-                classDeclaration,
+                "@$STUFF_ANNOTATION_NAME of \"$classDescriptor\": \"$STUFF_ARGUMENT_POLYMORPHIC_OF\" and \"$STUFF_ARGUMENT_POLYMORPHIC_ID\" must be set together",
+                sourceSymbol,
             )
 
             return null
@@ -57,8 +121,8 @@ class BagStuffParser(private val logger: KSPLogger) {
 
         if (polymorphicOfDescriptor != null && isPolymorphic) {
             logger.error(
-                "@$STUFF_ANNOTATION_NAME of \"$classDescriptor\": \"$STUFF_ARGUMENT_POLYMORPHIC_OF_NAME\" and \"$STUFF_ARGUMENT_IS_POLYMORPHIC_NAME\" must not be used together",
-                classDeclaration,
+                "@$STUFF_ANNOTATION_NAME of \"$classDescriptor\": \"$STUFF_ARGUMENT_POLYMORPHIC_OF\" and \"$STUFF_ARGUMENT_IS_POLYMORPHIC\" must not be used together",
+                sourceSymbol,
             )
 
             return null
@@ -97,7 +161,7 @@ class BagStuffParser(private val logger: KSPLogger) {
             if (wares[0].index != 1) {
                 logger.error(
                     "@$STUFF_ANNOTATION_NAME of \"$classDescriptor\": indexes of @$WARE_ANNOTATION_NAME must starts with 1",
-                    classDeclaration,
+                    sourceSymbol,
                 )
 
                 return null
@@ -145,8 +209,8 @@ class BagStuffParser(private val logger: KSPLogger) {
             } else {
                 null
             },
-            sourceSymbol = classDeclaration,
-            sourceFile = classDeclaration.containingFile,
+            sourceSymbol = sourceSymbol,
+            sourceFile = sourceFile,
         )
     }
 
@@ -177,9 +241,9 @@ class BagStuffParser(private val logger: KSPLogger) {
 
         val annotation = annotations[0]
 
-        if (!annotation.getArgumentValue<String>(WARE_ARGUMENT_FIELD_NAME).isNullOrEmpty()) {
+        if (!annotation.getArgumentValue<String>(WARE_ARGUMENT_FIELD).isNullOrEmpty()) {
             logger.error(
-                "@$WARE_ANNOTATION_NAME of \"$classDescriptor.$fieldName\": \"$WARE_ARGUMENT_FIELD_NAME\" argument is not allowed on property",
+                "@$WARE_ANNOTATION_NAME of \"$classDescriptor.$fieldName\": \"$WARE_ARGUMENT_FIELD\" argument is not allowed on property",
                 propertyDeclaration,
             )
 
@@ -209,11 +273,11 @@ class BagStuffParser(private val logger: KSPLogger) {
             return null
         }
 
-        val fieldName = annotation.getArgumentValue<String>(WARE_ARGUMENT_FIELD_NAME) ?: ""
+        val fieldName = annotation.getArgumentValue<String>(WARE_ARGUMENT_FIELD) ?: ""
 
         if (fieldName.isEmpty()) {
             logger.error(
-                "@$WARE_ANNOTATION_NAME of \"$classDescriptor\": \"$WARE_ARGUMENT_FIELD_NAME\" argument is required",
+                "@$WARE_ANNOTATION_NAME of \"$classDescriptor\": \"$WARE_ARGUMENT_FIELD\" argument is required",
                 classDeclaration,
             )
 
@@ -251,12 +315,12 @@ class BagStuffParser(private val logger: KSPLogger) {
         sourceTypeDescriptor: TypeDescriptor,
         sourceSymbol: KSNode,
     ): BagStuffWareDescriptor? {
-        val index = annotation.getArgumentValue<Int>(WARE_ARGUMENT_INDEX_NAME) ?: return null
-        val customTypeDescriptor = annotation.getArgumentValue<KSType>(WARE_ARGUMENT_TYPE_NAME)?.typeDescriptor
-        val packerName = annotation.getArgumentValue<String>(WARE_ARGUMENT_PACKER_NAME) ?: ""
-        val unpackerName = annotation.getArgumentValue<String>(WARE_ARGUMENT_UNPACKER_NAME) ?: ""
-        val version = annotation.getArgumentValue<Int>(WARE_ARGUMENT_VERSION_NAME) ?: 1
-        val fallback = annotation.getArgumentValue<String>(WARE_ARGUMENT_FALLBACK_NAME) ?: ""
+        val index = annotation.getArgumentValue<Int>(WARE_ARGUMENT_INDEX) ?: return null
+        val customTypeDescriptor = annotation.getArgumentValue<KSType>(WARE_ARGUMENT_TYPE)?.typeDescriptor
+        val packerName = annotation.getArgumentValue<String>(WARE_ARGUMENT_PACKER) ?: ""
+        val unpackerName = annotation.getArgumentValue<String>(WARE_ARGUMENT_UNPACKER) ?: ""
+        val version = annotation.getArgumentValue<Int>(WARE_ARGUMENT_VERSION) ?: 1
+        val fallback = annotation.getArgumentValue<String>(WARE_ARGUMENT_FALLBACK) ?: ""
 
         val typeDescriptor = if (customTypeDescriptor == null || customTypeDescriptor == NOTHING_DESCRIPTOR) {
             sourceTypeDescriptor
@@ -331,21 +395,21 @@ class BagStuffParser(private val logger: KSPLogger) {
 
         private val NOTHING_DESCRIPTOR = TypeDescriptor.Type(NameDescriptor("kotlin", "Nothing"), false)
 
-        private const val STUFF_ARGUMENT_PACKER_NAME = "packer"
-        private const val STUFF_ARGUMENT_UNPACKER_NAME = "unpacker"
+        private const val STUFF_ARGUMENT_OF = "of"
+        private const val STUFF_ARGUMENT_PACKER = "packer"
+        private const val STUFF_ARGUMENT_UNPACKER = "unpacker"
+        private const val STUFF_ARGUMENT_POLYMORPHIC_OF = "polymorphicOf"
+        private const val STUFF_ARGUMENT_POLYMORPHIC_ID = "polymorphicId"
+        private const val STUFF_ARGUMENT_IS_POLYMORPHIC = "isPolymorphic"
         private const val STUFF_SKIP_GENERATION_NAME = "_"
 
-        private const val STUFF_ARGUMENT_POLYMORPHIC_OF_NAME = "polymorphicOf"
-        private const val STUFF_ARGUMENT_POLYMORPHIC_ID_NAME = "polymorphicId"
-        private const val STUFF_ARGUMENT_IS_POLYMORPHIC_NAME = "isPolymorphic"
-
-        private const val WARE_ARGUMENT_INDEX_NAME = "index"
-        private const val WARE_ARGUMENT_FIELD_NAME = "field"
-        private const val WARE_ARGUMENT_TYPE_NAME = "type"
-        private const val WARE_ARGUMENT_PACKER_NAME = "packer"
-        private const val WARE_ARGUMENT_UNPACKER_NAME = "unpacker"
-        private const val WARE_ARGUMENT_VERSION_NAME = "version"
-        private const val WARE_ARGUMENT_FALLBACK_NAME = "fallback"
+        private const val WARE_ARGUMENT_INDEX = "index"
+        private const val WARE_ARGUMENT_FIELD = "field"
+        private const val WARE_ARGUMENT_TYPE = "type"
+        private const val WARE_ARGUMENT_PACKER = "packer"
+        private const val WARE_ARGUMENT_UNPACKER = "unpacker"
+        private const val WARE_ARGUMENT_VERSION = "version"
+        private const val WARE_ARGUMENT_FALLBACK = "fallback"
 
         private const val GENERATED_SUFFIX_STUFF = "Stuff"
         private const val GENERATED_SUFFIX_POLYMORPHIC_STUFF = "PolymorphicStuff"

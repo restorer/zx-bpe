@@ -5,7 +5,9 @@ import com.eightsines.bpe.bag.BagStuffUnpacker
 import com.eightsines.bpe.bag.PackableBag
 import com.eightsines.bpe.bag.UnpackableBag
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
+import com.eightsines.bpe.foundation.Canvas
 import com.eightsines.bpe.foundation.CanvasType
+import com.eightsines.bpe.foundation.SciiCell
 import com.eightsines.bpe.foundation.SciiChar
 import com.eightsines.bpe.foundation.SciiColor
 import com.eightsines.bpe.foundation.SciiLight
@@ -650,8 +652,9 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
         isPaintActive = bpeState.toolboxTool == BpeTool.Paint && isPaintAvailable
         isEraseActive = bpeState.toolboxTool == BpeTool.Erase && isEraseAvailable
 
+        @Suppress("UNCHECKED_CAST")
         return UiState(
-            sheet = UiSheetView(bpeState.background, bpeState.canvas),
+            sheet = UiSheetView(bpeState.background, bpeState.canvas as CanvasView<Canvas<SciiCell>>),
 
             areas = listOfNotNull(
                 bpeState.selection?.let {
