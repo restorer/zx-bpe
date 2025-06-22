@@ -15,6 +15,8 @@ import com.eightsines.bpe.presentation.UiPanel
 import com.eightsines.bpe.presentation.UiSheetView
 import com.eightsines.bpe.presentation.UiToolState
 import com.eightsines.bpe.util.ElapsedTimeProvider
+import com.eightsines.bpe.util.KeyCode
+import com.eightsines.bpe.util.KeyModifier
 import com.eightsines.bpe.util.ResourceManager
 import com.eightsines.bpe.util.TextRes
 import kotlinx.coroutines.flow.Flow
@@ -33,6 +35,7 @@ import org.w3c.dom.Node
 import org.w3c.dom.ParentNode
 import org.w3c.dom.TouchEvent
 import org.w3c.dom.events.Event
+import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 
 class BrowserView(
@@ -41,7 +44,7 @@ class BrowserView(
     private val renderer: BrowserRenderer,
     private val resourceManager: ResourceManager,
 ) {
-    private val _actionFlow = MutableSharedFlow<BrowserAction>(extraBufferCapacity = 1)
+    private val _actionFlow = MutableSharedFlow<BrowserAction>(extraBufferCapacity = 4)
 
     val actionFlow: Flow<BrowserAction>
         get() = _actionFlow
@@ -295,15 +298,13 @@ class BrowserView(
         dialogBackground.addClickListener { _actionFlow.tryEmit(BrowserAction.DialogHide) }
         dialogAlert.addClickListener { _actionFlow.tryEmit(BrowserAction.DialogHide) }
 
-        dialogConfirmOk.addClickListener {
-            (activeDialog as? BrowserDialog.Confirm)?.let { _actionFlow.tryEmit(BrowserAction.DialogConfirmOk(it.tag)) }
-        }
-
+        dialogConfirmOk.addClickListener { _actionFlow.tryEmit(BrowserAction.DialogOk) }
         dialogConfirmCancel.addClickListener { _actionFlow.tryEmit(BrowserAction.DialogHide) }
 
         dialogPromptOk.addClickListener {
-            (activeDialog as? BrowserDialog.Prompt)?.let {
-                _actionFlow.tryEmit(BrowserAction.DialogPromptOk(it.tag, dialogPromptInput.value))
+            if (activeDialog is BrowserDialog.Prompt) {
+                _actionFlow.tryEmit(BrowserAction.DialogPromptInput(dialogPromptInput.value))
+                _actionFlow.tryEmit(BrowserAction.DialogOk)
             }
         }
 
@@ -320,6 +321,44 @@ class BrowserView(
                 TextRes.of(resId)?.let { resourceManager.resolveText(it) } ?: resId
             } ?: ""
         }
+
+        document.addEventListener(
+            EVENT_KEY_DOWN,
+            {
+                it as KeyboardEvent
+
+                if (!it.repeat) {
+                    if (activeDialog is BrowserDialog.Prompt) {
+                        _actionFlow.tryEmit(BrowserAction.DialogPromptInput(dialogPromptInput.value))
+                    }
+
+                    _actionFlow.tryEmit(BrowserAction.KeyDown(it.keyCode, getKeyModifiers(it)))
+                }
+
+                if (activeDialog == null && it.keyCode != KeyCode.F12) {
+                    it.stopPropagation()
+                    it.preventDefault()
+                }
+            },
+        )
+
+        document.addEventListener(
+            EVENT_KEY_UP,
+            {
+                it as KeyboardEvent
+
+                if (activeDialog is BrowserDialog.Prompt) {
+                    _actionFlow.tryEmit(BrowserAction.DialogPromptInput(dialogPromptInput.value))
+                }
+
+                _actionFlow.tryEmit(BrowserAction.KeyUp(it.keyCode, getKeyModifiers(it)))
+
+                if (activeDialog == null && it.keyCode != KeyCode.F12) {
+                    it.stopPropagation()
+                    it.preventDefault()
+                }
+            },
+        )
     }
 
     fun render(state: BrowserState) {
@@ -1023,6 +1062,24 @@ class BrowserView(
         }
     )
 
+    private fun getKeyModifiers(event: KeyboardEvent): Int {
+        var modifiers = 0
+
+        if (event.shiftKey) {
+            modifiers += KeyModifier.Shift
+        }
+
+        if (event.ctrlKey || event.metaKey) {
+            modifiers += KeyModifier.Ctrl
+        }
+
+        if (event.altKey) {
+            modifiers += KeyModifier.Alt
+        }
+
+        return modifiers
+    }
+
     @Suppress("NOTHING_TO_INLINE")
     private inline fun makeSpan(innerHtml: String) = "<span>$innerHtml</span>"
 
@@ -1047,6 +1104,8 @@ class BrowserView(
         private const val EVENT_TOUCH_MOVE = "touchmove"
         private const val EVENT_TOUCH_END = "touchend"
         private const val EVENT_TOUCH_CANCEL = "touchcancel"
+        private const val EVENT_KEY_DOWN = "keydown"
+        private const val EVENT_KEY_UP = "keyup"
 
         private const val NAME_DIV = "div"
         private const val NAME_IMG = "img"

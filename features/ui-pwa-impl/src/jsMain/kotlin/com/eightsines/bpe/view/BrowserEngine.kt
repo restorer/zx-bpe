@@ -10,10 +10,11 @@ import com.eightsines.bpe.bag.UnpackableStringBag
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
 import com.eightsines.bpe.presentation.UiAction
 import com.eightsines.bpe.presentation.UiEngine
-import com.eightsines.bpe.util.TextDescriptor
-import com.eightsines.bpe.util.TextRes
+import com.eightsines.bpe.util.KeyCode
 import com.eightsines.bpe.util.Logger
 import com.eightsines.bpe.util.Severity
+import com.eightsines.bpe.util.TextDescriptor
+import com.eightsines.bpe.util.TextRes
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -46,6 +47,8 @@ class BrowserEngine(
     private val drawingSheet = document.querySelector(BrowserView.SELECTOR_DRAWING_SHEET) as? HTMLCanvasElement
     private var isInitiallyLoaded = false
     private var fileName = DEFAULT_FILE_NAME
+    private var lastKeyDownCode = 0
+    private var lastDialogPromptInput = ""
 
     val browserStateFlow: Flow<BrowserState>
         get() = _browserStateFlow
@@ -75,10 +78,12 @@ class BrowserEngine(
         }
 
         when (action) {
-            is BrowserAction.Ui -> executeUi(action)
+            is BrowserAction.Ui -> executeUi(action.action)
+            is BrowserAction.KeyDown -> executeKeyDown(action)
+            is BrowserAction.KeyUp -> executeKeyUp(action)
             is BrowserAction.DialogHide -> executeDialogHide()
-            is BrowserAction.DialogConfirmOk -> executeDialogConfirmOk(action)
-            is BrowserAction.DialogPromptOk -> executeDialogPromptOk(action)
+            is BrowserAction.DialogOk -> executeDialogOk()
+            is BrowserAction.DialogPromptInput -> executeDialogPromptInput(action)
             is BrowserAction.PaintingNew -> executePaintingNew()
             is BrowserAction.PaintingLoad -> executePaintingLoad(action)
             is BrowserAction.PaintingSave -> executePaintingSave()
@@ -88,25 +93,50 @@ class BrowserEngine(
         }
     }
 
-    private fun executeUi(action: BrowserAction.Ui) {
-        uiEngine.execute(action.action)
+    private fun executeUi(action: UiAction) {
+        uiEngine.execute(action)
         _browserStateFlow.value = _browserStateFlow.value.copy(uiState = uiEngine.state)
+    }
+
+    private fun executeKeyDown(action: BrowserAction.KeyDown) {
+        lastKeyDownCode = if (action.keyModifiers == 0) action.keyCode else 0
+
+        if (_browserStateFlow.value.dialog == null) {
+            BROWSER_HOTKEYS[BrowserKey(action.keyCode, action.keyModifiers)]?.let(::executeUi)
+        }
+    }
+
+    private fun executeKeyUp(action: BrowserAction.KeyUp) {
+        val dialog = _browserStateFlow.value.dialog
+
+        if (dialog == null || action.keyModifiers != 0 || lastKeyDownCode != action.keyCode) {
+            return
+        }
+
+        when (action.keyCode) {
+            KeyCode.Escape -> executeDialogHide()
+            KeyCode.Enter -> executeDialogOk()
+        }
     }
 
     private fun executeDialogHide() {
         _browserStateFlow.value = _browserStateFlow.value.copy(dialog = null)
     }
 
-    private fun executeDialogConfirmOk(action: BrowserAction.DialogConfirmOk) {
-        if (action.tag === CONFIRM_TAG_NEW) {
-            performPaintingNewConfirmed()
+    private fun executeDialogOk() {
+        val dialog = _browserStateFlow.value.dialog
+
+        when {
+            dialog is BrowserDialog.Confirm && dialog.tag === CONFIRM_TAG_NEW ->
+                performPaintingNewConfirmed()
+
+            dialog is BrowserDialog.Prompt && dialog.tag is PromptTag ->
+                performPaintingSaveOrExportConfirmed(dialog.tag, lastDialogPromptInput)
         }
     }
 
-    private fun executeDialogPromptOk(action: BrowserAction.DialogPromptOk) {
-        if (action.tag is PromptTag) {
-            performPaintingSaveOrExportConfirmed(action.tag, action.value)
-        }
+    private fun executeDialogPromptInput(action: BrowserAction.DialogPromptInput) {
+        lastDialogPromptInput = action.value
     }
 
     private fun executePaintingNew() {
@@ -397,8 +427,6 @@ class BrowserEngine(
             } else {
                 val fileName = bag.getString()
                 bag.getStuff(uiEngine.selfUnpacker())
-
-                @Suppress("KotlinUnreachableCode")
                 this@BrowserEngine.fileName = fileName
             }
 

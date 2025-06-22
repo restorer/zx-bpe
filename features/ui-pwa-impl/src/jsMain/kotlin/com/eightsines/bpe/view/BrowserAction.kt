@@ -5,9 +5,13 @@ import org.w3c.dom.HTMLInputElement
 
 sealed interface BrowserAction {
     data class Ui(val action: UiAction) : BrowserAction
+
+    data class KeyDown(val keyCode: Int, val keyModifiers: Int) : BrowserAction
+    data class KeyUp(val keyCode: Int, val keyModifiers: Int) : BrowserAction
+
     data object DialogHide : BrowserAction
-    data class DialogConfirmOk(val tag: Any) : BrowserAction
-    data class DialogPromptOk(val tag: Any, val value: String) : BrowserAction
+    data object DialogOk : BrowserAction
+    data class DialogPromptInput(val value: String) : BrowserAction
 
     data object PaintingNew : BrowserAction
     data class PaintingLoad(val inputElement: HTMLInputElement) : BrowserAction

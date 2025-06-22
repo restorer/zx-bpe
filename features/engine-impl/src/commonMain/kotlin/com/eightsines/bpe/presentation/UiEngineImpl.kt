@@ -363,14 +363,16 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
     }
 
     private fun executeToolboxPaintClick() {
-        if (state.toolboxPaint.isInteractable) {
-            activePanel = if (bpeEngine.state.toolboxTool != BpeTool.Paint || activePanel == Panel.Shapes) {
-                null
-            } else {
-                Panel.Shapes
-            }
+        val bpeState = bpeEngine.state
 
-            bpeEngine.execute(BpeAction.ToolboxSetTool(BpeTool.Paint))
+        when {
+            bpeState.toolboxAvailTools.contains(BpeTool.Paint) && bpeState.toolboxTool == BpeTool.Paint ->
+                activePanel = if (activePanel == Panel.Shapes) null else Panel.Shapes
+
+            state.toolboxPaint.isInteractable -> {
+                activePanel = null
+                bpeEngine.execute(BpeAction.ToolboxSetTool(BpeTool.Paint))
+            }
         }
     }
 
@@ -381,14 +383,16 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
     }
 
     private fun executeToolboxEraseClick() {
-        if (state.toolboxErase.isInteractable) {
-            activePanel = if (bpeEngine.state.toolboxTool != BpeTool.Erase || activePanel == Panel.Shapes) {
-                null
-            } else {
-                Panel.Shapes
-            }
+        val bpeState = bpeEngine.state
 
-            bpeEngine.execute(BpeAction.ToolboxSetTool(BpeTool.Erase))
+        when {
+            bpeState.toolboxAvailTools.contains(BpeTool.Erase) && bpeState.toolboxTool == BpeTool.Erase ->
+                activePanel = if (activePanel == Panel.Shapes) null else Panel.Shapes
+
+            state.toolboxErase.isInteractable -> {
+                activePanel = null
+                bpeEngine.execute(BpeAction.ToolboxSetTool(BpeTool.Erase))
+            }
         }
     }
 
