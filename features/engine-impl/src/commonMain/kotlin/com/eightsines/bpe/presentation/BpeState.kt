@@ -62,6 +62,7 @@ data class BpeState(
     val paintingMode: BpePaintingMode,
     val informer: BpeInformer?,
     val historySteps: Int,
+    val isPainting: Boolean,
 )
 
 enum class BpeTool(val value: Int) {

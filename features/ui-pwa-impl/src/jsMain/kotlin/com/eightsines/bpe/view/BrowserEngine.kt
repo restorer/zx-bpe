@@ -47,7 +47,7 @@ class BrowserEngine(
     private val drawingSheet = document.querySelector(BrowserView.SELECTOR_DRAWING_SHEET) as? HTMLCanvasElement
     private var isInitiallyLoaded = false
     private var fileName = DEFAULT_FILE_NAME
-    private var lastKeyDownCode = 0
+    private var lastDownBrowserKey: BrowserKey? = null
     private var lastDialogPromptInput = ""
 
     val browserStateFlow: Flow<BrowserState>
@@ -79,11 +79,20 @@ class BrowserEngine(
 
         when (action) {
             is BrowserAction.Ui -> executeUi(action.action)
+
+            is BrowserAction.SheetEnter -> executeUi(UiAction.SheetEnter(action.pointerX, action.pointerY))
+            is BrowserAction.SheetDown -> executeUi(UiAction.SheetDown(action.pointerX, action.pointerY))
+            is BrowserAction.SheetMove -> executeUi(UiAction.SheetMove(action.pointerX, action.pointerY))
+            is BrowserAction.SheetUp -> executeUi(UiAction.SheetUp(action.pointerX, action.pointerY))
+            is BrowserAction.SheetLeave -> executeUi(UiAction.SheetLeave)
+
             is BrowserAction.KeyDown -> executeKeyDown(action)
             is BrowserAction.KeyUp -> executeKeyUp(action)
+
             is BrowserAction.DialogHide -> executeDialogHide()
             is BrowserAction.DialogOk -> executeDialogOk()
             is BrowserAction.DialogPromptInput -> executeDialogPromptInput(action)
+
             is BrowserAction.PaintingNew -> executePaintingNew()
             is BrowserAction.PaintingLoad -> executePaintingLoad(action)
             is BrowserAction.PaintingSave -> executePaintingSave()
@@ -99,21 +108,24 @@ class BrowserEngine(
     }
 
     private fun executeKeyDown(action: BrowserAction.KeyDown) {
-        lastKeyDownCode = if (action.keyModifiers == 0) action.keyCode else 0
+        lastDownBrowserKey = action.browserKey
 
         if (_browserStateFlow.value.dialog == null) {
-            BROWSER_HOTKEYS[BrowserKey(action.keyCode, action.keyModifiers)]?.let(::executeUi)
+            BROWSER_HOTKEYS[action.browserKey]?.let(::executeUi)
         }
     }
 
     private fun executeKeyUp(action: BrowserAction.KeyUp) {
         val dialog = _browserStateFlow.value.dialog
 
-        if (dialog == null || action.keyModifiers != 0 || lastKeyDownCode != action.keyCode) {
+        val lastDownBrowserKey = this.lastDownBrowserKey
+        this.lastDownBrowserKey = null
+
+        if (dialog == null || lastDownBrowserKey != action.browserKey || action.browserKey.keyModifiers != 0) {
             return
         }
 
-        when (action.keyCode) {
+        when (action.browserKey.keyCode) {
             KeyCode.Escape -> executeDialogHide()
             KeyCode.Enter -> executeDialogOk()
         }

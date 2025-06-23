@@ -1,10 +1,10 @@
 package com.eightsines.bpe.presentation
 
+import com.eightsines.bpe.foundation.CanvasType
+import com.eightsines.bpe.foundation.LayerUid
 import com.eightsines.bpe.foundation.SciiChar
 import com.eightsines.bpe.foundation.SciiColor
 import com.eightsines.bpe.foundation.SciiLight
-import com.eightsines.bpe.foundation.CanvasType
-import com.eightsines.bpe.foundation.LayerUid
 
 sealed interface UiAction {
     data class SheetEnter(val pointerX: Int, val pointerY: Int) : UiAction
@@ -13,9 +13,8 @@ sealed interface UiAction {
     data class SheetUp(val pointerX: Int, val pointerY: Int) : UiAction
     data object SheetLeave : UiAction
 
-    data object PaletteColorClick : UiAction
+    data object PaletteInkOrColorClick : UiAction
     data object PalettePaperClick : UiAction
-    data object PaletteInkClick : UiAction
     data object PaletteBrightClick : UiAction
     data object PaletteFlashClick : UiAction
     data object PaletteCharClick : UiAction
@@ -49,6 +48,7 @@ sealed interface UiAction {
     data class PanelCharClick(val character: SciiChar) : UiAction
     data class PanelEraseClick(val shouldErase: Boolean) : UiAction
     data class PanelShapeClick(val shape: BpeShape) : UiAction
+    data class PanelPress(val index: Int) : UiAction
 
     data class LayerItemClick(val layerUid: LayerUid) : UiAction
     data class LayerItemVisibleClick(val layerUid: LayerUid, val isVisible: Boolean) : UiAction

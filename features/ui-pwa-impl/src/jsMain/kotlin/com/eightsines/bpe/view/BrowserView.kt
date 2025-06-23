@@ -15,7 +15,6 @@ import com.eightsines.bpe.presentation.UiPanel
 import com.eightsines.bpe.presentation.UiSheetView
 import com.eightsines.bpe.presentation.UiToolState
 import com.eightsines.bpe.util.ElapsedTimeProvider
-import com.eightsines.bpe.util.KeyCode
 import com.eightsines.bpe.util.KeyModifier
 import com.eightsines.bpe.util.ResourceManager
 import com.eightsines.bpe.util.TextRes
@@ -168,7 +167,7 @@ class BrowserView(
             {
                 it.preventDefault()
                 val point = translateMouseToCanvas(drawingAreas, it as MouseEvent)
-                _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetEnter(point.first, point.second)))
+                _actionFlow.tryEmit(BrowserAction.SheetEnter(point.first, point.second))
             }
         )
 
@@ -177,7 +176,7 @@ class BrowserView(
             {
                 it.preventDefault()
                 val point = translateMouseToCanvas(drawingAreas, it as TouchEvent)
-                _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetDown(point.first, point.second)))
+                _actionFlow.tryEmit(BrowserAction.SheetDown(point.first, point.second))
             }
         )
 
@@ -186,7 +185,7 @@ class BrowserView(
             {
                 it.preventDefault()
                 val point = translateMouseToCanvas(drawingAreas, it as TouchEvent)
-                _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetMove(point.first, point.second)))
+                _actionFlow.tryEmit(BrowserAction.SheetMove(point.first, point.second))
             }
         )
 
@@ -195,7 +194,7 @@ class BrowserView(
             {
                 it.preventDefault()
                 val point = translateMouseToCanvas(drawingAreas, it as TouchEvent)
-                _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetUp(point.first, point.second)))
+                _actionFlow.tryEmit(BrowserAction.SheetUp(point.first, point.second))
             }
         )
 
@@ -204,7 +203,7 @@ class BrowserView(
             {
                 it.preventDefault()
                 val point = translateMouseToCanvas(drawingAreas, it as MouseEvent)
-                _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetDown(point.first, point.second)))
+                _actionFlow.tryEmit(BrowserAction.SheetDown(point.first, point.second))
             }
         )
 
@@ -213,7 +212,7 @@ class BrowserView(
             {
                 it.preventDefault()
                 val point = translateMouseToCanvas(drawingAreas, it as MouseEvent)
-                _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetMove(point.first, point.second)))
+                _actionFlow.tryEmit(BrowserAction.SheetMove(point.first, point.second))
             }
         )
 
@@ -222,16 +221,16 @@ class BrowserView(
             {
                 it.preventDefault()
                 val point = translateMouseToCanvas(drawingAreas, it as MouseEvent)
-                _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetUp(point.first, point.second)))
+                _actionFlow.tryEmit(BrowserAction.SheetUp(point.first, point.second))
             }
         )
 
-        drawingAreas.addEventListener(EVENT_TOUCH_CANCEL, { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetLeave)) })
-        drawingAreas.addEventListener(EVENT_MOUSE_LEAVE, { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.SheetLeave)) })
+        drawingAreas.addEventListener(EVENT_TOUCH_CANCEL, { _actionFlow.tryEmit(BrowserAction.SheetLeave) })
+        drawingAreas.addEventListener(EVENT_MOUSE_LEAVE, { _actionFlow.tryEmit(BrowserAction.SheetLeave) })
 
-        paletteBlockColor.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteColorClick)) }
+        paletteBlockColor.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteInkOrColorClick)) }
         paletteSciiPaper.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PalettePaperClick)) }
-        paletteSciiInk.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteInkClick)) }
+        paletteSciiInk.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteInkOrColorClick)) }
         paletteSciiBright.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteBrightClick)) }
         paletteSciiFlash.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteFlashClick)) }
         paletteSciiChar.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteCharClick)) }
@@ -327,15 +326,20 @@ class BrowserView(
             {
                 it as KeyboardEvent
 
-                if (!it.repeat) {
+                val browserKey = if (!it.repeat) {
                     if (activeDialog is BrowserDialog.Prompt) {
                         _actionFlow.tryEmit(BrowserAction.DialogPromptInput(dialogPromptInput.value))
                     }
 
-                    _actionFlow.tryEmit(BrowserAction.KeyDown(it.keyCode, getKeyModifiers(it)))
+                    val browserKey = BrowserKey(it.keyCode, getKeyModifiers(it))
+                    _actionFlow.tryEmit(BrowserAction.KeyDown(browserKey))
+
+                    browserKey
+                } else {
+                    null
                 }
 
-                if (activeDialog == null && it.keyCode != KeyCode.F12) {
+                if (activeDialog == null && !PASSTHRU_KEYS.contains(browserKey)) {
                     it.stopPropagation()
                     it.preventDefault()
                 }
@@ -351,9 +355,10 @@ class BrowserView(
                     _actionFlow.tryEmit(BrowserAction.DialogPromptInput(dialogPromptInput.value))
                 }
 
-                _actionFlow.tryEmit(BrowserAction.KeyUp(it.keyCode, getKeyModifiers(it)))
+                val browserKey = BrowserKey(it.keyCode, getKeyModifiers(it))
+                _actionFlow.tryEmit(BrowserAction.KeyUp(browserKey))
 
-                if (activeDialog == null && it.keyCode != KeyCode.F12) {
+                if (activeDialog == null && !PASSTHRU_KEYS.contains(browserKey)) {
                     it.stopPropagation()
                     it.preventDefault()
                 }

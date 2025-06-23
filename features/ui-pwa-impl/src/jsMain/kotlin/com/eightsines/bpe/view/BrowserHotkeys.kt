@@ -4,25 +4,27 @@ import com.eightsines.bpe.presentation.UiAction
 import com.eightsines.bpe.util.KeyCode
 import com.eightsines.bpe.util.KeyModifier
 
-data class BrowserKey(val keyCode: Int, val keyModifiers: Int)
+val PASSTHRU_KEYS = setOf(
+    BrowserKey(KeyCode.F12),
+    BrowserKey(KeyCode.KeyR, KeyModifier.Ctrl),
+)
 
 val BROWSER_HOTKEYS = buildMap {
-    put(BrowserKey(KeyCode.KeyB, 0), UiAction.ToolboxPaintClick)
-    put(BrowserKey(KeyCode.KeyE, 0), UiAction.ToolboxEraseClick)
-    put(BrowserKey(KeyCode.KeyW, 0), UiAction.ToolboxSelectClick)
-    put(BrowserKey(KeyCode.KeyV, 0), UiAction.ToolboxPickColorClick)
+    put(BrowserKey(KeyCode.KeyD), UiAction.ToolboxPaintClick)
+    put(BrowserKey(KeyCode.KeyE), UiAction.ToolboxEraseClick)
+    put(BrowserKey(KeyCode.KeyW), UiAction.ToolboxSelectClick)
+    put(BrowserKey(KeyCode.KeyS), UiAction.ToolboxPickColorClick)
 
-    put(BrowserKey(KeyCode.KeyI, 0), UiAction.PaletteInkClick)
-    put(BrowserKey(KeyCode.KeyO, 0), UiAction.PaletteColorClick)
-    put(BrowserKey(KeyCode.KeyP, 0), UiAction.PalettePaperClick)
-    put(BrowserKey(KeyCode.Digit8, 0), UiAction.PaletteBrightClick)
-    put(BrowserKey(KeyCode.Digit9, 0), UiAction.PaletteFlashClick)
-    put(BrowserKey(KeyCode.Digit0, 0), UiAction.PaletteCharClick)
+    put(BrowserKey(KeyCode.KeyO), UiAction.PaletteInkOrColorClick)
+    put(BrowserKey(KeyCode.KeyP), UiAction.PalettePaperClick)
+    put(BrowserKey(KeyCode.KeyI), UiAction.PaletteBrightClick)
+    put(BrowserKey(KeyCode.KeyU), UiAction.PaletteFlashClick)
+    put(BrowserKey(KeyCode.KeyK), UiAction.PaletteCharClick)
 
-    put(BrowserKey(KeyCode.KeyL, 0), UiAction.LayersClick)
-    put(BrowserKey(KeyCode.KeyK, 0), UiAction.SelectionMenuClick)
-    put(BrowserKey(KeyCode.KeyW, KeyModifier.Shift), UiAction.SelectionMenuClick)
-    put(BrowserKey(KeyCode.KeyM, 0), UiAction.MenuClick)
+    put(BrowserKey(KeyCode.KeyL), UiAction.LayersClick)
+    put(BrowserKey(KeyCode.KeyJ), UiAction.SelectionMenuClick)
+    put(BrowserKey(KeyCode.KeyM), UiAction.MenuClick)
+    put(BrowserKey(KeyCode.KeyN), UiAction.PaintingModeClick)
 
     put(BrowserKey(KeyCode.KeyZ, KeyModifier.Ctrl), UiAction.ToolboxUndoClick)
     put(BrowserKey(KeyCode.KeyY, KeyModifier.Ctrl), UiAction.ToolboxRedoClick)
@@ -31,4 +33,15 @@ val BROWSER_HOTKEYS = buildMap {
     put(BrowserKey(KeyCode.KeyX, KeyModifier.Ctrl), UiAction.SelectionCutClick)
     put(BrowserKey(KeyCode.KeyC, KeyModifier.Ctrl), UiAction.SelectionCopyClick)
     put(BrowserKey(KeyCode.KeyV, KeyModifier.Ctrl), UiAction.ToolboxPasteClick)
+
+    put(BrowserKey(KeyCode.Digit0), UiAction.PanelPress(0))
+    put(BrowserKey(KeyCode.Digit1), UiAction.PanelPress(1))
+    put(BrowserKey(KeyCode.Digit2), UiAction.PanelPress(2))
+    put(BrowserKey(KeyCode.Digit3), UiAction.PanelPress(3))
+    put(BrowserKey(KeyCode.Digit4), UiAction.PanelPress(4))
+    put(BrowserKey(KeyCode.Digit5), UiAction.PanelPress(5))
+    put(BrowserKey(KeyCode.Digit6), UiAction.PanelPress(6))
+    put(BrowserKey(KeyCode.Digit7), UiAction.PanelPress(7))
+    put(BrowserKey(KeyCode.Digit8), UiAction.PanelPress(8))
+    put(BrowserKey(KeyCode.Digit9), UiAction.PanelPress(9))
 }

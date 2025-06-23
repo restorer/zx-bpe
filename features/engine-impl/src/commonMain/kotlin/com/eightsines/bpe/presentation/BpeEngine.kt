@@ -849,6 +849,7 @@ class BpeEngine(
             paintingMode = paintingController.paintingMode,
             informer = paintingInformer ?: selectionController.informer,
             historySteps = history.size,
+            isPainting = paintingController.isActive,
         )
     }
 

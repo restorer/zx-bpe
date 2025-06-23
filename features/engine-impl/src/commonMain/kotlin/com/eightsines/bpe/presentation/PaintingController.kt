@@ -16,12 +16,15 @@ import com.eightsines.bpe.graphics.Shape
 import com.eightsines.bpe.graphics.executePair
 
 class PaintingController(private val graphicsEngine: GraphicsEngine, private val selectionController: SelectionController) {
-    var paintingMode = BpePaintingMode.Edge
-        private set
-
     private var currentPaintingSpec: PaintingSpec? = null
     private var lastDrawingPoint: Pair<Int, Int>? = null
     private var pendingHistoryStep: HistoryStep = HistoryStep.Empty
+
+    var paintingMode = BpePaintingMode.Edge
+        private set
+
+    val isActive: Boolean
+        get() = currentPaintingSpec != null
 
     fun cancel(historyActionsPerformer: (List<HistoryAction>) -> Unit): Boolean {
         val shouldRefresh = when (val spec = currentPaintingSpec) {
@@ -112,7 +115,7 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
     }
 
     fun finish(drawingX: Int, drawingY: Int): PaintingFinishResult {
-        val paintingResult = update(drawingX, drawingY)
+        update(drawingX, drawingY)
 
         val historyStep = when (val spec = currentPaintingSpec) {
             is PaintingSpec.Single -> spec.paintActions.toHistoryStep()
@@ -159,7 +162,7 @@ class PaintingController(private val graphicsEngine: GraphicsEngine, private val
         }
 
         val result = PaintingFinishResult(
-            shouldRefresh = paintingResult.shouldRefresh,
+            shouldRefresh = true, // Always refresh, to renew "isActive"
             historyStep = pendingHistoryStep.merge(historyStep),
         )
 

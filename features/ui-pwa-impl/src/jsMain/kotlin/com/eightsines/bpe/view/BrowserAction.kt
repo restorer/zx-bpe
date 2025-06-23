@@ -6,8 +6,14 @@ import org.w3c.dom.HTMLInputElement
 sealed interface BrowserAction {
     data class Ui(val action: UiAction) : BrowserAction
 
-    data class KeyDown(val keyCode: Int, val keyModifiers: Int) : BrowserAction
-    data class KeyUp(val keyCode: Int, val keyModifiers: Int) : BrowserAction
+    data class SheetEnter(val pointerX: Int, val pointerY: Int) : BrowserAction
+    data class SheetDown(val pointerX: Int, val pointerY: Int) : BrowserAction
+    data class SheetMove(val pointerX: Int, val pointerY: Int) : BrowserAction
+    data class SheetUp(val pointerX: Int, val pointerY: Int) : BrowserAction
+    data object SheetLeave : BrowserAction
+
+    data class KeyDown(val browserKey: BrowserKey) : BrowserAction
+    data class KeyUp(val browserKey: BrowserKey) : BrowserAction
 
     data object DialogHide : BrowserAction
     data object DialogOk : BrowserAction
@@ -20,3 +26,5 @@ sealed interface BrowserAction {
     data object PaintingExportScr : BrowserAction
     data object PaintingExportPng : BrowserAction
 }
+
+data class BrowserKey(val keyCode: Int, val keyModifiers: Int = 0)
