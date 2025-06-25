@@ -13,6 +13,7 @@ import com.eightsines.bpe.util.UidFactoryImpl
 import com.eightsines.bpe.view.BrowserEngine
 import com.eightsines.bpe.view.BrowserRenderer
 import com.eightsines.bpe.view.BrowserView
+import com.eightsines.bpe.view.BrowserSheetController
 import com.eightsines.bpe.view.UnhandledErrorView
 import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -51,6 +52,7 @@ class BpeComponent(private val window: Window) {
     private val browserRenderer by lazy { BrowserRenderer(elapsedTimeProvider) }
     private val uiEngine by lazy { UiEngineImpl(logger = logger, bpeEngine = bpeEngine) }
     private val resourceManager by lazy { ResourceManager() }
+    private val browserSheetController by lazy { BrowserSheetController() }
 
     val mainDispatcher by lazy { Dispatchers.Main }
 
@@ -60,6 +62,7 @@ class BpeComponent(private val window: Window) {
             window = window,
             document = document,
             uiEngine = uiEngine,
+            sheetController = browserSheetController,
             mainDispatcher = mainDispatcher,
         )
     }
@@ -70,6 +73,7 @@ class BpeComponent(private val window: Window) {
             elapsedTimeProvider = elapsedTimeProvider,
             renderer = browserRenderer,
             resourceManager = resourceManager,
+            sheetController = browserSheetController,
         )
     }
 

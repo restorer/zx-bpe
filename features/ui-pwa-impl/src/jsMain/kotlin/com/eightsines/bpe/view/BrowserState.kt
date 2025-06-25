@@ -4,7 +4,7 @@ import com.eightsines.bpe.presentation.UiState
 import com.eightsines.bpe.util.TextDescriptor
 import com.eightsines.bpe.util.TextRes
 
-data class BrowserState(val uiState: UiState, val dialog: BrowserDialog? = null)
+data class BrowserState(val uiState: UiState, val transform: DrawingTransform, val dialog: BrowserDialog? = null)
 
 sealed interface BrowserDialog {
     data class Alert(val message: TextRes) : BrowserDialog

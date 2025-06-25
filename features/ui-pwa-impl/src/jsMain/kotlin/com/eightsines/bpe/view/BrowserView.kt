@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.dom.addClass
 import kotlinx.dom.createElement
 import kotlinx.dom.removeClass
-import org.w3c.dom.DOMRect
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
@@ -42,6 +41,7 @@ class BrowserView(
     private val elapsedTimeProvider: ElapsedTimeProvider,
     private val renderer: BrowserRenderer,
     private val resourceManager: ResourceManager,
+    private val sheetController: BrowserSheetController,
 ) {
     private val _actionFlow = MutableSharedFlow<BrowserAction>(extraBufferCapacity = 4)
 
@@ -51,7 +51,7 @@ class BrowserView(
     private val loading = document.find<HTMLElement>(".js-loading")
     private val container = document.find<HTMLElement>(".js-container")
     private val drawing = document.find<HTMLElement>(".js-drawing")
-    private val drawingSheet = document.find<HTMLCanvasElement>(SELECTOR_DRAWING_SHEET)
+    private val drawingSheet = document.find<HTMLCanvasElement>(BrowserSheetController.SELECTOR_DRAWING_SHEET)
     private val drawingAreas = document.find<HTMLCanvasElement>(".js-drawing-areas")
 
     private val paletteBlockColor = document.find<HTMLElement>(".js-palette-color")
@@ -154,7 +154,7 @@ class BrowserView(
     private var wasRendered = false
     private var lastRefreshTimeMs = 0L
     private var activeDialog: BrowserDialog? = null
-    private var drawingTransform: DrawingTransform = DrawingTransform()
+    private var drawingTransform: DrawingTransform? = null
 
     init {
         createColorItems()
@@ -162,71 +162,8 @@ class BrowserView(
         createCharItems()
         createLayerTypeItems()
 
-        drawingAreas.addEventListener(
-            EVENT_MOUSE_ENTER,
-            {
-                it.preventDefault()
-                val point = translateMouseToCanvas(drawingAreas, it as MouseEvent)
-                _actionFlow.tryEmit(BrowserAction.SheetEnter(point.first, point.second))
-            }
-        )
-
-        drawingAreas.addEventListener(
-            EVENT_TOUCH_START,
-            {
-                it.preventDefault()
-                val point = translateMouseToCanvas(drawingAreas, it as TouchEvent)
-                _actionFlow.tryEmit(BrowserAction.SheetDown(point.first, point.second))
-            }
-        )
-
-        drawingAreas.addEventListener(
-            EVENT_TOUCH_MOVE,
-            {
-                it.preventDefault()
-                val point = translateMouseToCanvas(drawingAreas, it as TouchEvent)
-                _actionFlow.tryEmit(BrowserAction.SheetMove(point.first, point.second))
-            }
-        )
-
-        drawingAreas.addEventListener(
-            EVENT_TOUCH_END,
-            {
-                it.preventDefault()
-                val point = translateMouseToCanvas(drawingAreas, it as TouchEvent)
-                _actionFlow.tryEmit(BrowserAction.SheetUp(point.first, point.second))
-            }
-        )
-
-        drawingAreas.addEventListener(
-            EVENT_MOUSE_DOWN,
-            {
-                it.preventDefault()
-                val point = translateMouseToCanvas(drawingAreas, it as MouseEvent)
-                _actionFlow.tryEmit(BrowserAction.SheetDown(point.first, point.second))
-            }
-        )
-
-        drawingAreas.addEventListener(
-            EVENT_MOUSE_MOVE,
-            {
-                it.preventDefault()
-                val point = translateMouseToCanvas(drawingAreas, it as MouseEvent)
-                _actionFlow.tryEmit(BrowserAction.SheetMove(point.first, point.second))
-            }
-        )
-
-        drawingAreas.addEventListener(
-            EVENT_MOUSE_UP,
-            {
-                it.preventDefault()
-                val point = translateMouseToCanvas(drawingAreas, it as MouseEvent)
-                _actionFlow.tryEmit(BrowserAction.SheetUp(point.first, point.second))
-            }
-        )
-
-        drawingAreas.addEventListener(EVENT_TOUCH_CANCEL, { _actionFlow.tryEmit(BrowserAction.SheetLeave) })
-        drawingAreas.addEventListener(EVENT_MOUSE_LEAVE, { _actionFlow.tryEmit(BrowserAction.SheetLeave) })
+        attachDrawingTouchEvents()
+        attachDrawingMouseEvents()
 
         paletteBlockColor.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteInkOrColorClick)) }
         paletteSciiPaper.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PalettePaperClick)) }
@@ -339,7 +276,7 @@ class BrowserView(
                     null
                 }
 
-                if (activeDialog == null && !PASSTHRU_KEYS.contains(browserKey)) {
+                if (activeDialog == null && (BROWSER_HOTKEYS.contains(browserKey) || BROWSER_HANDLED_KEYS.contains(browserKey))) {
                     it.stopPropagation()
                     it.preventDefault()
                 }
@@ -358,7 +295,7 @@ class BrowserView(
                 val browserKey = BrowserKey(it.keyCode, getKeyModifiers(it))
                 _actionFlow.tryEmit(BrowserAction.KeyUp(browserKey))
 
-                if (activeDialog == null && !PASSTHRU_KEYS.contains(browserKey)) {
+                if (activeDialog == null && (BROWSER_HOTKEYS.contains(browserKey) || BROWSER_HANDLED_KEYS.contains(browserKey))) {
                     it.stopPropagation()
                     it.preventDefault()
                 }
@@ -374,6 +311,7 @@ class BrowserView(
             container.removeClass(CLASS_HIDDEN)
         }
 
+        drawingTransform = state.transform
         reposition()
 
         paletteBlockColor.setToolState(uiState.paletteColor) {
@@ -565,34 +503,14 @@ class BrowserView(
     }
 
     fun reposition() {
-        val drawingFullWidth = drawing.clientWidth
-        val drawingFullHeight = drawing.clientHeight
-        val drawingAvailWidth = (drawingFullWidth - DRAWING_OFFSET_DBL).toDouble()
-        val drawingAvailHeight = (drawingFullHeight - DRAWING_OFFSET_DBL).toDouble()
+        val bbox = drawingTransform
+            ?.let { sheetController.getSheetBbox(drawing.clientWidth, drawing.clientHeight, it) }
+            ?: return
 
-        if (drawingAvailWidth < 1 || drawingAvailHeight < 1) {
-            return
-        }
-
-        val centerX = drawingFullWidth.toDouble() * 0.5 + drawingAvailWidth * drawingTransform.translateXRatio
-        val centerY = drawingFullHeight.toDouble() * 0.5 + drawingAvailHeight * drawingTransform.translateYRatio
-
-        val drawingRatio = drawingAvailWidth / drawingAvailHeight
-        val sheetRatio = DRAWING_SHEET_WIDTH / DRAWING_SHEET_HEIGHT
-
-        val scale = if (drawingRatio < sheetRatio) {
-            drawingAvailWidth / DRAWING_SHEET_WIDTH
-        } else {
-            drawingAvailHeight / DRAWING_SHEET_HEIGHT
-        } * drawingTransform.scale
-
-        val sheetWidth = DRAWING_SHEET_WIDTH * scale
-        val sheetHeight = DRAWING_SHEET_HEIGHT * scale
-
-        val sheetLeftStyle = "${(centerX - sheetWidth * 0.5).toInt()}px"
-        val sheetTopStyle = "${(centerY - sheetHeight * 0.5).toInt()}px"
-        val sheetWidthStyle = "${sheetWidth.toInt()}px"
-        val sheetHeightStyle = "${sheetHeight.toInt()}px"
+        val sheetLeftStyle = "${bbox.lx}px"
+        val sheetTopStyle = "${bbox.ly}px"
+        val sheetWidthStyle = "${bbox.width}px"
+        val sheetHeightStyle = "${bbox.height}px"
 
         drawingSheet.style.also {
             it.left = sheetLeftStyle
@@ -904,41 +822,124 @@ class BrowserView(
         }
     )
 
-    private fun translateMouseToCanvas(canvas: HTMLCanvasElement, event: MouseEvent) =
-        translateMouseToCanvas(canvas, event.clientX, event.clientY)
-
-    private fun translateMouseToCanvas(canvas: HTMLCanvasElement, event: TouchEvent) =
-        translateMouseToCanvas(
-            canvas,
-            event.changedTouches.item(0)?.clientX ?: 0,
-            event.changedTouches.item(0)?.clientY ?: 0,
+    private fun attachDrawingTouchEvents() {
+        drawing.addEventListener(
+            EVENT_TOUCH_START,
+            {
+                it as TouchEvent
+                it.preventDefault()
+                _actionFlow.tryEmit(
+                    BrowserAction.DrawingDown(
+                        x = it.clientX - drawing.offsetLeft,
+                        y = it.clientY - drawing.offsetTop,
+                        width = drawing.clientWidth,
+                        height = drawing.clientHeight,
+                    )
+                )
+            }
         )
 
-    private fun translateMouseToCanvas(canvas: HTMLCanvasElement, clientX: Int, clientY: Int): Pair<Int, Int> {
-        val bbox: DOMRect = canvas.getBoundingClientRect()
+        drawing.addEventListener(
+            EVENT_TOUCH_MOVE,
+            {
+                it as TouchEvent
+                it.preventDefault()
+                _actionFlow.tryEmit(
+                    BrowserAction.DrawingMove(
+                        x = it.clientX - drawing.offsetLeft,
+                        y = it.clientY - drawing.offsetTop,
+                        width = drawing.clientWidth,
+                        height = drawing.clientHeight,
+                    )
+                )
+            }
+        )
 
-        if (bbox.width < 1.0 || bbox.height < 1.0) {
-            return 0 to 0
-        }
+        drawing.addEventListener(
+            EVENT_TOUCH_END,
+            {
+                it as TouchEvent
+                it.preventDefault()
+                _actionFlow.tryEmit(
+                    BrowserAction.DrawingUp(
+                        x = it.clientX - drawing.offsetLeft,
+                        y = it.clientY - drawing.offsetTop,
+                        width = drawing.clientWidth,
+                        height = drawing.clientHeight,
+                    )
+                )
+            }
+        )
 
-        val scale: Double
-        val offsetX: Double
-        val offsetY: Double
+        drawing.addEventListener(EVENT_TOUCH_CANCEL, { _actionFlow.tryEmit(BrowserAction.DrawingLeave) })
+    }
 
-        if (canvas.height / bbox.height > canvas.width / bbox.width) {
-            scale = bbox.height / canvas.height
-            offsetX = (bbox.width - canvas.width * scale) * 0.5
-            offsetY = 0.0
-        } else {
-            scale = bbox.width / canvas.width
-            offsetX = 0.0
-            offsetY = (bbox.height - canvas.height * scale) * 0.5
-        }
+    private fun attachDrawingMouseEvents() {
+        drawing.addEventListener(
+            EVENT_MOUSE_ENTER,
+            {
+                it as MouseEvent
+                it.preventDefault()
+                _actionFlow.tryEmit(
+                    BrowserAction.DrawingEnter(
+                        x = it.clientX - drawing.offsetLeft,
+                        y = it.clientY - drawing.offsetTop,
+                        width = drawing.clientWidth,
+                        height = drawing.clientHeight,
+                    )
+                )
+            }
+        )
 
-        val x = (clientX - bbox.left - offsetX) / scale
-        val y = (clientY - bbox.top - offsetY) / scale
+        drawing.addEventListener(
+            EVENT_MOUSE_DOWN,
+            {
+                it as MouseEvent
+                it.preventDefault()
+                _actionFlow.tryEmit(
+                    BrowserAction.DrawingDown(
+                        x = it.clientX - drawing.offsetLeft,
+                        y = it.clientY - drawing.offsetTop,
+                        width = drawing.clientWidth,
+                        height = drawing.clientHeight,
+                    )
+                )
+            }
+        )
 
-        return x.toInt() to y.toInt()
+        drawing.addEventListener(
+            EVENT_MOUSE_MOVE,
+            {
+                it as MouseEvent
+                it.preventDefault()
+                _actionFlow.tryEmit(
+                    BrowserAction.DrawingMove(
+                        x = it.clientX - drawing.offsetLeft,
+                        y = it.clientY - drawing.offsetTop,
+                        width = drawing.clientWidth,
+                        height = drawing.clientHeight,
+                    )
+                )
+            }
+        )
+
+        drawing.addEventListener(
+            EVENT_MOUSE_UP,
+            {
+                it as MouseEvent
+                it.preventDefault()
+                _actionFlow.tryEmit(
+                    BrowserAction.DrawingUp(
+                        x = it.clientX - drawing.offsetLeft,
+                        y = it.clientY - drawing.offsetTop,
+                        width = drawing.clientWidth,
+                        height = drawing.clientHeight,
+                    )
+                )
+            }
+        )
+
+        drawing.addEventListener(EVENT_MOUSE_LEAVE, { _actionFlow.tryEmit(BrowserAction.DrawingLeave) })
     }
 
     private inline fun <reified T> ParentNode.find(selectors: String) = requireNotNull(querySelector(selectors) as? T) {
@@ -1096,7 +1097,6 @@ class BrowserView(
         private const val SUFFIX_ON = "on"
         private const val SUFFIX_TRANSPARENT = "transparent"
         private const val SUFFIX_FORCE_TRANSPARENT = "force_transparent"
-        const val SELECTOR_DRAWING_SHEET = ".js-drawing-sheet"
 
         private const val EVENT_CLICK = "click"
         private const val EVENT_CHANGE = "change"
@@ -1132,11 +1132,13 @@ class BrowserView(
 
         private const val PREVIEW_WIDTH = 256
         private const val PREVIEW_HEIGHT = 192
-
-        private const val DRAWING_OFFSET_DBL = 16 * 2
-        private const val DRAWING_SHEET_WIDTH = 320.0
-        private const val DRAWING_SHEET_HEIGHT = 256.0
     }
 }
+
+inline val TouchEvent.clientX: Int
+    get() = changedTouches.item(0)?.clientX ?: 0
+
+inline val TouchEvent.clientY: Int
+    get() = changedTouches.item(0)?.clientY ?: 0
 
 private class CachedLayerItem(val element: Element, val previewCanvas: HTMLCanvasElement)

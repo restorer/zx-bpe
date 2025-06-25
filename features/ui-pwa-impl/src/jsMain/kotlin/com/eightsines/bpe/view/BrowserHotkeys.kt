@@ -4,11 +4,6 @@ import com.eightsines.bpe.presentation.UiAction
 import com.eightsines.bpe.util.KeyCode
 import com.eightsines.bpe.util.KeyModifier
 
-val PASSTHRU_KEYS = setOf(
-    BrowserKey(KeyCode.F12),
-    BrowserKey(KeyCode.KeyR, KeyModifier.Ctrl),
-)
-
 val BROWSER_HOTKEYS = buildMap {
     put(BrowserKey(KeyCode.KeyD), UiAction.ToolboxPaintClick)
     put(BrowserKey(KeyCode.KeyE), UiAction.ToolboxEraseClick)
@@ -45,3 +40,9 @@ val BROWSER_HOTKEYS = buildMap {
     put(BrowserKey(KeyCode.Digit8), UiAction.PanelPress(8))
     put(BrowserKey(KeyCode.Digit9), UiAction.PanelPress(9))
 }
+
+val BROWSER_HANDLED_KEYS = setOf(
+    BrowserKey(KeyCode.Enter),
+    BrowserKey(KeyCode.Escape),
+    BrowserKey(KeyCode.Space),
+)

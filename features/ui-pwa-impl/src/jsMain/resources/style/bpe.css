@@ -658,6 +658,7 @@ body {
 
 .drawing {
     position: absolute;
+    overflow: hidden;
 
     top: calc(var(--tool-size) + var(--panel-divider-size));
     right: 0;
