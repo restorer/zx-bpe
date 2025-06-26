@@ -35,6 +35,7 @@ import org.w3c.dom.TouchEvent
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
+import org.w3c.dom.events.WheelEvent
 
 class BrowserView(
     private val document: Document,
@@ -828,6 +829,7 @@ class BrowserView(
             {
                 it as TouchEvent
                 it.preventDefault()
+
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingDown(
                         x = it.clientX - drawing.offsetLeft,
@@ -844,6 +846,7 @@ class BrowserView(
             {
                 it as TouchEvent
                 it.preventDefault()
+
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingMove(
                         x = it.clientX - drawing.offsetLeft,
@@ -860,6 +863,7 @@ class BrowserView(
             {
                 it as TouchEvent
                 it.preventDefault()
+
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingUp(
                         x = it.clientX - drawing.offsetLeft,
@@ -880,6 +884,7 @@ class BrowserView(
             {
                 it as MouseEvent
                 it.preventDefault()
+
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingEnter(
                         x = it.clientX - drawing.offsetLeft,
@@ -896,6 +901,7 @@ class BrowserView(
             {
                 it as MouseEvent
                 it.preventDefault()
+
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingDown(
                         x = it.clientX - drawing.offsetLeft,
@@ -912,6 +918,7 @@ class BrowserView(
             {
                 it as MouseEvent
                 it.preventDefault()
+
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingMove(
                         x = it.clientX - drawing.offsetLeft,
@@ -928,6 +935,7 @@ class BrowserView(
             {
                 it as MouseEvent
                 it.preventDefault()
+
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingUp(
                         x = it.clientX - drawing.offsetLeft,
@@ -937,6 +945,24 @@ class BrowserView(
                     )
                 )
             }
+        )
+
+        drawing.addEventListener(
+            EVENT_WHEEL,
+            {
+                it as WheelEvent
+                it.preventDefault()
+
+                _actionFlow.tryEmit(
+                    BrowserAction.DrawingWheel(
+                        x = it.clientX - drawing.offsetLeft,
+                        y = it.clientY - drawing.offsetTop,
+                        deltaY = it.deltaY,
+                        width = drawing.clientWidth,
+                        height = drawing.clientHeight,
+                    )
+                )
+            },
         )
 
         drawing.addEventListener(EVENT_MOUSE_LEAVE, { _actionFlow.tryEmit(BrowserAction.DrawingLeave) })
@@ -1104,6 +1130,7 @@ class BrowserView(
         private const val EVENT_MOUSE_DOWN = "mousedown"
         private const val EVENT_MOUSE_MOVE = "mousemove"
         private const val EVENT_MOUSE_UP = "mouseup"
+        private const val EVENT_WHEEL = "wheel"
         private const val EVENT_MOUSE_LEAVE = "mouseleave"
         private const val EVENT_TOUCH_START = "touchstart"
         private const val EVENT_TOUCH_MOVE = "touchmove"

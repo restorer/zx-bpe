@@ -45,4 +45,5 @@ val BROWSER_HANDLED_KEYS = setOf(
     BrowserKey(KeyCode.Enter),
     BrowserKey(KeyCode.Escape),
     BrowserKey(KeyCode.Space),
+    BrowserKey(KeyCode.Shift),
 )

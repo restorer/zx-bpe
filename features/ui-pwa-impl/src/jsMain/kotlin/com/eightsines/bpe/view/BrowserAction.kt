@@ -11,6 +11,7 @@ sealed interface BrowserAction {
     data class DrawingDown(val x: Int, val y: Int, val width: Int, val height: Int) : BrowserAction
     data class DrawingMove(val x: Int, val y: Int, val width: Int, val height: Int) : BrowserAction
     data class DrawingUp(val x: Int, val y: Int, val width: Int, val height: Int) : BrowserAction
+    data class DrawingWheel(val x: Int, val y: Int, val deltaY: Double, val width: Int, val height: Int) : BrowserAction
     data object DrawingLeave : BrowserAction
 
     data class KeyDown(val browserKey: BrowserKey) : BrowserAction
