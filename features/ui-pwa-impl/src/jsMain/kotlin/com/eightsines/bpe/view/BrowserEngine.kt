@@ -53,6 +53,7 @@ class BrowserEngine(
     private var lastDownBrowserKey: BrowserKey? = null
     private var lastDialogPromptInput = ""
     private var sheetMode: SheetMode = SheetMode.None
+    private var lastDrawingPoints: List<Pair<Int, Int>> = emptyList()
 
     val browserStateFlow: Flow<BrowserState>
         get() = _browserStateFlow
@@ -122,6 +123,8 @@ class BrowserEngine(
         val point = translateToSheet(action.x, action.y, action.width, action.height) ?: return
 
         sheetMode = SheetMode.Sheet
+        lastDrawingPoints = listOf(action.x to action.y)
+
         executeUi(UiAction.SheetEnter(point.first, point.second))
     }
 
@@ -129,6 +132,8 @@ class BrowserEngine(
         if (action.points.isEmpty()) {
             return
         }
+
+        lastDrawingPoints = action.points
 
         if (action.points.size > 1) {
             val drawingPoint1 = action.points[0]
@@ -185,6 +190,8 @@ class BrowserEngine(
             return
         }
 
+        lastDrawingPoints = action.points
+
         if (action.points.size > 1) {
             val sheetMode = this.sheetMode as? SheetMode.PinchZoom ?: return
 
@@ -233,14 +240,22 @@ class BrowserEngine(
     }
 
     private fun executeDrawingUp(action: BrowserAction.DrawingUp) {
-        if (action.points.isEmpty()) {
+        val points = action.points.ifEmpty { lastDrawingPoints }
+        lastDrawingPoints = emptyList()
+
+        if (points.isEmpty()) {
+            if (sheetMode !is SheetMode.None) {
+                sheetMode = SheetMode.None
+                executeUi(UiAction.SheetLeave)
+            }
+
             return
         }
 
-        if (action.points.size > 1) {
+        if (points.size > 1) {
             if (sheetMode is SheetMode.PinchZoom) {
-                val drawingPoint1 = action.points[0]
-                val drawingPoint2 = action.points[1]
+                val drawingPoint1 = points[0]
+                val drawingPoint2 = points[1]
 
                 val drawingX = (drawingPoint1.first + drawingPoint2.first) / 2
                 val drawingY = (drawingPoint1.second + drawingPoint2.second) / 2
@@ -255,7 +270,7 @@ class BrowserEngine(
                 }
             }
         } else {
-            val drawingPoint = action.points[0]
+            val drawingPoint = points[0]
             val sheetPoint = translateToSheet(drawingPoint, action.width, action.height)
 
             if (sheetMode is SheetMode.Move) {

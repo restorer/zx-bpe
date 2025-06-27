@@ -870,10 +870,7 @@ class BrowserView(
                 it.preventDefault()
 
                 val points = it.touches.mapWithLimit { it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop }
-
-                if (points.isNotEmpty()) {
-                    _actionFlow.tryEmit(BrowserAction.DrawingUp(points, drawing.clientWidth, drawing.clientHeight))
-                }
+                _actionFlow.tryEmit(BrowserAction.DrawingUp(points, drawing.clientWidth, drawing.clientHeight))
             }
         )
 
