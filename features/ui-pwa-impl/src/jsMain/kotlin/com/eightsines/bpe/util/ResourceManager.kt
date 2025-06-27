@@ -73,6 +73,7 @@ class ResourceManager {
             TextRes.MenuExportTap -> "Export to TAP"
             TextRes.MenuExportScr -> "Export to SCR"
             TextRes.MenuExportPng -> "Export to PNG"
+            TextRes.MenuBuild -> "Build: {n}"
 
             TextRes.LayerVisible -> "Visible"
             TextRes.LayerInvisible -> "Invisible"

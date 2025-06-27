@@ -17,6 +17,7 @@ import com.eightsines.bpe.presentation.UiToolState
 import com.eightsines.bpe.util.ElapsedTimeProvider
 import com.eightsines.bpe.util.KeyModifier
 import com.eightsines.bpe.util.ResourceManager
+import com.eightsines.bpe.util.TextDescriptor
 import com.eightsines.bpe.util.TextRes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -98,6 +99,7 @@ class BrowserView(
     private val menuExportTap = document.find<HTMLElement>(".js-menu-export-tap")
     private val menuExportScr = document.find<HTMLElement>(".js-menu-export-scr")
     private val menuExportPng = document.find<HTMLElement>(".js-menu-export-png")
+    private val menuBuild = document.find<HTMLElement>(".js-menu-build")
 
     private val colorsPanel = document.find<HTMLElement>(".js-colors-panel")
     private val lightsPanel = document.find<HTMLElement>(".js-lights-panel")
@@ -303,6 +305,13 @@ class BrowserView(
                     it.preventDefault()
                 }
             },
+        )
+
+        menuBuild.textContent = resourceManager.resolveText(
+            TextDescriptor(
+                TextRes.MenuBuild,
+                buildMap { put("n", document.body?.getAttribute("bpe-build") ?: "<unset>") },
+            ),
         )
     }
 
@@ -832,17 +841,11 @@ class BrowserView(
                 it as TouchEvent
                 it.preventDefault()
 
-                if (it.changedTouches.length < 1) {
-                    return@addEventListener
-                }
+                val points = it.touches.mapWithLimit { it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop }
 
-                _actionFlow.tryEmit(
-                    BrowserAction.DrawingDown(
-                        points = it.changedTouches.mapWithLimit { it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop },
-                        width = drawing.clientWidth,
-                        height = drawing.clientHeight,
-                    )
-                )
+                if (points.isNotEmpty()) {
+                    _actionFlow.tryEmit(BrowserAction.DrawingDown(points, drawing.clientWidth, drawing.clientHeight))
+                }
             }
         )
 
@@ -852,17 +855,11 @@ class BrowserView(
                 it as TouchEvent
                 it.preventDefault()
 
-                if (it.changedTouches.length < 1) {
-                    return@addEventListener
-                }
+                val points = it.touches.mapWithLimit { it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop }
 
-                _actionFlow.tryEmit(
-                    BrowserAction.DrawingMove(
-                        points = it.changedTouches.mapWithLimit { it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop },
-                        width = drawing.clientWidth,
-                        height = drawing.clientHeight,
-                    )
-                )
+                if (points.isNotEmpty()) {
+                    _actionFlow.tryEmit(BrowserAction.DrawingMove(points, drawing.clientWidth, drawing.clientHeight))
+                }
             }
         )
 
@@ -872,17 +869,11 @@ class BrowserView(
                 it as TouchEvent
                 it.preventDefault()
 
-                if (it.changedTouches.length < 1) {
-                    return@addEventListener
-                }
+                val points = it.touches.mapWithLimit { it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop }
 
-                _actionFlow.tryEmit(
-                    BrowserAction.DrawingUp(
-                        points = it.changedTouches.mapWithLimit { it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop },
-                        width = drawing.clientWidth,
-                        height = drawing.clientHeight,
-                    )
-                )
+                if (points.isNotEmpty()) {
+                    _actionFlow.tryEmit(BrowserAction.DrawingUp(points, drawing.clientWidth, drawing.clientHeight))
+                }
             }
         )
 

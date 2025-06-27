@@ -17,6 +17,7 @@
     --panel-active-highlight-size: 4px;
     --subpanel-shift: 4px;
     --menu-font-size: 20px;
+    --menu-font-sm-size: 16px;
     --menu-offset: 24px;
     --layers-width: 272px;
 
@@ -238,15 +239,24 @@ body {
     cursor: pointer;
 }
 
-.menu__item > .menu__item-content {
+.menu__item > .menu__item-text,
+.menu__item > .menu__item-link {
     color: var(--menu-text);
     font-family: sans-serif;
-    font-size: var(--menu-font-size);
     line-height: var(--tool-sm-size);
+}
+
+.menu__item > .menu__item-text {
+    font-size: var(--menu-font-sm-size);
+    opacity: 0.5;
+}
+
+.menu__item > .menu__item-link {
+    font-size: var(--menu-font-size);
     text-decoration: underline;
 }
 
-.menu__item:active > .menu__item-content {
+.menu__item:active > .menu__item-link {
     text-decoration: none;
 }
 
