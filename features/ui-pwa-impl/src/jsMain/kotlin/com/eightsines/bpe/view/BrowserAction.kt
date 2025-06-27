@@ -8,9 +8,9 @@ sealed interface BrowserAction {
     data class Ui(val action: UiAction) : BrowserAction
 
     data class DrawingEnter(val x: Int, val y: Int, val width: Int, val height: Int) : BrowserAction
-    data class DrawingDown(val x: Int, val y: Int, val width: Int, val height: Int) : BrowserAction
-    data class DrawingMove(val x: Int, val y: Int, val width: Int, val height: Int) : BrowserAction
-    data class DrawingUp(val x: Int, val y: Int, val width: Int, val height: Int) : BrowserAction
+    data class DrawingDown(val points: List<Pair<Int, Int>>, val width: Int, val height: Int) : BrowserAction
+    data class DrawingMove(val points: List<Pair<Int, Int>>, val width: Int, val height: Int) : BrowserAction
+    data class DrawingUp(val points: List<Pair<Int, Int>>, val width: Int, val height: Int) : BrowserAction
     data class DrawingWheel(val x: Int, val y: Int, val deltaY: Double, val width: Int, val height: Int) : BrowserAction
     data object DrawingLeave : BrowserAction
 

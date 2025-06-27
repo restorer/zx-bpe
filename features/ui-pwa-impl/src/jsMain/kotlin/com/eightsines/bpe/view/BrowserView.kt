@@ -31,7 +31,9 @@ import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.Node
 import org.w3c.dom.ParentNode
+import org.w3c.dom.Touch
 import org.w3c.dom.TouchEvent
+import org.w3c.dom.TouchList
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
@@ -830,10 +832,13 @@ class BrowserView(
                 it as TouchEvent
                 it.preventDefault()
 
+                if (it.changedTouches.length < 1) {
+                    return@addEventListener
+                }
+
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingDown(
-                        x = it.clientX - drawing.offsetLeft,
-                        y = it.clientY - drawing.offsetTop,
+                        points = it.changedTouches.mapWithLimit { it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop },
                         width = drawing.clientWidth,
                         height = drawing.clientHeight,
                     )
@@ -847,10 +852,13 @@ class BrowserView(
                 it as TouchEvent
                 it.preventDefault()
 
+                if (it.changedTouches.length < 1) {
+                    return@addEventListener
+                }
+
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingMove(
-                        x = it.clientX - drawing.offsetLeft,
-                        y = it.clientY - drawing.offsetTop,
+                        points = it.changedTouches.mapWithLimit { it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop },
                         width = drawing.clientWidth,
                         height = drawing.clientHeight,
                     )
@@ -864,10 +872,13 @@ class BrowserView(
                 it as TouchEvent
                 it.preventDefault()
 
+                if (it.changedTouches.length < 1) {
+                    return@addEventListener
+                }
+
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingUp(
-                        x = it.clientX - drawing.offsetLeft,
-                        y = it.clientY - drawing.offsetTop,
+                        points = it.changedTouches.mapWithLimit { it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop },
                         width = drawing.clientWidth,
                         height = drawing.clientHeight,
                     )
@@ -904,8 +915,7 @@ class BrowserView(
 
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingDown(
-                        x = it.clientX - drawing.offsetLeft,
-                        y = it.clientY - drawing.offsetTop,
+                        points = listOf(it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop),
                         width = drawing.clientWidth,
                         height = drawing.clientHeight,
                     )
@@ -921,8 +931,7 @@ class BrowserView(
 
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingMove(
-                        x = it.clientX - drawing.offsetLeft,
-                        y = it.clientY - drawing.offsetTop,
+                        points = listOf(it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop),
                         width = drawing.clientWidth,
                         height = drawing.clientHeight,
                     )
@@ -938,8 +947,7 @@ class BrowserView(
 
                 _actionFlow.tryEmit(
                     BrowserAction.DrawingUp(
-                        x = it.clientX - drawing.offsetLeft,
-                        y = it.clientY - drawing.offsetTop,
+                        points = listOf(it.clientX - drawing.offsetLeft to it.clientY - drawing.offsetTop),
                         width = drawing.clientWidth,
                         height = drawing.clientHeight,
                     )
@@ -1162,10 +1170,16 @@ class BrowserView(
     }
 }
 
-inline val TouchEvent.clientX: Int
-    get() = changedTouches.item(0)?.clientX ?: 0
+private inline fun <R> TouchList.mapWithLimit(limit: Int = 2, transform: (Touch) -> R) = buildList {
+    for (index in 0..<length) {
+        item(index)?.let {
+            add(transform(it))
 
-inline val TouchEvent.clientY: Int
-    get() = changedTouches.item(0)?.clientY ?: 0
+            if (size >= limit) {
+                return@buildList
+            }
+        }
+    }
+}
 
 private class CachedLayerItem(val element: Element, val previewCanvas: HTMLCanvasElement)

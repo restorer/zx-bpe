@@ -35,7 +35,7 @@ import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
 import org.w3c.files.FileReader
 import kotlin.math.abs
-import kotlin.math.sign
+import kotlin.math.sqrt
 import kotlin.time.Duration.Companion.seconds
 
 class BrowserEngine(
@@ -126,62 +126,149 @@ class BrowserEngine(
     }
 
     private fun executeDrawingDown(action: BrowserAction.DrawingDown) {
-        val point = translateToSheet(action.x, action.y, action.width, action.height)
+        if (action.points.isEmpty()) {
+            return
+        }
 
-        when {
-            lastDownBrowserKey == BrowserKey.Space ->
-                if (sheetMode !is SheetMode.Move && point != null) {
-                    if (sheetMode is SheetMode.Sheet) {
-                        executeUi(UiAction.SheetLeave)
+        if (action.points.size > 1) {
+            val drawingPoint1 = action.points[0]
+            val drawingPoint2 = action.points[1]
+
+            val drawingX = (drawingPoint1.first + drawingPoint2.first) / 2
+            val drawingY = (drawingPoint1.second + drawingPoint2.second) / 2
+
+            val sheetPoint = translateToSheet(drawingX, drawingY, action.width, action.height)
+                ?: return
+
+            val offsetX = drawingPoint2.first - drawingPoint1.first
+            val offsetY = drawingPoint2.second - drawingPoint1.second
+            val distance = sqrt((offsetX * offsetX + offsetY * offsetY).toDouble())
+
+            if (sheetMode is SheetMode.Sheet || sheetMode is SheetMode.SheetScale) {
+                executeUi(UiAction.SheetLeave)
+            }
+
+            sheetMode = SheetMode.PinchZoom(
+                sheetX = sheetPoint.first,
+                sheetY = sheetPoint.second,
+                scale = _browserStateFlow.value.transform.scale,
+                distance = distance,
+            )
+        } else {
+            val drawingPoint = action.points[0]
+            val sheetPoint = translateToSheet(drawingPoint, action.width, action.height)
+
+            when {
+                lastDownBrowserKey == BrowserKey.Space ->
+                    if (sheetMode !is SheetMode.Move && sheetPoint != null) {
+                        if (sheetMode is SheetMode.Sheet || sheetMode is SheetMode.SheetScale) {
+                            executeUi(UiAction.SheetLeave)
+                        }
+
+                        sheetMode = SheetMode.Move(
+                            sheetX = sheetPoint.first,
+                            sheetY = sheetPoint.second,
+                            scale = _browserStateFlow.value.transform.scale,
+                        )
                     }
 
-                    sheetMode = SheetMode.Move(point.first, point.second, _browserStateFlow.value.transform.scale)
-                }
-
-            else ->
-                performSheetAction(drawingX = action.x, drawingY = action.y, point = point) {
-                    executeUi(UiAction.SheetDown(it.first, it.second))
-                }
+                else ->
+                    performSheetAction(drawingPoint, sheetPoint) {
+                        executeUi(UiAction.SheetDown(it.first, it.second))
+                    }
+            }
         }
     }
 
     private fun executeDrawingMove(action: BrowserAction.DrawingMove) {
-        val sheetMode = this.sheetMode
+        if (action.points.isEmpty()) {
+            return
+        }
 
-        if (sheetMode is SheetMode.Move) {
+        if (action.points.size > 1) {
+            val sheetMode = this.sheetMode as? SheetMode.PinchZoom ?: return
+
+            val drawingPoint1 = action.points[0]
+            val drawingPoint2 = action.points[1]
+
+            val drawingX = (drawingPoint1.first + drawingPoint2.first) / 2
+            val drawingY = (drawingPoint1.second + drawingPoint2.second) / 2
+
+            val offsetX = drawingPoint2.first - drawingPoint1.first
+            val offsetY = drawingPoint2.second - drawingPoint1.second
+            val distance = sqrt((offsetX * offsetX + offsetY * offsetY).toDouble())
+
             sheetController.computeTransform(
-                drawingX = action.x,
-                drawingY = action.y,
+                drawingX = drawingX,
+                drawingY = drawingY,
                 drawingWidth = action.width,
                 drawingHeight = action.height,
                 srcSheetX = sheetMode.sheetX,
                 srcSheetY = sheetMode.sheetY,
-                newScale = sheetMode.sheetScale,
+                newScale = sheetMode.scale * maxOf(1.0, distance) / maxOf(1.0, sheetMode.distance),
             )?.let { _browserStateFlow.value = _browserStateFlow.value.copy(transform = it) }
         } else {
-            performSheetAction(
-                drawingX = action.x,
-                drawingY = action.y,
-                point = translateToSheet(action.x, action.y, action.width, action.height),
-            ) {
-                executeUi(UiAction.SheetMove(it.first, it.second))
+            val drawingPoint = action.points[0]
+            val sheetMode = this.sheetMode
+
+            if (sheetMode is SheetMode.Move) {
+                sheetController.computeTransform(
+                    drawingX = drawingPoint.first,
+                    drawingY = drawingPoint.second,
+                    drawingWidth = action.width,
+                    drawingHeight = action.height,
+                    srcSheetX = sheetMode.sheetX,
+                    srcSheetY = sheetMode.sheetY,
+                    newScale = sheetMode.scale,
+                )?.let { _browserStateFlow.value = _browserStateFlow.value.copy(transform = it) }
+            } else {
+                performSheetAction(
+                    drawingPoint,
+                    translateToSheet(drawingPoint, action.width, action.height),
+                ) {
+                    executeUi(UiAction.SheetMove(it.first, it.second))
+                }
             }
         }
     }
 
     private fun executeDrawingUp(action: BrowserAction.DrawingUp) {
-        val point = translateToSheet(action.x, action.y, action.width, action.height)
+        if (action.points.isEmpty()) {
+            return
+        }
 
-        if (sheetMode is SheetMode.Move) {
-            sheetMode = if (point == null) {
-                SheetMode.None
-            } else {
-                executeUi(UiAction.SheetEnter(point.first, point.second))
-                SheetMode.Sheet
+        if (action.points.size > 1) {
+            if (sheetMode is SheetMode.PinchZoom) {
+                val drawingPoint1 = action.points[0]
+                val drawingPoint2 = action.points[1]
+
+                val drawingX = (drawingPoint1.first + drawingPoint2.first) / 2
+                val drawingY = (drawingPoint1.second + drawingPoint2.second) / 2
+
+                val sheetPoint = translateToSheet(drawingX, drawingY, action.width, action.height)
+
+                sheetMode = if (sheetPoint == null) {
+                    SheetMode.None
+                } else {
+                    executeUi(UiAction.SheetEnter(sheetPoint.first, sheetPoint.second))
+                    SheetMode.Sheet
+                }
             }
         } else {
-            performSheetAction(drawingX = action.x, drawingY = action.y, point = point) {
-                executeUi(UiAction.SheetUp(it.first, it.second))
+            val drawingPoint = action.points[0]
+            val sheetPoint = translateToSheet(drawingPoint, action.width, action.height)
+
+            if (sheetMode is SheetMode.Move) {
+                sheetMode = if (sheetPoint == null) {
+                    SheetMode.None
+                } else {
+                    executeUi(UiAction.SheetEnter(sheetPoint.first, sheetPoint.second))
+                    SheetMode.Sheet
+                }
+            } else {
+                performSheetAction(drawingPoint, sheetPoint) {
+                    executeUi(UiAction.SheetUp(it.first, it.second))
+                }
             }
         }
     }
@@ -191,23 +278,19 @@ class BrowserEngine(
             return
         }
 
-        val sheetMode = (sheetMode as? SheetMode.Scale)
-            ?: translateToSheet(action.x, action.y, action.width, action.height)
-                ?.let {
-                    SheetMode.Scale(
-                        drawingX = action.x,
-                        drawingY = action.y,
-                        sheetX = it.first,
-                        sheetY = it.second,
-                        sheetScale = _browserStateFlow.value.transform.scale,
-                    )
-                }
-            ?: return
+        val sheetMode = (sheetMode as? SheetMode.SheetScale)
+            ?: run {
+                val point = translateToSheet(action.x, action.y, action.width, action.height)
+                    ?: return
 
-        this.sheetMode = sheetMode.copy(
-            sheetScale = (sheetMode.sheetScale + sign(action.deltaY) * -0.01)
-                .coerceIn(BrowserSheetController.SCALE_MIN, BrowserSheetController.SCALE_MAX),
-        )
+                SheetMode.SheetScale(
+                    drawingX = action.x,
+                    drawingY = action.y,
+                    sheetX = point.first,
+                    sheetY = point.second,
+                    scale = _browserStateFlow.value.transform.scale,
+                ).also { this.sheetMode = it }
+            }
 
         sheetController.computeTransform(
             drawingX = action.x,
@@ -216,8 +299,11 @@ class BrowserEngine(
             drawingHeight = action.height,
             srcSheetX = sheetMode.sheetX,
             srcSheetY = sheetMode.sheetY,
-            newScale = sheetMode.sheetScale,
-        )?.let { _browserStateFlow.value = _browserStateFlow.value.copy(transform = it) }
+            newScale = sheetMode.scale + action.deltaY * -0.01,
+        )?.let {
+            sheetMode.scale = it.scale
+            _browserStateFlow.value = _browserStateFlow.value.copy(transform = it)
+        }
     }
 
     private fun executeDrawingLeave() {
@@ -512,28 +598,40 @@ class BrowserEngine(
         PromptTag.ExportPng -> FILE_EXT_PNG
     }
 
-    private fun translateToSheet(x: Int, y: Int, drawingWidth: Int, drawingHeight: Int): Pair<Int, Int>? =
-        sheetController.getSheetBbox(drawingWidth, drawingHeight, _browserStateFlow.value.transform)
-            ?.let { sheetController.translateToSheet(x, y, it) }
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun translateToSheet(drawingPoint: Pair<Int, Int>, drawingWidth: Int, drawingHeight: Int): Pair<Int, Int>? =
+        sheetController.translateToSheet(drawingPoint.first, drawingPoint.second, drawingWidth, drawingHeight, _browserStateFlow.value.transform)
 
-    private inline fun performSheetAction(drawingX: Int, drawingY: Int, point: Pair<Int, Int>?, block: (point: Pair<Int, Int>) -> Unit) {
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun translateToSheet(x: Int, y: Int, drawingWidth: Int, drawingHeight: Int): Pair<Int, Int>? =
+        sheetController.translateToSheet(x, y, drawingWidth, drawingHeight, _browserStateFlow.value.transform)
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun performSheetAction(drawingPoint: Pair<Int, Int>, sheetPoint: Pair<Int, Int>?, noinline block: (point: Pair<Int, Int>) -> Unit) =
+        performSheetAction(drawingPoint.first, drawingPoint.second, sheetPoint, block)
+
+    private fun performSheetAction(drawingX: Int, drawingY: Int, sheetPoint: Pair<Int, Int>?, block: (point: Pair<Int, Int>) -> Unit) {
         val sheetMode = this.sheetMode
 
         when {
-            point != null -> {
-                when {
-                    sheetMode is SheetMode.None || sheetMode is SheetMode.Move -> {
+            sheetPoint != null -> {
+                when (sheetMode) {
+                    is SheetMode.SheetScale ->
+                        if ((abs(drawingX - sheetMode.drawingX) > SCALE_POINT_THRESHOLD ||
+                                    abs(drawingY - sheetMode.drawingY) > SCALE_POINT_THRESHOLD)
+                        ) {
+                            this.sheetMode = SheetMode.Sheet
+                        }
+
+                    !is SheetMode.Sheet -> {
                         this.sheetMode = SheetMode.Sheet
-                        uiEngine.execute(UiAction.SheetEnter(point.first, point.second))
+                        uiEngine.execute(UiAction.SheetEnter(sheetPoint.first, sheetPoint.second))
                     }
 
-                    sheetMode is SheetMode.Scale &&
-                            (abs(drawingX - sheetMode.drawingX) > SCALE_POINT_THRESHOLD ||
-                                    abs(drawingY - sheetMode.drawingY) > SCALE_POINT_THRESHOLD) ->
-                        this.sheetMode = SheetMode.Sheet
+                    else -> Unit
                 }
 
-                block(point)
+                block(sheetPoint)
             }
 
             sheetMode !is SheetMode.None -> {
@@ -600,6 +698,7 @@ class BrowserEngine(
 sealed interface SheetMode {
     data object None : SheetMode
     data object Sheet : SheetMode
-    data class Move(val sheetX: Int, val sheetY: Int, val sheetScale: Double) : SheetMode
-    data class Scale(val drawingX: Int, val drawingY: Int, val sheetX: Int, val sheetY: Int, val sheetScale: Double) : SheetMode
+    data class SheetScale(val drawingX: Int, val drawingY: Int, val sheetX: Int, val sheetY: Int, var scale: Double) : SheetMode
+    data class Move(val sheetX: Int, val sheetY: Int, val scale: Double) : SheetMode
+    data class PinchZoom(val sheetX: Int, val sheetY: Int, val scale: Double, val distance: Double) : SheetMode
 }

@@ -5,11 +5,15 @@ class BrowserSheetController {
         val ratio = computeRatio(drawingWidth, drawingHeight) ?: return null
 
         val sheetScale = ratio * transform.scale
-        val sheetWidth = DRAWING_SHEET_WIDTH_D * sheetScale
-        val sheetHeight = DRAWING_SHEET_HEIGHT_D * sheetScale
+        val sheetWidth = DRAWING_SHEET_WIDTH * sheetScale
+        val sheetHeight = DRAWING_SHEET_HEIGHT * sheetScale
 
-        val centerX = drawingWidth.toDouble() * 0.5 + DRAWING_SHEET_WIDTH_D * ratio * transform.translateXRatio
-        val centerY = drawingHeight.toDouble() * 0.5 + DRAWING_SHEET_HEIGHT_D * ratio * transform.translateYRatio
+        if (sheetWidth < 1.0 || sheetHeight < 1.0) {
+            return null
+        }
+
+        val centerX = drawingWidth.toDouble() * 0.5 + DRAWING_SHEET_WIDTH * ratio * transform.translateXRatio
+        val centerY = drawingHeight.toDouble() * 0.5 + DRAWING_SHEET_HEIGHT * ratio * transform.translateYRatio
 
         return BBox(
             lx = (centerX - sheetWidth * 0.5).toInt(),
@@ -19,12 +23,14 @@ class BrowserSheetController {
         )
     }
 
-    fun translateToSheet(drawingX: Int, drawingY: Int, bbox: BBox): Pair<Int, Int>? =
-        if (bbox.width < 1 || bbox.height < 1) {
-            null
-        } else {
-            ((drawingX - bbox.lx) * DRAWING_SHEET_WIDTH / bbox.width) to ((drawingY - bbox.ly) * DRAWING_SHEET_HEIGHT / bbox.height)
-        }
+    fun translateToSheet(drawingX: Int, drawingY: Int, drawingWidth: Int, drawingHeight: Int, transform: DrawingTransform): Pair<Int, Int>? {
+        val bbox = getSheetBbox(drawingWidth, drawingHeight, transform) ?: return null
+
+        val sheetX = (drawingX - bbox.lx) * DRAWING_SHEET_WIDTH / bbox.width
+        val sheetY = (drawingY - bbox.ly) * DRAWING_SHEET_HEIGHT / bbox.height
+
+        return sheetX.toInt() to sheetY.toInt()
+    }
 
     fun computeTransform(
         drawingX: Int,
@@ -39,20 +45,20 @@ class BrowserSheetController {
         val scale = newScale.coerceIn(SCALE_MIN, SCALE_MAX)
 
         val sheetScale = ratio * scale
-        val sheetWidth = DRAWING_SHEET_WIDTH_D * sheetScale
-        val sheetHeight = DRAWING_SHEET_HEIGHT_D * sheetScale
+        val sheetWidth = DRAWING_SHEET_WIDTH * sheetScale
+        val sheetHeight = DRAWING_SHEET_HEIGHT * sheetScale
 
         if (sheetWidth < 1.0 || sheetHeight < 1.0) {
             return null
         }
 
-        val centerX = (drawingX.toDouble() - srcSheetX.toDouble() * sheetWidth / DRAWING_SHEET_WIDTH_D) + sheetWidth * 0.5
-        val centerY = (drawingY.toDouble() - srcSheetY.toDouble() * sheetHeight / DRAWING_SHEET_HEIGHT_D) + sheetHeight * 0.5
+        val centerX = (drawingX.toDouble() - srcSheetX.toDouble() * sheetWidth / DRAWING_SHEET_WIDTH) + sheetWidth * 0.5
+        val centerY = (drawingY.toDouble() - srcSheetY.toDouble() * sheetHeight / DRAWING_SHEET_HEIGHT) + sheetHeight * 0.5
         val limit = (scale - 1.0) * 0.5 + 1.0
 
         return DrawingTransform(
-            translateXRatio = ((centerX - drawingWidth.toDouble() * 0.5) / DRAWING_SHEET_WIDTH_D / ratio).coerceIn(-limit, limit),
-            translateYRatio = ((centerY - drawingHeight.toDouble() * 0.5) / DRAWING_SHEET_HEIGHT_D / ratio).coerceIn(-limit, limit),
+            translateXRatio = ((centerX - drawingWidth.toDouble() * 0.5) / DRAWING_SHEET_WIDTH / ratio).coerceIn(-limit, limit),
+            translateYRatio = ((centerY - drawingHeight.toDouble() * 0.5) / DRAWING_SHEET_HEIGHT / ratio).coerceIn(-limit, limit),
             scale = scale,
         )
     }
@@ -66,12 +72,12 @@ class BrowserSheetController {
         }
 
         val drawingRatio = drawingAvailWidth / drawingAvailHeight
-        val sheetRatio = DRAWING_SHEET_WIDTH_D / DRAWING_SHEET_HEIGHT_D
+        val sheetRatio = DRAWING_SHEET_WIDTH / DRAWING_SHEET_HEIGHT
 
         return if (drawingRatio < sheetRatio) {
-            drawingAvailWidth / DRAWING_SHEET_WIDTH_D
+            drawingAvailWidth / DRAWING_SHEET_WIDTH
         } else {
-            drawingAvailHeight / DRAWING_SHEET_HEIGHT_D
+            drawingAvailHeight / DRAWING_SHEET_HEIGHT
         }
     }
 
@@ -79,14 +85,12 @@ class BrowserSheetController {
         const val SELECTOR_DRAWING_SHEET = ".js-drawing-sheet"
 
         private const val DRAWING_SHEET_OFFSET_X2 = 16 * 2
-        private const val DRAWING_SHEET_WIDTH = 320
-        private const val DRAWING_SHEET_HEIGHT = 256
 
-        const val DRAWING_SHEET_WIDTH_D = DRAWING_SHEET_WIDTH.toDouble()
-        const val DRAWING_SHEET_HEIGHT_D = DRAWING_SHEET_HEIGHT.toDouble()
+        private const val DRAWING_SHEET_WIDTH = 320.0
+        private const val DRAWING_SHEET_HEIGHT = 256.0
 
-        const val SCALE_MIN = 0.25
-        const val SCALE_MAX = 4.0
+        private const val SCALE_MIN = 0.25
+        private const val SCALE_MAX = 4.0
     }
 }
 
