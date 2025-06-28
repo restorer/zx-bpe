@@ -2,6 +2,7 @@ package com.eightsines.bpe.util
 
 enum class TextRes(val id: String) {
     PaletteSelectColor("palette_select_color"),
+    PaletteSelectBorder("palette_select_border"),
     PaletteSelectPaper("palette_select_paper"),
     PaletteSelectInk("palette_select_ink"),
     PaletteSelectBright("palette_select_bright"),
@@ -73,7 +74,6 @@ enum class TextRes(val id: String) {
     AlertLoadReaderError("alert_load_reader_error"),
     AlertLoadNullResult("alert_load_null_result"),
     AlertLoadUnpackError("alert_load_unpack_error"),
-    AlertExportNotImplemented("alert_export_not_implemented"),
 
     ConfirmNew("confirm_new"),
 

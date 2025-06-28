@@ -28,5 +28,5 @@ value class SciiColor(val value: Int) {
     }
 }
 
-val SciiColor.isTransparent
+inline val SciiColor.isTransparent
     get() = this.value < 0

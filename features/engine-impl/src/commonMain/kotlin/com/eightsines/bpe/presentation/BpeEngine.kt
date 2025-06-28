@@ -10,6 +10,7 @@ import com.eightsines.bpe.bag.UnpackableStringBag
 import com.eightsines.bpe.bag.requireNoIllegalArgumentException
 import com.eightsines.bpe.bag.requireSupportedStuffVersion
 import com.eightsines.bpe.exporters.ScrExporter
+import com.eightsines.bpe.exporters.TapExporter
 import com.eightsines.bpe.foundation.BackgroundLayer
 import com.eightsines.bpe.foundation.CanvasLayer
 import com.eightsines.bpe.foundation.CanvasType
@@ -32,6 +33,7 @@ class BpeEngine(
     private val selectionController: SelectionController,
     private val paintingController: PaintingController,
     private val scrExporter: ScrExporter,
+    private val tapExporter: TapExporter,
     private val historyMaxSteps: Int = 10000,
 ) {
     private val palette = MutablePalette()
@@ -62,7 +64,7 @@ class BpeEngine(
 
         when (action) {
             is BpeAction.PaletteSetBackgroundBorder -> executePaletteSetBackgroundBorder(action)
-            is BpeAction.PaletteSetBackgroundPaper -> executePaletteSetBackgroundPaper(action)
+            is BpeAction.PaletteSetBackgroundColor -> executePaletteSetBackgroundColor(action)
             is BpeAction.PaletteSetBackgroundBright -> executePaletteSetBackgroundBright(action)
 
             is BpeAction.PaletteSetPaintSciiInk -> executePaletteSetSciiInk(action)
@@ -126,9 +128,8 @@ class BpeEngine(
         }
     }
 
-    fun exportToTap(): List<Byte> {
-        return emptyList()
-    }
+    fun exportToTap(name: String): List<Byte> =
+        tapExporter.export(name, graphicsEngine.state.backgroundLayer.border, graphicsEngine.state.preview)
 
     fun exportToScr(): List<Byte> = scrExporter.export(graphicsEngine.state.preview)
     fun selfUnpacker(): BagStuffUnpacker<BpeEngine> = Unpacker()
@@ -154,14 +155,14 @@ class BpeEngine(
 
     private fun executePaletteSetBackgroundBorder(action: BpeAction.PaletteSetBackgroundBorder) {
         if (currentLayer is BackgroundLayer) {
-            appendHistoryStep(graphicsEngine.executePair(GraphicsAction.SetBackgroundColor(action.color)).toHistoryStep())
+            appendHistoryStep(graphicsEngine.executePair(GraphicsAction.SetBackgroundBorder(action.color)).toHistoryStep())
             shouldRefresh = true
         }
     }
 
-    private fun executePaletteSetBackgroundPaper(action: BpeAction.PaletteSetBackgroundPaper) {
+    private fun executePaletteSetBackgroundColor(action: BpeAction.PaletteSetBackgroundColor) {
         if (currentLayer is BackgroundLayer) {
-            appendHistoryStep(graphicsEngine.executePair(GraphicsAction.SetBackgroundBorder(action.color)).toHistoryStep())
+            appendHistoryStep(graphicsEngine.executePair(GraphicsAction.SetBackgroundColor(action.color)).toHistoryStep())
             shouldRefresh = true
         }
     }

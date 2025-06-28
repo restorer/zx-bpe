@@ -24,6 +24,7 @@ class ResourceManager {
 
         private fun resolveTextInternal(res: TextRes) = when (res) {
             TextRes.PaletteSelectColor -> "Select color"
+            TextRes.PaletteSelectBorder -> "Select border"
             TextRes.PaletteSelectPaper -> "Select paper"
             TextRes.PaletteSelectInk -> "Select ink"
             TextRes.PaletteSelectBright -> "Select bright"
@@ -96,7 +97,6 @@ class ResourceManager {
             TextRes.AlertLoadReaderError -> "Failed to read painting (reader error)."
             TextRes.AlertLoadNullResult -> "Failed to read painting (result is null)."
             TextRes.AlertLoadUnpackError -> "Failed to read painting (unpack)."
-            TextRes.AlertExportNotImplemented -> "Export is not implemented yet."
 
             TextRes.ConfirmNew -> "Clear everything? This action cannot be undone."
 

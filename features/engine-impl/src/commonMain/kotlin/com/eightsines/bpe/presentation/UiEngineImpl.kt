@@ -65,7 +65,7 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
             is UiAction.SheetUp -> executeSheetUp(action)
             is UiAction.SheetLeave -> executeSheetLeave()
 
-            is UiAction.PaletteInkOrColorClick -> executePaletteInkOrColorClick()
+            is UiAction.PaletteColorClick -> executePaletteColorClick()
             is UiAction.PalettePaperClick -> executePalettePaperClick()
             is UiAction.PaletteBrightClick -> executePaletteBrightClick()
             is UiAction.PaletteFlashClick -> executePaletteFlashClick()
@@ -122,7 +122,7 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
         }
     }
 
-    override fun exportToTap(): List<Byte> = bpeEngine.exportToTap()
+    override fun exportToTap(name: String): List<Byte> = bpeEngine.exportToTap(name)
     override fun exportToScr(): List<Byte> = bpeEngine.exportToScr()
 
     @Suppress("UNCHECKED_CAST")
@@ -205,7 +205,7 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
         cursorSpec = null
     }
 
-    private fun executePaletteInkOrColorClick() {
+    private fun executePaletteColorClick() {
         val panel = when {
             bpeEngine.state.isPainting -> null
 
@@ -218,6 +218,7 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
             state.paletteInk.isInteractable -> when {
                 currentDrawingType == CanvasType.Scii && isPaintActive -> Panel.PaintSciiInk
                 currentDrawingType == CanvasType.Scii && isEraseActive -> Panel.EraseSciiInk
+                currentDrawingType == null -> Panel.BackgroundColor
                 else -> null
             }
 
@@ -446,7 +447,7 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
 
         when (activePanel) {
             Panel.BackgroundBorder -> bpeEngine.execute(BpeAction.PaletteSetBackgroundBorder(action.color))
-            Panel.BackgroundPaper -> bpeEngine.execute(BpeAction.PaletteSetBackgroundPaper(action.color))
+            Panel.BackgroundColor -> bpeEngine.execute(BpeAction.PaletteSetBackgroundColor(action.color))
             Panel.PaintSciiPaper -> bpeEngine.execute(BpeAction.PaletteSetPaintSciiPaper(action.color))
             Panel.PaintSciiInk -> bpeEngine.execute(BpeAction.PaletteSetPaintSciiInk(action.color))
             Panel.PaintBlockColor -> bpeEngine.execute(BpeAction.PaletteSetPaintBlockColor(action.color))
@@ -738,7 +739,7 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
                     currentDrawingType == CanvasType.Scii && isPaintActive -> bpeState.palettePaintSciiInk to Panel.PaintSciiInk
                     currentDrawingType == CanvasType.Scii && isPickColorActive -> bpeState.palettePaintSciiInk to null
                     currentDrawingType == CanvasType.Scii && isEraseActive -> makeColor(bpeState.paletteEraseSciiInk) to Panel.EraseSciiInk
-                    currentDrawingType == null -> bpeState.paletteBackgroundPaper to Panel.BackgroundPaper
+                    currentDrawingType == null -> bpeState.paletteBackgroundPaper to Panel.BackgroundColor
                     else -> null
                 }
             ),
@@ -770,6 +771,9 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
                     else -> null
                 }
             ),
+
+            palettePaperHint = if (currentDrawingType == null) TextRes.PaletteSelectBorder else TextRes.PaletteSelectPaper,
+            paletteInkHint = if (currentDrawingType == null) TextRes.PaletteSelectPaper else TextRes.PaletteSelectInk,
 
             selectionPaste = if (bpeState.toolboxCanPaste) UiToolState.Visible(Unit) else UiToolState.Hidden,
             selectionMenu = when {
@@ -822,7 +826,7 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
                 null -> null
 
                 Panel.BackgroundBorder -> UiPanel.Colors(bpeState.paletteBackgroundBorder ?: SciiColor.Transparent)
-                Panel.BackgroundPaper -> UiPanel.Colors(bpeState.paletteBackgroundPaper ?: SciiColor.Transparent)
+                Panel.BackgroundColor -> UiPanel.Colors(bpeState.paletteBackgroundPaper ?: SciiColor.Transparent)
                 Panel.BackgroundBright -> UiPanel.Lights(bpeState.paletteBackgroundBright ?: SciiLight.Transparent)
 
                 Panel.PaintSciiInk -> UiPanel.Colors(bpeState.palettePaintSciiInk ?: SciiColor.Transparent)
@@ -996,7 +1000,7 @@ private object PanelPresses {
 
 private enum class Panel(val placement: PanelPlacement, val presses: Map<Int, UiAction> = emptyMap()) {
     BackgroundBorder(PanelPlacement.Palette, PanelPresses.COLOR),
-    BackgroundPaper(PanelPlacement.Palette, PanelPresses.COLOR),
+    BackgroundColor(PanelPlacement.Palette, PanelPresses.COLOR),
     BackgroundBright(PanelPlacement.Palette, PanelPresses.LIGHT),
 
     PaintSciiInk(PanelPlacement.Palette, PanelPresses.COLOR),

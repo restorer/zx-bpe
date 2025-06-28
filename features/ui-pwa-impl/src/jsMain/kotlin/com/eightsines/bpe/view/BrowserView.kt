@@ -170,9 +170,9 @@ class BrowserView(
         attachDrawingTouchEvents()
         attachDrawingMouseEvents()
 
-        paletteBlockColor.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteInkOrColorClick)) }
+        paletteBlockColor.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteColorClick)) }
         paletteSciiPaper.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PalettePaperClick)) }
-        paletteSciiInk.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteInkOrColorClick)) }
+        paletteSciiInk.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteColorClick)) }
         paletteSciiBright.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteBrightClick)) }
         paletteSciiFlash.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteFlashClick)) }
         paletteSciiChar.addClickListener { _actionFlow.tryEmit(BrowserAction.Ui(UiAction.PaletteCharClick)) }
@@ -349,6 +349,9 @@ class BrowserView(
         paletteSciiChar.setToolState(uiState.paletteChar) {
             paletteSciiCharIndicator.replaceClassModifier("tool__char--", getCharClassSuffix(it))
         }
+
+        paletteSciiPaper.title = resourceManager.resolveText(uiState.palettePaperHint)
+        paletteSciiInk.title = resourceManager.resolveText(uiState.paletteInkHint)
 
         selectionPasteOuter.setToolState(
             if (uiState.selectionMenu is UiToolState.Hidden) uiState.selectionPaste else UiToolState.Hidden

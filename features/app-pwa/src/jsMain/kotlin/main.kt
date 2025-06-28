@@ -1,4 +1,5 @@
 import com.eightsines.bpe.exporters.ScrExporter
+import com.eightsines.bpe.exporters.TapExporter
 import com.eightsines.bpe.graphics.GraphicsEngine
 import com.eightsines.bpe.graphics.Painter
 import com.eightsines.bpe.graphics.Renderer
@@ -33,6 +34,7 @@ class BpeComponent(private val window: Window) {
     private val graphicsEngine by lazy { GraphicsEngine(logger = logger, painter = painter, renderer = renderer) }
     private val selectionController by lazy { SelectionController(graphicsEngine) }
     private val scrExporter by lazy { ScrExporter() }
+    private val tapExporter by lazy { TapExporter() }
 
     private val paintingController by lazy {
         PaintingController(graphicsEngine = graphicsEngine, selectionController = selectionController)
@@ -46,6 +48,7 @@ class BpeComponent(private val window: Window) {
             selectionController = selectionController,
             paintingController = paintingController,
             scrExporter = scrExporter,
+            tapExporter = tapExporter,
         )
     }
 

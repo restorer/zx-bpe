@@ -1,19 +1,13 @@
 package com.eightsines.bpe.exporters
 
-import com.eightsines.bpe.foundation.SciiChar
-import com.eightsines.bpe.foundation.SciiColor
-import com.eightsines.bpe.foundation.SciiLight
 import com.eightsines.bpe.foundation.SciiCanvas
+import com.eightsines.bpe.foundation.SciiChar
+import com.eightsines.bpe.foundation.isTransparent
 import com.eightsines.bpe.presentation.UiSpec
 import com.eightsines.bpe.util.SpecScii
 import kotlin.math.max
 
-class ScrExporter(
-    private val defaultPaper: Int = 0,
-    private val defaultInk: Int = 0,
-    private val defaultBright: Int = 0,
-    private val defaultFlash: Int = 0,
-) {
+class ScrExporter(private val defaultColor: Int = 0) {
     fun export(preview: SciiCanvas): List<Byte> {
         val result = mutableListOf<Byte>()
         val charsData = SpecScii.DATA
@@ -55,10 +49,10 @@ class ScrExporter(
             for (sciiX in 0..31) {
                 val cell = preview.getSciiCell(sciiX, sciiY)
 
-                val paper = if (cell.paper.value < 0) defaultPaper else cell.paper.value
-                val ink = if (cell.ink.value < 0) defaultInk else cell.ink.value
-                val bright = if (cell.bright.value < 0) defaultBright else cell.bright.value
-                val flash = if (cell.flash.value < 0) defaultFlash else cell.flash.value
+                val paper = if (cell.paper.isTransparent) defaultColor else cell.paper.value
+                val ink = if (cell.ink.isTransparent) defaultColor else cell.ink.value
+                val bright = if (cell.bright.isTransparent) 0 else cell.bright.value
+                val flash = if (cell.flash.isTransparent) 0 else cell.flash.value
 
                 val attrsValue = flash * 128 + bright * 64 + paper * 8 + ink
                 result.add(attrsValue.toByte())

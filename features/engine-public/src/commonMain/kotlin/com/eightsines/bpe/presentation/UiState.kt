@@ -18,6 +18,9 @@ data class UiState(
     val paletteFlash: UiToolState<SciiLight>,
     val paletteChar: UiToolState<SciiChar>,
 
+    val palettePaperHint: TextRes,
+    val paletteInkHint: TextRes,
+
     val selectionPaste: UiToolState<Unit>,
     val selectionMenu: UiToolState<Unit>,
     val layers: UiToolState<Unit>,

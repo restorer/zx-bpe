@@ -10,7 +10,7 @@ interface UiEngine {
 
     fun execute(action: UiAction)
 
-    fun exportToTap(): List<Byte>
+    fun exportToTap(name: String): List<Byte>
     fun exportToScr(): List<Byte>
 
     fun selfUnpacker(): BagStuffUnpacker<UiEngine>

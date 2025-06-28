@@ -8,7 +8,7 @@ import com.eightsines.bpe.foundation.SciiLight
 
 sealed interface BpeAction {
     data class PaletteSetBackgroundBorder(val color: SciiColor) : BpeAction
-    data class PaletteSetBackgroundPaper(val color: SciiColor) : BpeAction
+    data class PaletteSetBackgroundColor(val color: SciiColor) : BpeAction
     data class PaletteSetBackgroundBright(val light: SciiLight) : BpeAction
 
     data class PaletteSetPaintSciiInk(val color: SciiColor) : BpeAction

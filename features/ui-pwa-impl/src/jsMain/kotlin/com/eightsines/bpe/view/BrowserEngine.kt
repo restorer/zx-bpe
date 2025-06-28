@@ -463,7 +463,7 @@ class BrowserEngine(
     }
 
     private fun executePaintingExportTap() {
-        _browserStateFlow.value = _browserStateFlow.value.copy(dialog = BrowserDialog.Alert(TextRes.AlertExportNotImplemented))
+        performShowSaveOrExportPrompt(PromptTag.ExportTap)
     }
 
     private fun executePaintingExportScr() {
@@ -524,7 +524,10 @@ class BrowserEngine(
                 )
             }
 
-            PromptTag.ExportTap -> Unit
+            PromptTag.ExportTap -> performPaintingSaveOrExportBlob(
+                newFileName + FILE_EXT_TAP,
+                Blob(arrayOf(Uint8Array(uiEngine.exportToTap(newFileName).toTypedArray())), BlobPropertyBag("application/octet-stream")),
+            )
 
             PromptTag.ExportScr -> performPaintingSaveOrExportBlob(
                 newFileName + FILE_EXT_SCR,

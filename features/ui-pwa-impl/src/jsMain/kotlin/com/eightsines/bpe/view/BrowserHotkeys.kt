@@ -10,7 +10,7 @@ val BROWSER_HOTKEYS = buildMap {
     put(BrowserKey(KeyCode.KeyW), UiAction.ToolboxSelectClick)
     put(BrowserKey(KeyCode.KeyS), UiAction.ToolboxPickColorClick)
 
-    put(BrowserKey(KeyCode.KeyO), UiAction.PaletteInkOrColorClick)
+    put(BrowserKey(KeyCode.KeyO), UiAction.PaletteColorClick)
     put(BrowserKey(KeyCode.KeyP), UiAction.PalettePaperClick)
     put(BrowserKey(KeyCode.KeyI), UiAction.PaletteBrightClick)
     put(BrowserKey(KeyCode.KeyU), UiAction.PaletteFlashClick)

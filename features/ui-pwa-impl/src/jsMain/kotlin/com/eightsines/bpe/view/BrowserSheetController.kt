@@ -89,8 +89,8 @@ class BrowserSheetController {
         private const val DRAWING_SHEET_WIDTH = 320.0
         private const val DRAWING_SHEET_HEIGHT = 256.0
 
-        private const val SCALE_MIN = 0.25
-        private const val SCALE_MAX = 4.0
+        private const val SCALE_MIN = 0.125
+        private const val SCALE_MAX = 8.0
     }
 }
 

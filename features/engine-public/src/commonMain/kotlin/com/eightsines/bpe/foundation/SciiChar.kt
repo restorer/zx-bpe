@@ -40,3 +40,6 @@ value class SciiChar(val value: Int) {
         val BlockFull = SciiChar(BLOCK_VALUE_LAST)
     }
 }
+
+inline val SciiChar.isTransparent
+    get() = this.value < 0

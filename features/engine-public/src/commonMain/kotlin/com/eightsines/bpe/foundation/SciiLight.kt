@@ -13,3 +13,6 @@ value class SciiLight(val value: Int) {
         val On = SciiLight(1)
     }
 }
+
+inline val SciiLight.isTransparent
+    get() = this.value < 0

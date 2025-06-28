@@ -3,6 +3,7 @@ package com.eightsines.bpe.integration
 import com.eightsines.bpe.bag.PackableStringBag
 import com.eightsines.bpe.bag.UnpackableStringBag
 import com.eightsines.bpe.exporters.ScrExporter
+import com.eightsines.bpe.exporters.TapExporter
 import com.eightsines.bpe.graphics.GraphicsEngine
 import com.eightsines.bpe.graphics.Painter
 import com.eightsines.bpe.graphics.Renderer
@@ -36,6 +37,7 @@ class IntegrationTest {
             val selectionController = SelectionController(graphicsEngine)
             val paintingController = PaintingController(graphicsEngine = graphicsEngine, selectionController = selectionController)
             val scrExporter = ScrExporter()
+            val tapExporter = TapExporter()
 
             val bpeEngine = BpeEngine(
                 logger = logger,
@@ -44,6 +46,7 @@ class IntegrationTest {
                 selectionController = selectionController,
                 paintingController = paintingController,
                 scrExporter = scrExporter,
+                tapExporter = tapExporter,
             )
 
             UiEngineImpl(logger = logger, bpeEngine = bpeEngine)
