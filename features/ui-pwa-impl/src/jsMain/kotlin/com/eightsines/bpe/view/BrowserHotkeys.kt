@@ -41,9 +41,8 @@ val BROWSER_HOTKEYS = buildMap {
     put(BrowserKey(KeyCode.Digit9), UiAction.PanelPress(9))
 }
 
-val BROWSER_HANDLED_KEYS = setOf(
-    BrowserKey(KeyCode.Enter),
+val BROWSER_EXTRA_KEYS = setOf(
     BrowserKey(KeyCode.Escape),
+    BrowserKey(KeyCode.Enter),
     BrowserKey(KeyCode.Space),
-    BrowserKey(KeyCode.Shift),
 )

@@ -76,7 +76,6 @@ abstract class HBlockCanvas(
         val drawingY = sciiY * 2
         val topCell = cells[drawingY][sciiX]
         val bottomCell = cells[drawingY + 1][sciiX]
-
         return if (topCell.color.value < 0 && bottomCell.color.value < 0) {
             SciiCell.Transparent
         } else {

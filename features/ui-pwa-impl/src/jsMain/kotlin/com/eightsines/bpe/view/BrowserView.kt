@@ -281,7 +281,7 @@ class BrowserView(
                     null
                 }
 
-                if (activeDialog == null && (BROWSER_HOTKEYS.contains(browserKey) || BROWSER_HANDLED_KEYS.contains(browserKey))) {
+                if (activeDialog == null && (BROWSER_HOTKEYS.contains(browserKey) || BROWSER_EXTRA_KEYS.contains(browserKey))) {
                     it.stopPropagation()
                     it.preventDefault()
                 }
@@ -300,7 +300,7 @@ class BrowserView(
                 val browserKey = BrowserKey(it.keyCode, getKeyModifiers(it))
                 _actionFlow.tryEmit(BrowserAction.KeyUp(browserKey))
 
-                if (activeDialog == null && (BROWSER_HOTKEYS.contains(browserKey) || BROWSER_HANDLED_KEYS.contains(browserKey))) {
+                if (activeDialog == null && (BROWSER_HOTKEYS.contains(browserKey) || BROWSER_EXTRA_KEYS.contains(browserKey))) {
                     it.stopPropagation()
                     it.preventDefault()
                 }

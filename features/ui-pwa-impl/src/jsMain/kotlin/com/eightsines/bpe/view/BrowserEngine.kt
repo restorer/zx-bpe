@@ -335,18 +335,22 @@ class BrowserEngine(
     }
 
     private fun executeKeyUp(action: BrowserAction.KeyUp) {
-        val dialog = _browserStateFlow.value.dialog
-
         val lastDownBrowserKey = this.lastDownBrowserKey
         this.lastDownBrowserKey = null
 
-        if (dialog == null || lastDownBrowserKey != action.browserKey || action.browserKey.keyModifiers != 0) {
+        if (lastDownBrowserKey != action.browserKey || action.browserKey.keyModifiers != 0) {
             return
         }
 
-        when (action.browserKey.keyCode) {
-            KeyCode.Escape -> executeDialogHide()
-            KeyCode.Enter -> executeDialogOk()
+        val dialog = _browserStateFlow.value.dialog
+
+        when {
+            dialog != null -> when (action.browserKey.keyCode) {
+                KeyCode.Escape -> executeDialogHide()
+                KeyCode.Enter -> executeDialogOk()
+            }
+
+            action.browserKey.keyCode == KeyCode.Escape -> executeUi(UiAction.CloseActivePanel)
         }
     }
 

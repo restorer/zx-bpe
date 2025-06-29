@@ -61,4 +61,6 @@ sealed interface UiAction {
     data object LayerMoveUpClick : UiAction
     data object LayerMoveDownClick : UiAction
     data class LayerTypeClick(val type: CanvasType) : UiAction
+
+    data object CloseActivePanel : UiAction
 }

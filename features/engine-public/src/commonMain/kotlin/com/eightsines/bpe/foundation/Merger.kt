@@ -48,11 +48,14 @@ object Merger {
             charValue == SciiChar.ForceTransparent.value -> SciiCell.Transparent
             charValue == SciiChar.Transparent.value && ontoCharValue == SciiChar.Transparent.value -> SciiCell.Transparent
 
-            charValue in SciiChar.BLOCK_VALUE_FIRST..SciiChar.BLOCK_VALUE_LAST &&
-                    ontoCharValue in SciiChar.BLOCK_VALUE_FIRST..SciiChar.BLOCK_VALUE_LAST -> {
+            (charValue == SciiChar.Space.value || charValue in SciiChar.BLOCK_VALUE_FIRST..SciiChar.BLOCK_VALUE_LAST) &&
+                    (ontoCharValue == SciiChar.Space.value || ontoCharValue in SciiChar.BLOCK_VALUE_FIRST..SciiChar.BLOCK_VALUE_LAST) -> {
 
                 val ontoInk = onto.ink
                 val ontoPaper = onto.paper
+
+                // It is OK to do bit manipulations with SciiChar.Space.value,
+                // because it also has 0 at lower 4 bits, just like BLOCK_VALUE_FIRST.
 
                 val trColor = if ((charValue and SciiChar.BLOCK_BIT_TR) != 0) which.ink else which.paper
                 val tlColor = if ((charValue and SciiChar.BLOCK_BIT_TL) != 0) which.ink else which.paper

@@ -113,6 +113,8 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
             is UiAction.LayerMoveUpClick -> executeLayerMoveUpClick()
             is UiAction.LayerMoveDownClick -> executeLayerMoveDownClick()
             is UiAction.LayerTypeClick -> executeLayerTypeClick(action)
+
+            is UiAction.CloseActivePanel -> executeCloseActivePanel()
         }
 
         state = refresh()
@@ -440,6 +442,12 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
         }
     }
 
+    private fun executeMenuClick() {
+        if (!bpeEngine.state.isPainting) {
+            activePanel = if (activePanel == Panel.Menu) null else Panel.Menu
+        }
+    }
+
     private fun executePanelColorClick(action: UiAction.PanelColorClick) {
         if (bpeEngine.state.isPainting) {
             return
@@ -587,9 +595,9 @@ class UiEngineImpl(private val logger: Logger, private val bpeEngine: BpeEngine)
         layerTypePanel = null
     }
 
-    private fun executeMenuClick() {
+    private fun executeCloseActivePanel() {
         if (!bpeEngine.state.isPainting) {
-            activePanel = if (activePanel == Panel.Menu) null else Panel.Menu
+            activePanel = null
         }
     }
 

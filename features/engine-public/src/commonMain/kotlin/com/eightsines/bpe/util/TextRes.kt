@@ -54,6 +54,7 @@ enum class TextRes(val id: String) {
     MenuExportTap("menu_export_tap"),
     MenuExportScr("menu_export_scr"),
     MenuExportPng("menu_export_png"),
+    MenuManual("menu_manual"),
     MenuBuild("menu_build"),
 
     LayerVisible("layer_visible"),

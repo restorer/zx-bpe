@@ -21,10 +21,10 @@ value class SciiChar(val value: Int) {
 
         val ForceTransparent = SciiChar(-2)
         val Transparent = SciiChar(-1)
-        val Space = SciiChar(32)
+        val Space = SciiChar(0x20)
 
         @Suppress("unused")
-        val Copyright = SciiChar(127)
+        val Copyright = SciiChar(0x7F)
 
         val BlockSpace = SciiChar(BLOCK_VALUE_FIRST)
         val BlockHorizontalTop = SciiChar(BLOCK_VALUE_FIRST + BLOCK_BIT_TR + BLOCK_BIT_TL)
